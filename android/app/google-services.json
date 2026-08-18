@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "936455382026",
+    "project_id": "poseidon-25eb9",
+    "storage_bucket": "poseidon-25eb9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:936455382026:android:8cc01627da71107e2eabf3",
+        "android_client_info": {
+          "package_name": "com.example.poseidon_os"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCkZhCTQlEpy5JH4V7LdU4mWkGXizjy7yI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
