@@ -133,8 +133,6 @@ class PoseidonApp extends StatelessWidget {
 
 // ---------------- GİRİŞ EKRANI ----------------
 
-// ---------------- POSEIDON AKADEMİ GİRİŞ EKRANI ----------------
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -169,28 +167,28 @@ class _LoginScreenState extends State<LoginScreen> {
         _sifreController.text.trim(),
       );
 
-      if (context.mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HomeScreen(
-              rol: kullanici['role'],
-              veliSporcuId: kullanici['athlete_id'] != null
-                  ? int.parse(kullanici['athlete_id'].toString())
-                  : null,
-            ),
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(
+            rol: kullanici['role'],
+            veliSporcuId: kullanici['athlete_id'] != null
+                ? int.parse(kullanici['athlete_id'].toString())
+                : null,
           ),
-        );
-      }
+        ),
+      );
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$e'),
-            backgroundColor: const Color(0xFF351515),
-          ),
-        );
-      }
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$e'),
+          backgroundColor: const Color(0xFF351515),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _girisYapiliyor = false);
@@ -211,464 +209,336 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFF02090D),
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
-          // -------------------------------------------------------
-          // ARKA PLAN
-          // -------------------------------------------------------
-
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF062536),
-                  Color(0xFF03141F),
-                  Color(0xFF02090D),
-                  Color(0xFF010609),
-                ],
-                stops: [0.0, 0.30, 0.65, 1.0],
-              ),
+          // =========================================================
+          // TAM EKRAN POSEIDON ARKA PLANI
+          // =========================================================
+         // =========================================================
+          // TAM EKRAN POSEIDON ARKA PLANI
+          // =========================================================
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/poseidon_mizrak.png',
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter, // center yerine topCenter yapıldı
             ),
           ),
 
-          // Üstten gelen sualtı ışığı
-          Positioned(
-            top: -120,
-            left: ekran.width * 0.15,
-            right: ekran.width * 0.15,
+          // =========================================================
+          // KARARTMA KATMANI
+          // =========================================================
+          Positioned.fill(
             child: Container(
-              height: 280,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF5ADFFF).withOpacity(0.16),
-                    blurRadius: 120,
-                    spreadRadius: 40,
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Sol ışık hüzmesi
-          Positioned(
-            top: 0,
-            left: 30,
-            child: Transform.rotate(
-              angle: -0.15,
-              child: Container(
-                width: 80,
-                height: 480,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.035),
-                      Colors.transparent,
-                    ],
-                  ),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withOpacity(0.03),
+                    Colors.black.withOpacity(0.10),
+                    Colors.black.withOpacity(0.38),
+                    const Color(0xFF02090D).withOpacity(0.94),
+                  ],
+                  stops: const [0.0, 0.30, 0.64, 1.0],
                 ),
               ),
             ),
           ),
 
-          // Sağ ışık hüzmesi
-          Positioned(
-            top: 0,
-            right: 30,
-            child: Transform.rotate(
-              angle: 0.15,
-              child: Container(
-                width: 80,
-                height: 480,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withOpacity(0.035),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // -------------------------------------------------------
-          // KABARCIKLAR
-          // -------------------------------------------------------
-
-          const Positioned(
-            top: 95,
-            left: 35,
-            child: _Baloncuk(size: 5),
-          ),
-
-          const Positioned(
-            top: 165,
-            right: 42,
-            child: _Baloncuk(size: 7),
-          ),
-
-          const Positioned(
-            top: 300,
-            left: 25,
-            child: _Baloncuk(size: 4),
-          ),
-
-          const Positioned(
-            top: 370,
-            right: 30,
-            child: _Baloncuk(size: 5),
-          ),
-
-          const Positioned(
-            top: 520,
-            left: 55,
-            child: _Baloncuk(size: 6),
-          ),
-
-          const Positioned(
-            top: 600,
-            right: 45,
-            child: _Baloncuk(size: 4),
-          ),
-
-          // -------------------------------------------------------
-          // ANA İÇERİK
-          // -------------------------------------------------------
-
+          // =========================================================
+          // MOBİL FORM ALANI
+          // =========================================================
           SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 26,
-                vertical: 18,
-              ),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: ekran.height - 36,
+            child: Center(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 15,
                 ),
-                child: Column(
-                  children: [
-                    // -------------------------------------------------
-                    // LOGO / MIZRAK
-                    // -------------------------------------------------
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 430),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        height: ekran.height * 0.35,
+                      ),
 
-                    SizedBox(
-                      height: 285,
-                      width: double.infinity,
-                      child: Stack(
-                        alignment: Alignment.center,
+                      // =================================================
+                      // MARKA
+                      // =================================================
+                      const Text(
+                        'POSEIDON',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFFEAF1F3),
+                          fontSize: 35,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 5,
+                          shadows: [
+                            Shadow(
+                              color: Color(0xFF78FF36),
+                              blurRadius: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 3),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Yeşil aura
                           Container(
-                            width: 230,
-                            height: 250,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF8CFF32)
-                                      .withOpacity(0.12),
-                                  blurRadius: 80,
-                                  spreadRadius: 15,
-                                ),
-                              ],
+                            width: 40,
+                            height: 1,
+                            color: const Color(0xFF75E837),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text(
+                            'AKADEMİ',
+                            style: TextStyle(
+                              color: Color(0xFF8DEB45),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 7,
                             ),
                           ),
-
-                          // Gerçek Poseidon mızrağı
-                          Image.asset(
-                            'assets/images/poseidon_mizrak.png',
-                            height: 275,
-                            fit: BoxFit.contain,
+                          const SizedBox(width: 10),
+                          Container(
+                            width: 40,
+                            height: 1,
+                            color: const Color(0xFF75E837),
                           ),
                         ],
                       ),
-                    ),
 
-                    // -------------------------------------------------
-                    // MARKA
-                    // -------------------------------------------------
+                      const SizedBox(height: 8),
 
-                    const Text(
-                      'POSEIDON',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFFE8F0F2),
-                        fontSize: 35,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 5,
-                        shadows: [
-                          Shadow(
-                            color: Color(0xFF78FF36),
-                            blurRadius: 18,
-                          ),
-                        ],
+                      const Text(
+                        'GÜCÜNÜ KEŞFET, ZİRVEYE YÜKSEL',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Color(0xFFD0D9DC),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 2,
+                        ),
                       ),
-                    ),
 
-                    const SizedBox(height: 2),
+                      const SizedBox(height: 25),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 45,
-                          height: 1,
-                          color: const Color(0xFF75E837),
-                        ),
-                        const SizedBox(width: 10),
-                        const Text(
-                          'AKADEMİ',
-                          style: TextStyle(
-                            color: Color(0xFF8DEB45),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 7,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          width: 45,
-                          height: 1,
-                          color: const Color(0xFF75E837),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    const Text(
-                      'GÜCÜNÜ KEŞFET, ZİRVEYE YÜKSEL',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFFB7C4C8),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 2.2,
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // -------------------------------------------------
-                    // GİRİŞ / KAYIT SEKMELERİ
-                    // -------------------------------------------------
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            children: [
-                              const Text(
-                                'GİRİŞ YAP',
-                                style: TextStyle(
-                                  color: Color(0xFF9AF04C),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 1,
-                                ),
-                              ),
-                              const SizedBox(height: 9),
-                              Container(
-                                height: 2,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF8BE83E),
-                                  borderRadius: BorderRadius.circular(5),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF8BE83E)
-                                          .withOpacity(0.6),
-                                      blurRadius: 8,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const RegisterScreen(),
-                                ),
-                              );
-                            },
+                      // =================================================
+                      // GİRİŞ / KAYIT
+                      // =================================================
+                      Row(
+                        children: [
+                          Expanded(
                             child: Column(
                               children: [
                                 const Text(
-                                  'KAYIT OL',
+                                  'GİRİŞ YAP',
                                   style: TextStyle(
-                                    color: Color(0xFF718087),
+                                    color: Color(0xFF9AF04C),
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1,
                                   ),
                                 ),
-                                const SizedBox(height: 9),
+                                const SizedBox(height: 8),
                                 Container(
                                   height: 2,
-                                  color: const Color(0xFF17303A),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF8BE83E),
+                                    borderRadius: BorderRadius.circular(5),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF8BE83E)
+                                            .withOpacity(0.6),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // -------------------------------------------------
-                    // E-POSTA
-                    // -------------------------------------------------
-
-                    _PoseidonInput(
-                      controller: _emailController,
-                      hint: 'E-posta adresiniz',
-                      icon: Icons.mail_outline_rounded,
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // -------------------------------------------------
-                    // ŞİFRE
-                    // -------------------------------------------------
-
-                    _PoseidonInput(
-                      controller: _sifreController,
-                      hint: 'Şifre',
-                      icon: Icons.lock_outline_rounded,
-                      obscureText: !_sifreGorunuyor,
-                      suffixIcon: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _sifreGorunuyor = !_sifreGorunuyor;
-                          });
-                        },
-                        icon: Icon(
-                          _sifreGorunuyor
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
-                          color: const Color(0xFF718087),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    // -------------------------------------------------
-                    // GİRİŞ BUTONU
-                    // -------------------------------------------------
-
-                    SizedBox(
-                      width: double.infinity,
-                      height: 58,
-                      child: ElevatedButton(
-                        onPressed: _girisYapiliyor ? null : _girisYap,
-                        style: ElevatedButton.styleFrom(
-                          elevation: 10,
-                          shadowColor:
-                              const Color(0xFF72FF32).withOpacity(0.35),
-                          backgroundColor: const Color(0xFF8BE052),
-                          disabledBackgroundColor:
-                              const Color(0xFF477C32),
-                          foregroundColor: const Color(0xFF031006),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: _girisYapiliyor
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: Color(0xFF031006),
-                                ),
-                              )
-                            : const Text(
-                                'GİRİŞ YAP',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.5,
-                                ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const RegisterScreen(),
+                                  ),
+                                );
+                              },
+                              child: Column(
+                                children: [
+                                  const Text(
+                                    'KAYIT OL',
+                                    style: TextStyle(
+                                      color: Color(0xFF718087),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    height: 2,
+                                    color: const Color(0xFF17303A),
+                                  ),
+                                ],
                               ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 17),
-
-                    // -------------------------------------------------
-                    // ŞİFREMİ UNUTTUM
-                    // -------------------------------------------------
-
-                    GestureDetector(
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Şifre yenileme özelliği yakında eklenecek.',
                             ),
                           ),
-                        );
-                      },
-                      child: const Text(
-                        'Şifremi Unuttum',
-                        style: TextStyle(
-                          color: Color(0xFFB7C1C5),
-                          fontSize: 13,
-                          decoration: TextDecoration.underline,
-                          decorationColor: Color(0xFFB7C1C5),
+                        ],
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      // =================================================
+                      // E-POSTA
+                      // =================================================
+                      _PoseidonLoginInput(
+                        controller: _emailController,
+                        hint: 'E-posta adresiniz',
+                        icon: Icons.mail_outline_rounded,
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // =================================================
+                      // ŞİFRE
+                      // =================================================
+                      _PoseidonLoginInput(
+                        controller: _sifreController,
+                        hint: 'Şifre',
+                        icon: Icons.lock_outline_rounded,
+                        obscureText: !_sifreGorunuyor,
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _sifreGorunuyor = !_sifreGorunuyor;
+                            });
+                          },
+                          icon: Icon(
+                            _sifreGorunuyor
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                            color: const Color(0xFF9AA8AD),
+                          ),
                         ),
                       ),
-                    ),
 
-                    const SizedBox(height: 26),
+                      const SizedBox(height: 17),
 
-                    // -------------------------------------------------
-                    // ALT MARKA
-                    // -------------------------------------------------
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            color: const Color(0xFF1C3944),
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            'POSEIDON OS',
-                            style: TextStyle(
-                              color: Color(0xFF4F6269),
-                              fontSize: 9,
-                              letterSpacing: 2,
-                              fontWeight: FontWeight.w600,
+                      // =================================================
+                      // GİRİŞ BUTONU
+                      // =================================================
+                      SizedBox(
+                        width: double.infinity,
+                        height: 58,
+                        child: ElevatedButton(
+                          onPressed: _girisYapiliyor ? null : _girisYap,
+                          style: ElevatedButton.styleFrom(
+                            elevation: 12,
+                            shadowColor:
+                                const Color(0xFF72FF32).withOpacity(0.45),
+                            backgroundColor: const Color(0xFF8BE052),
+                            disabledBackgroundColor: const Color(0xFF477C32),
+                            foregroundColor: const Color(0xFF031006),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
                           ),
+                          child: _girisYapiliyor
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Color(0xFF031006),
+                                  ),
+                                )
+                              : const Text(
+                                  'GİRİŞ YAP',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
                         ),
-                        Expanded(
-                          child: Container(
-                            height: 1,
-                            color: const Color(0xFF1C3944),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // =================================================
+                      // ŞİFREMİ UNUTTUM
+                      // =================================================
+                      GestureDetector(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Şifre yenileme özelliği yakında eklenecek.',
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Şifremi Unuttum',
+                          style: TextStyle(
+                            color: Color(0xFFD0D8DB),
+                            fontSize: 13,
+                            decoration: TextDecoration.underline,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
 
-                    const SizedBox(height: 20),
-                  ],
+                      const SizedBox(height: 25),
+
+                      // =================================================
+                      // ALT MARKA
+                      // =================================================
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 1,
+                              color: const Color(0xFF1C3944),
+                            ),
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'POSEIDON OS',
+                              style: TextStyle(
+                                color: Color(0xFF607279),
+                                fontSize: 9,
+                                letterSpacing: 2,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              height: 1,
+                              color: const Color(0xFF1C3944),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 18),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -679,12 +549,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
+// ---------------- POSEIDON GİRİŞ INPUT ----------------
 
-// ---------------------------------------------------------------
-// POSEIDON INPUT
-// ---------------------------------------------------------------
-
-class _PoseidonInput extends StatelessWidget {
+class _PoseidonLoginInput extends StatelessWidget {
   final TextEditingController controller;
   final String hint;
   final IconData icon;
@@ -692,7 +559,7 @@ class _PoseidonInput extends StatelessWidget {
   final Widget? suffixIcon;
   final TextInputType? keyboardType;
 
-  const _PoseidonInput({
+  const _PoseidonLoginInput({
     required this.controller,
     required this.hint,
     required this.icon,
@@ -705,16 +572,16 @@ class _PoseidonInput extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF06141B).withOpacity(0.92),
+        color: const Color(0xFF06141B).withOpacity(0.82),
         borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: const Color(0xFF294550),
+          color: const Color(0xFF36525E),
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.30),
+            blurRadius: 12,
             offset: const Offset(0, 5),
           ),
         ],
@@ -731,12 +598,12 @@ class _PoseidonInput extends StatelessWidget {
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(
-            color: Color(0xFF718087),
+            color: Color(0xFF859399),
             fontSize: 14,
           ),
           prefixIcon: Icon(
             icon,
-            color: const Color(0xFF87969B),
+            color: const Color(0xFF9AA8AD),
             size: 24,
           ),
           suffixIcon: suffixIcon,
@@ -751,33 +618,6 @@ class _PoseidonInput extends StatelessWidget {
   }
 }
 
-
-// ---------------------------------------------------------------
-// SUALTI BALONCUĞU
-// ---------------------------------------------------------------
-
-class _Baloncuk extends StatelessWidget {
-  final double size;
-
-  const _Baloncuk({
-    required this.size,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withOpacity(0.28),
-          width: 1,
-        ),
-      ),
-    );
-  }
-}
 // ---------------- KAYIT OL EKRANI ----------------
 
 class RegisterScreen extends StatefulWidget {
