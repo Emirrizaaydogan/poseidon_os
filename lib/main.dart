@@ -215,9 +215,6 @@ class _LoginScreenState extends State<LoginScreen> {
           // =========================================================
           // TAM EKRAN POSEIDON ARKA PLANI
           // =========================================================
-         // =========================================================
-          // TAM EKRAN POSEIDON ARKA PLANI
-          // =========================================================
           Positioned.fill(
             child: Image.asset(
               'assets/images/poseidon_mizrak.png',
