@@ -4,6 +4,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'services/database_service.dart';
+import 'package:video_player/video_player.dart';
 
 // ---------------- VERİ MODELLERİ ----------------
 
@@ -148,6 +149,41 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  late final VideoPlayerController _videoController;
+
+  static const _loopBaslangic = Duration(seconds: 7);
+  static const _loopBitis = Duration(seconds: 8);
+
+  @override
+  void initState() {
+    super.initState();
+    _videoController =
+        VideoPlayerController.asset('assets/videos/trident_rising.mp4')
+          ..setLooping(false) // döngüyü artık kendimiz yönetiyoruz
+          ..setVolume(0)
+          ..addListener(_videoPozisyonuKontrolEt)
+          ..initialize().then((_) {
+            if (mounted) {
+              setState(() {});
+              _videoController.play();
+            }
+          });
+  }
+
+  void _videoPozisyonuKontrolEt() {
+    final deger = _videoController.value;
+    if (!deger.isInitialized) return;
+    // 8. saniyeye ulaşınca (veya video bittiğinde) 7. saniyeye geri sar
+    if (deger.position >= _loopBitis ||
+        !deger.isPlaying &&
+            deger.position >= _loopBaslangic &&
+            deger.duration - deger.position <
+                const Duration(milliseconds: 200)) {
+      _videoController.seekTo(_loopBaslangic);
+      _videoController.play();
+    }
+  }
+
   final _emailController = TextEditingController();
   final _sifreController = TextEditingController();
 
@@ -204,6 +240,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _sifreController.dispose();
+    _videoController.removeListener(_videoPozisyonuKontrolEt);
+    _videoController.dispose();
     super.dispose();
   }
 
@@ -220,11 +258,17 @@ class _LoginScreenState extends State<LoginScreen> {
           // TAM EKRAN POSEIDON ARKA PLANI
           // =========================================================
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/poseidon_mizrak.png',
-              fit: BoxFit.cover,
-              alignment: Alignment.topCenter, // center yerine topCenter yapıldı
-            ),
+            child: _videoController.value.isInitialized
+                ? FittedBox(
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    child: SizedBox(
+                      width: _videoController.value.size.width,
+                      height: _videoController.value.size.height,
+                      child: VideoPlayer(_videoController),
+                    ),
+                  )
+                : Container(color: const Color(0xFF02090D)),
           ),
 
           // =========================================================
