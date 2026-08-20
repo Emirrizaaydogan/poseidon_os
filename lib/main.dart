@@ -74,7 +74,9 @@ class Antrenman {
       tarih: veri['tarih'] ?? '',
       havuz: veri['havuz'] ?? '',
       sure: veri['sure'] ?? '',
-      setler: hamSetler.map((s) => AntrenmanSeti.fromMap(Map<String, dynamic>.from(s))).toList(),
+      setler: hamSetler
+          .map((s) => AntrenmanSeti.fromMap(Map<String, dynamic>.from(s)))
+          .toList(),
     );
   }
 }
@@ -102,7 +104,12 @@ class PerformansKaydi {
   }
 }
 
-const List<String> yuzmeStilleri = ['Serbest', 'Sırtüstü', 'Kurbağalama', 'Kelebek'];
+const List<String> yuzmeStilleri = [
+  'Serbest',
+  'Sırtüstü',
+  'Kurbağalama',
+  'Kelebek',
+];
 const List<String> yuzmeMesafeleri = ['25m', '50m', '100m', '200m'];
 
 final Map<DateTime, List<String>> ornekEtkinlikler = {
@@ -184,10 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$e'),
-          backgroundColor: const Color(0xFF351515),
-        ),
+        SnackBar(content: Text('$e'), backgroundColor: const Color(0xFF351515)),
       );
     } finally {
       if (mounted) {
@@ -260,9 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(
-                        height: ekran.height * 0.35,
-                      ),
+                      SizedBox(height: ekran.height * 0.35),
 
                       // =================================================
                       // MARKA
@@ -276,10 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           fontWeight: FontWeight.w800,
                           letterSpacing: 5,
                           shadows: [
-                            Shadow(
-                              color: Color(0xFF78FF36),
-                              blurRadius: 18,
-                            ),
+                            Shadow(color: Color(0xFF78FF36), blurRadius: 18),
                           ],
                         ),
                       ),
@@ -353,8 +352,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     borderRadius: BorderRadius.circular(5),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF8BE83E)
-                                            .withOpacity(0.6),
+                                        color: const Color(
+                                          0xFF8BE83E,
+                                        ).withOpacity(0.6),
                                         blurRadius: 8,
                                       ),
                                     ],
@@ -445,8 +445,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: _girisYapiliyor ? null : _girisYap,
                           style: ElevatedButton.styleFrom(
                             elevation: 12,
-                            shadowColor:
-                                const Color(0xFF72FF32).withOpacity(0.45),
+                            shadowColor: const Color(
+                              0xFF72FF32,
+                            ).withOpacity(0.45),
                             backgroundColor: const Color(0xFF8BE052),
                             disabledBackgroundColor: const Color(0xFF477C32),
                             foregroundColor: const Color(0xFF031006),
@@ -571,10 +572,7 @@ class _PoseidonLoginInput extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF06141B).withOpacity(0.82),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: const Color(0xFF36525E),
-          width: 1.2,
-        ),
+        border: Border.all(color: const Color(0xFF36525E), width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.30),
@@ -587,22 +585,12 @@ class _PoseidonLoginInput extends StatelessWidget {
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 15,
-        ),
+        style: const TextStyle(color: Colors.white, fontSize: 15),
         cursorColor: const Color(0xFF8BE052),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(
-            color: Color(0xFF859399),
-            fontSize: 14,
-          ),
-          prefixIcon: Icon(
-            icon,
-            color: const Color(0xFF9AA8AD),
-            size: 24,
-          ),
+          hintStyle: const TextStyle(color: Color(0xFF859399), fontSize: 14),
+          prefixIcon: Icon(icon, color: const Color(0xFF9AA8AD), size: 24),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
@@ -632,12 +620,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _kayitOluyor = false;
 
   Future<void> _kayitOl() async {
-    if (_emailController.text.trim().isEmpty || _sifreController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('E-posta ve şifre gerekli')));
+    if (_emailController.text.trim().isEmpty ||
+        _sifreController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('E-posta ve şifre gerekli')));
       return;
     }
     if (_seciliRol == 'veli' && _seciliSporcuId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lütfen çocuğunu seç')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lütfen çocuğunu seç')));
       return;
     }
 
@@ -650,12 +643,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         sporcuId: _seciliRol == 'veli' ? _seciliSporcuId : null,
       );
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Kayıt başarılı, şimdi giriş yapabilirsin')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Kayıt başarılı, şimdi giriş yapabilirsin'),
+          ),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
       }
     } finally {
       if (mounted) setState(() => _kayitOluyor = false);
@@ -676,7 +675,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
-        title: const Text('Kayıt Ol', style: TextStyle(color: Colors.lightGreenAccent)),
+        title: const Text(
+          'Kayıt Ol',
+          style: TextStyle(color: Colors.lightGreenAccent),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(24),
@@ -692,8 +694,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               labelStyle: const TextStyle(color: Colors.grey),
               filled: true,
               fillColor: const Color(0xFF1A1A1A),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Colors.grey)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Colors.lightGreenAccent)),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.grey),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colors.lightGreenAccent),
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -702,21 +710,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
           Wrap(
             spacing: 8,
             children: [
-              _RolSecimChip(etiket: 'Antrenör', deger: 'antrenor', seciliRol: _seciliRol, onSec: (r) => setState(() => _seciliRol = r)),
-              _RolSecimChip(etiket: 'Sporcu', deger: 'sporcu', seciliRol: _seciliRol, onSec: (r) => setState(() => _seciliRol = r)),
-              _RolSecimChip(etiket: 'Veli', deger: 'veli', seciliRol: _seciliRol, onSec: (r) => setState(() => _seciliRol = r)),
+              _RolSecimChip(
+                etiket: 'Antrenör',
+                deger: 'antrenor',
+                seciliRol: _seciliRol,
+                onSec: (r) => setState(() => _seciliRol = r),
+              ),
+              _RolSecimChip(
+                etiket: 'Sporcu',
+                deger: 'sporcu',
+                seciliRol: _seciliRol,
+                onSec: (r) => setState(() => _seciliRol = r),
+              ),
+              _RolSecimChip(
+                etiket: 'Veli',
+                deger: 'veli',
+                seciliRol: _seciliRol,
+                onSec: (r) => setState(() => _seciliRol = r),
+              ),
             ],
           ),
           if (_seciliRol == 'veli') ...[
             const SizedBox(height: 20),
-            const Text('Çocuğun', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            const Text(
+              'Çocuğun',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
             const SizedBox(height: 8),
             FutureBuilder<List<dynamic>>(
               future: dbService.getSporcular(),
               builder: (context, snapshot) {
                 final sporcular = snapshot.data ?? [];
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.lightGreenAccent));
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.lightGreenAccent,
+                    ),
+                  );
                 }
                 return Wrap(
                   spacing: 8,
@@ -727,14 +757,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return GestureDetector(
                       onTap: () => setState(() => _seciliSporcuId = id),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
-                          color: seciliMi ? Colors.lightGreenAccent : const Color(0xFF1A1A1A),
+                          color: seciliMi
+                              ? Colors.lightGreenAccent
+                              : const Color(0xFF1A1A1A),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: Colors.lightGreenAccent),
                         ),
-                        child: Text(s['isim'] ?? '',
-                            style: TextStyle(color: seciliMi ? Colors.black : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                        child: Text(
+                          s['isim'] ?? '',
+                          style: TextStyle(
+                            color: seciliMi ? Colors.black : Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                     );
                   }).toList(),
@@ -748,10 +789,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: ElevatedButton(
               onPressed: _kayitOluyor ? null : _kayitOl,
               style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightGreenAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(vertical: 14)),
+                backgroundColor: Colors.lightGreenAccent,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
               child: _kayitOluyor
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                  : const Text('Kayıt Ol', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.black,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Kayıt Ol',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
             ),
           ),
         ],
@@ -766,7 +820,12 @@ class _RolSecimChip extends StatelessWidget {
   final String seciliRol;
   final ValueChanged<String> onSec;
 
-  const _RolSecimChip({required this.etiket, required this.deger, required this.seciliRol, required this.onSec});
+  const _RolSecimChip({
+    required this.etiket,
+    required this.deger,
+    required this.seciliRol,
+    required this.onSec,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -780,12 +839,18 @@ class _RolSecimChip extends StatelessWidget {
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.lightGreenAccent),
         ),
-        child: Text(etiket, style: TextStyle(color: seciliMi ? Colors.black : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+        child: Text(
+          etiket,
+          style: TextStyle(
+            color: seciliMi ? Colors.black : Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }
 }
-
 
 // ---------------- TRIDENT LOGO ----------------
 
@@ -793,11 +858,18 @@ class TridentIcon extends StatelessWidget {
   final double size;
   final Color color;
 
-  const TridentIcon({super.key, this.size = 28, this.color = Colors.lightGreenAccent});
+  const TridentIcon({
+    super.key,
+    this.size = 28,
+    this.color = Colors.lightGreenAccent,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(size: Size(size, size), painter: _TridentPainter(color: color));
+    return CustomPaint(
+      size: Size(size, size),
+      painter: _TridentPainter(color: color),
+    );
   }
 }
 
@@ -814,12 +886,28 @@ class _TridentPainter extends CustomPainter {
       ..strokeCap = StrokeCap.round;
     final w = size.width;
     final h = size.height;
-    canvas.drawLine(Offset(w * 0.5, h * 0.15), Offset(w * 0.5, h * 0.95), paint);
+    canvas.drawLine(
+      Offset(w * 0.5, h * 0.15),
+      Offset(w * 0.5, h * 0.95),
+      paint,
+    );
     canvas.drawLine(Offset(w * 0.5, h * 0.4), Offset(w * 0.15, h * 0.1), paint);
-    canvas.drawLine(Offset(w * 0.15, h * 0.1), Offset(w * 0.15, h * 0.35), paint);
+    canvas.drawLine(
+      Offset(w * 0.15, h * 0.1),
+      Offset(w * 0.15, h * 0.35),
+      paint,
+    );
     canvas.drawLine(Offset(w * 0.5, h * 0.4), Offset(w * 0.85, h * 0.1), paint);
-    canvas.drawLine(Offset(w * 0.85, h * 0.1), Offset(w * 0.85, h * 0.35), paint);
-    canvas.drawLine(Offset(w * 0.5, h * 0.15), Offset(w * 0.5, h * 0.05), paint);
+    canvas.drawLine(
+      Offset(w * 0.85, h * 0.1),
+      Offset(w * 0.85, h * 0.35),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(w * 0.5, h * 0.15),
+      Offset(w * 0.5, h * 0.05),
+      paint,
+    );
   }
 
   @override
@@ -843,13 +931,22 @@ class OkluButon extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(colors: [Color(0xFF9AE637), Color(0xFF5FD858)]),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF9AE637), Color(0xFF5FD858)],
+          ),
           borderRadius: BorderRadius.circular(30),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(metin, style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15)),
+            Text(
+              metin,
+              style: const TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
             const SizedBox(width: 6),
             const Icon(Icons.arrow_forward, color: Colors.black, size: 18),
           ],
@@ -866,7 +963,12 @@ class IstatistikKarti extends StatelessWidget {
   final String deger;
   final String etiket;
 
-  const IstatistikKarti({super.key, required this.icon, required this.deger, required this.etiket});
+  const IstatistikKarti({
+    super.key,
+    required this.icon,
+    required this.deger,
+    required this.etiket,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -882,9 +984,19 @@ class IstatistikKarti extends StatelessWidget {
         children: [
           Icon(icon, color: Colors.lightGreenAccent, size: 20),
           const SizedBox(height: 10),
-          Text(deger, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+          Text(
+            deger,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(etiket, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(
+            etiket,
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
         ],
       ),
     );
@@ -912,11 +1024,22 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final List<Widget> pages = [
       const AnaSayfaSekmesi(),
-      SporcularSekmesi(antrenorMu: _antrenorMu, filtreSporcuId: widget.veliSporcuId),
+      SporcularSekmesi(
+        antrenorMu: _antrenorMu,
+        filtreSporcuId: widget.veliSporcuId,
+      ),
       AntrenmanSekmesi(antrenorMu: _antrenorMu),
       const TakvimSekmesi(),
-      AidatSekmesi(antrenorMu: _antrenorMu, filtreSporcuId: widget.veliSporcuId),
-      Center(child: Text('Profil (${_rolAdi(widget.rol)})', style: const TextStyle(color: Colors.white))),
+      AidatSekmesi(
+        antrenorMu: _antrenorMu,
+        filtreSporcuId: widget.veliSporcuId,
+      ),
+      Center(
+        child: Text(
+          'Profil (${_rolAdi(widget.rol)})',
+          style: const TextStyle(color: Colors.white),
+        ),
+      ),
     ];
 
     return Scaffold(
@@ -926,8 +1049,14 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const TridentIcon(size: 22),
             const SizedBox(width: 8),
-            Text('POSEIDON OS · ${_rolAdi(widget.rol)}',
-                style: const TextStyle(color: Colors.lightGreenAccent, fontWeight: FontWeight.bold, fontSize: 15)),
+            Text(
+              'POSEIDON OS · ${_rolAdi(widget.rol)}',
+              style: const TextStyle(
+                color: Colors.lightGreenAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
           ],
         ),
         leading: IconButton(
@@ -953,8 +1082,14 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Ana Sayfa'),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Sporcular'),
-          BottomNavigationBarItem(icon: Icon(Icons.fitness_center), label: 'Antrenman'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Takvim'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.fitness_center),
+            label: 'Antrenman',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_month),
+            label: 'Takvim',
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.payments), label: 'Aidat'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
         ],
@@ -1013,7 +1148,9 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
               final simdi = DateTime.now();
               final yaklasanlar = aidatlar.where((a) {
                 if (a['odendi'] == true) return false;
-                final sonTarih = DateTime.tryParse(a['son_odeme_tarihi'].toString());
+                final sonTarih = DateTime.tryParse(
+                  a['son_odeme_tarihi'].toString(),
+                );
                 if (sonTarih == null) return false;
                 final kalanGun = sonTarih.difference(simdi).inDays;
                 return kalanGun <= 7 && kalanGun >= 0;
@@ -1027,16 +1164,25 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF2A1F00),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orangeAccent.withOpacity(0.5)),
+                  border: Border.all(
+                    color: Colors.orangeAccent.withOpacity(0.5),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.notifications_active, color: Colors.orangeAccent),
+                    const Icon(
+                      Icons.notifications_active,
+                      color: Colors.orangeAccent,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         '${yaklasanlar.length} aidat ödemesinin süresi 7 gün içinde doluyor',
-                        style: const TextStyle(color: Colors.orangeAccent, fontWeight: FontWeight.bold, fontSize: 13),
+                        style: const TextStyle(
+                          color: Colors.orangeAccent,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -1057,25 +1203,47 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
               children: [
                 Row(
                   children: const [
-                    Icon(Icons.calendar_month, color: Colors.lightGreenAccent, size: 16),
+                    Icon(
+                      Icons.calendar_month,
+                      color: Colors.lightGreenAccent,
+                      size: 16,
+                    ),
                     SizedBox(width: 6),
-                    Text('Bugünkü Antrenman',
-                        style: TextStyle(color: Colors.lightGreenAccent, fontSize: 13, fontWeight: FontWeight.w600)),
+                    Text(
+                      'Bugünkü Antrenman',
+                      style: TextStyle(
+                        color: Colors.lightGreenAccent,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
-                const Text('Dayanıklılık + Teknik',
-                    style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Dayanıklılık + Teknik',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Row(
                   children: const [
                     Icon(Icons.pool, color: Colors.grey, size: 14),
                     SizedBox(width: 4),
-                    Text('Havuz', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    Text(
+                      'Havuz',
+                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
                     SizedBox(width: 12),
                     Icon(Icons.timer, color: Colors.grey, size: 14),
                     SizedBox(width: 4),
-                    Text('25dk', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    Text(
+                      '25dk',
+                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 18),
@@ -1084,7 +1252,14 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text('Genel Bakış', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text(
+            'Genel Bakış',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 12),
           FutureBuilder<List<dynamic>>(
             future: _sporcularFuture,
@@ -1102,10 +1277,26 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
                     crossAxisSpacing: 12,
                     childAspectRatio: 1.5,
                     children: [
-                      IstatistikKarti(icon: Icons.groups, deger: '$sporcuSayisi', etiket: 'Toplam Sporcu'),
-                      IstatistikKarti(icon: Icons.fact_check, deger: '$antrenmanSayisi', etiket: 'Aktif Program'),
-                      const IstatistikKarti(icon: Icons.qr_code_scanner, deger: '0', etiket: 'Bugünkü Yoklama'),
-                      const IstatistikKarti(icon: Icons.emoji_events, deger: '3', etiket: 'Yaklaşan Yarış'),
+                      IstatistikKarti(
+                        icon: Icons.groups,
+                        deger: '$sporcuSayisi',
+                        etiket: 'Toplam Sporcu',
+                      ),
+                      IstatistikKarti(
+                        icon: Icons.fact_check,
+                        deger: '$antrenmanSayisi',
+                        etiket: 'Aktif Program',
+                      ),
+                      const IstatistikKarti(
+                        icon: Icons.qr_code_scanner,
+                        deger: '0',
+                        etiket: 'Bugünkü Yoklama',
+                      ),
+                      const IstatistikKarti(
+                        icon: Icons.emoji_events,
+                        deger: '3',
+                        etiket: 'Yaklaşan Yarış',
+                      ),
                     ],
                   );
                 },
@@ -1124,7 +1315,11 @@ class SporcularSekmesi extends StatefulWidget {
   final bool antrenorMu;
   final int? filtreSporcuId;
 
-  const SporcularSekmesi({super.key, required this.antrenorMu, this.filtreSporcuId});
+  const SporcularSekmesi({
+    super.key,
+    required this.antrenorMu,
+    this.filtreSporcuId,
+  });
 
   @override
   State<SporcularSekmesi> createState() => _SporcularSekmesiState();
@@ -1150,7 +1345,10 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1A1A1A),
-        title: const Text('Sporcuyu Sil', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Sporcuyu Sil',
+          style: TextStyle(color: Colors.white),
+        ),
         content: Text(
           '${sporcu.isim} adlı sporcuyu silmek istediğine emin misin? Bu işlem geri alınamaz, sporcuya ait tüm performans ve aidat kayıtları da silinecek.',
           style: const TextStyle(color: Colors.grey),
@@ -1162,7 +1360,13 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Sil', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Sil',
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -1174,11 +1378,15 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
       await dbService.sporcuSil(sporcu.id);
       _reload();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${sporcu.isim} silindi')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('${sporcu.isim} silindi')));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     }
   }
@@ -1195,15 +1403,29 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: Colors.lightGreenAccent));
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.lightGreenAccent,
+                ),
+              );
             }
             if (snapshot.hasError) {
-              return Center(child: Text('Hata: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+              return Center(
+                child: Text(
+                  'Hata: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
             }
             var belgeler = snapshot.data ?? [];
 
             if (widget.filtreSporcuId != null) {
-              belgeler = belgeler.where((b) => int.parse(b['id'].toString()) == widget.filtreSporcuId).toList();
+              belgeler = belgeler
+                  .where(
+                    (b) =>
+                        int.parse(b['id'].toString()) == widget.filtreSporcuId,
+                  )
+                  .toList();
             }
 
             if (belgeler.isEmpty) {
@@ -1212,7 +1434,9 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                   const SizedBox(height: 100),
                   Center(
                     child: Text(
-                      widget.filtreSporcuId != null ? 'Sporcu bulunamadı' : 'Henüz sporcu eklenmemiş',
+                      widget.filtreSporcuId != null
+                          ? 'Sporcu bulunamadı'
+                          : 'Henüz sporcu eklenmemiş',
                       style: const TextStyle(color: Colors.grey),
                     ),
                   ),
@@ -1231,36 +1455,71 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => SporcuDetayEkrani(sporcu: sporcu, antrenorMu: widget.antrenorMu)),
+                        builder: (context) => SporcuDetayEkrani(
+                          sporcu: sporcu,
+                          antrenorMu: widget.antrenorMu,
+                        ),
+                      ),
                     );
                   },
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Row(
                       children: [
                         CircleAvatar(
                           backgroundColor: Colors.lightGreenAccent,
-                          child: Text(sporcu.isim.isNotEmpty ? sporcu.isim[0] : '?',
-                              style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                          child: Text(
+                            sporcu.isim.isNotEmpty ? sporcu.isim[0] : '?',
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(sporcu.isim, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('${sporcu.dogumYili} · ${sporcu.grup}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                              Text(
+                                sporcu.isim,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                '${sporcu.dogumYili} · ${sporcu.grup}',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                        Text(sporcu.enIyiDerece,
-                            style: const TextStyle(color: Colors.lightGreenAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text(
+                          sporcu.enIyiDerece,
+                          style: const TextStyle(
+                            color: Colors.lightGreenAccent,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         if (widget.antrenorMu) ...[
                           const SizedBox(width: 4),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.redAccent,
+                              size: 20,
+                            ),
                             onPressed: () => _silmeyiOnayla(context, sporcu),
                           ),
                         ],
@@ -1277,7 +1536,12 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
           ? FloatingActionButton(
               backgroundColor: Colors.lightGreenAccent,
               onPressed: () async {
-                await Navigator.push(context, MaterialPageRoute(builder: (context) => const SporcuEkleEkrani()));
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SporcuEkleEkrani(),
+                  ),
+                );
                 _reload();
               },
               child: const Icon(Icons.add, color: Colors.black),
@@ -1305,7 +1569,9 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
 
   Future<void> _sporcuKaydet() async {
     if (_isimController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('İsim boş olamaz')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('İsim boş olamaz')));
       return;
     }
     setState(() => _kaydediliyor = true);
@@ -1319,7 +1585,9 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
       if (context.mounted) Navigator.pop(context);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     } finally {
       if (mounted) setState(() => _kaydediliyor = false);
@@ -1341,7 +1609,10 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('Yeni Sporcu', style: TextStyle(color: Colors.lightGreenAccent)),
+        title: const Text(
+          'Yeni Sporcu',
+          style: TextStyle(color: Colors.lightGreenAccent),
+        ),
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
       ),
       body: Padding(
@@ -1350,11 +1621,21 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
           children: [
             _FormAlani(controller: _isimController, etiket: 'İsim'),
             const SizedBox(height: 12),
-            _FormAlani(controller: _dogumYiliController, etiket: 'Doğum Yılı', sayisalMi: true),
+            _FormAlani(
+              controller: _dogumYiliController,
+              etiket: 'Doğum Yılı',
+              sayisalMi: true,
+            ),
             const SizedBox(height: 12),
-            _FormAlani(controller: _grupController, etiket: 'Grup (örn. A Takım)'),
+            _FormAlani(
+              controller: _grupController,
+              etiket: 'Grup (örn. A Takım)',
+            ),
             const SizedBox(height: 12),
-            _FormAlani(controller: _enIyiDereceController, etiket: 'En İyi Derece (örn. 27.45)'),
+            _FormAlani(
+              controller: _enIyiDereceController,
+              etiket: 'En İyi Derece (örn. 27.45)',
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -1366,8 +1647,18 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 child: _kaydediliyor
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                    : const Text('Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.black,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Kaydet',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
           ],
@@ -1382,7 +1673,11 @@ class _FormAlani extends StatelessWidget {
   final String etiket;
   final bool sayisalMi;
 
-  const _FormAlani({required this.controller, required this.etiket, this.sayisalMi = false});
+  const _FormAlani({
+    required this.controller,
+    required this.etiket,
+    this.sayisalMi = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1395,8 +1690,14 @@ class _FormAlani extends StatelessWidget {
         labelStyle: const TextStyle(color: Colors.grey),
         filled: true,
         fillColor: const Color(0xFF1A1A1A),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Colors.grey)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Colors.lightGreenAccent)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.grey),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(color: Colors.lightGreenAccent),
+        ),
       ),
     );
   }
@@ -1408,7 +1709,11 @@ class SporcuDetayEkrani extends StatefulWidget {
   final Sporcu sporcu;
   final bool antrenorMu;
 
-  const SporcuDetayEkrani({super.key, required this.sporcu, required this.antrenorMu});
+  const SporcuDetayEkrani({
+    super.key,
+    required this.sporcu,
+    required this.antrenorMu,
+  });
 
   @override
   State<SporcuDetayEkrani> createState() => _SporcuDetayEkraniState();
@@ -1436,52 +1741,94 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
-        title: Text(widget.sporcu.isim, style: const TextStyle(color: Colors.lightGreenAccent)),
+        title: Text(
+          widget.sporcu.isim,
+          style: const TextStyle(color: Colors.lightGreenAccent),
+        ),
       ),
       body: FutureBuilder<List<dynamic>>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Colors.lightGreenAccent));
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.lightGreenAccent),
+            );
           }
-          final kayitlar = (snapshot.data ?? []).map((v) => PerformansKaydi.fromJson(v)).toList();
+          final kayitlar = (snapshot.data ?? [])
+              .map((v) => PerformansKaydi.fromJson(v))
+              .toList();
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 26,
                       backgroundColor: Colors.lightGreenAccent,
-                      child: Text(widget.sporcu.isim.isNotEmpty ? widget.sporcu.isim[0] : '?',
-                          style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20)),
+                      child: Text(
+                        widget.sporcu.isim.isNotEmpty
+                            ? widget.sporcu.isim[0]
+                            : '?',
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 14),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(widget.sporcu.isim, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        Text('${widget.sporcu.dogumYili} · ${widget.sporcu.grup}', style: const TextStyle(color: Colors.grey)),
+                        Text(
+                          widget.sporcu.isim,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          '${widget.sporcu.dogumYili} · ${widget.sporcu.grup}',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
-              const Text('Performans Gelişimi', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text(
+                'Performans Gelişimi',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 12),
               if (kayitlar.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 30),
-                  child: Center(child: Text('Henüz performans kaydı yok', style: TextStyle(color: Colors.grey))),
+                  child: Center(
+                    child: Text(
+                      'Henüz performans kaydı yok',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
                 )
               else
                 ...yuzmeStilleri.map((stil) {
-                  final stilKayitlari = kayitlar.where((k) => k.stil == stil).toList();
+                  final stilKayitlari = kayitlar
+                      .where((k) => k.stil == stil)
+                      .toList();
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 24),
                     child: Column(
@@ -1489,9 +1836,23 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                       children: [
                         Row(
                           children: [
-                            Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.lightGreenAccent, shape: BoxShape.circle)),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Colors.lightGreenAccent,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
                             const SizedBox(width: 8),
-                            Text(stil, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                            Text(
+                              stil,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 10),
@@ -1499,24 +1860,56 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(color: const Color(0xFF141414), borderRadius: BorderRadius.circular(12)),
-                            child: const Center(child: Text('Bu stilde henüz kayıt yok', style: TextStyle(color: Colors.grey, fontSize: 12))),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF141414),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'Bu stilde henüz kayıt yok',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
                           )
                         else
                           ...yuzmeMesafeleri.map((mesafe) {
-                            final mesafeKayitlari = stilKayitlari.where((k) => k.mesafe == mesafe).toList();
-                            if (mesafeKayitlari.isEmpty) return const SizedBox.shrink();
+                            final mesafeKayitlari = stilKayitlari
+                                .where((k) => k.mesafe == mesafe)
+                                .toList();
+                            if (mesafeKayitlari.isEmpty)
+                              return const SizedBox.shrink();
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 14, left: 16),
+                              padding: const EdgeInsets.only(
+                                bottom: 14,
+                                left: 16,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(mesafe, style: const TextStyle(color: Colors.lightGreenAccent, fontSize: 13, fontWeight: FontWeight.bold)),
+                                  Text(
+                                    mesafe,
+                                    style: const TextStyle(
+                                      color: Colors.lightGreenAccent,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   const SizedBox(height: 6),
                                   Container(
                                     height: 150,
-                                    padding: const EdgeInsets.fromLTRB(6, 14, 14, 6),
-                                    decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
+                                    padding: const EdgeInsets.fromLTRB(
+                                      6,
+                                      14,
+                                      14,
+                                      6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF1A1A1A),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
                                     child: LineChart(
                                       LineChartData(
                                         gridData: const FlGridData(show: false),
@@ -1526,7 +1919,13 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                                               showTitles: true,
                                               reservedSize: 30,
                                               getTitlesWidget: (value, meta) =>
-                                                  Text(value.toStringAsFixed(0), style: const TextStyle(color: Colors.grey, fontSize: 8)),
+                                                  Text(
+                                                    value.toStringAsFixed(0),
+                                                    style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 8,
+                                                    ),
+                                                  ),
                                             ),
                                           ),
                                           bottomTitles: AxisTitles(
@@ -1534,42 +1933,92 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                                               showTitles: true,
                                               getTitlesWidget: (value, meta) {
                                                 final i = value.toInt();
-                                                if (i < 0 || i >= mesafeKayitlari.length) return const SizedBox();
+                                                if (i < 0 ||
+                                                    i >= mesafeKayitlari.length)
+                                                  return const SizedBox();
                                                 return Padding(
-                                                  padding: const EdgeInsets.only(top: 4),
-                                                  child: Text(mesafeKayitlari[i].tarih, style: const TextStyle(color: Colors.grey, fontSize: 8)),
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        top: 4,
+                                                      ),
+                                                  child: Text(
+                                                    mesafeKayitlari[i].tarih,
+                                                    style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 8,
+                                                    ),
+                                                  ),
                                                 );
                                               },
                                             ),
                                           ),
-                                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                          rightTitles: const AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: false,
+                                            ),
+                                          ),
+                                          topTitles: const AxisTitles(
+                                            sideTitles: SideTitles(
+                                              showTitles: false,
+                                            ),
+                                          ),
                                         ),
                                         borderData: FlBorderData(show: false),
                                         lineBarsData: [
                                           LineChartBarData(
-                                            spots: mesafeKayitlari.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.derece)).toList(),
+                                            spots: mesafeKayitlari
+                                                .asMap()
+                                                .entries
+                                                .map(
+                                                  (e) => FlSpot(
+                                                    e.key.toDouble(),
+                                                    e.value.derece,
+                                                  ),
+                                                )
+                                                .toList(),
                                             isCurved: true,
                                             color: Colors.lightGreenAccent,
                                             barWidth: 2.5,
-                                            dotData: const FlDotData(show: true),
-                                            belowBarData: BarAreaData(show: true, color: Colors.lightGreenAccent.withOpacity(0.15)),
+                                            dotData: const FlDotData(
+                                              show: true,
+                                            ),
+                                            belowBarData: BarAreaData(
+                                              show: true,
+                                              color: Colors.lightGreenAccent
+                                                  .withOpacity(0.15),
+                                            ),
                                           ),
                                         ],
                                       ),
                                     ),
                                   ),
                                   const SizedBox(height: 6),
-                                  ...mesafeKayitlari.reversed.map((k) => Padding(
-                                        padding: const EdgeInsets.only(bottom: 4),
-                                        child: Row(
-                                          children: [
-                                            Expanded(child: Text(k.tarih, style: const TextStyle(color: Colors.grey, fontSize: 12))),
-                                            Text(k.derece.toStringAsFixed(2),
-                                                style: const TextStyle(color: Colors.lightGreenAccent, fontWeight: FontWeight.bold, fontSize: 13)),
-                                          ],
-                                        ),
-                                      )),
+                                  ...mesafeKayitlari.reversed.map(
+                                    (k) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              k.tarih,
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                          Text(
+                                            k.derece.toStringAsFixed(2),
+                                            style: const TextStyle(
+                                              color: Colors.lightGreenAccent,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
                                 ],
                               ),
                             );
@@ -1588,7 +2037,10 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
               onPressed: () async {
                 await Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => PerformansEkleEkrani(sporcuId: widget.sporcu.id)),
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        PerformansEkleEkrani(sporcuId: widget.sporcu.id),
+                  ),
                 );
                 _reload();
               },
@@ -1619,7 +2071,9 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
 
   Future<void> _kaydet() async {
     if (_dereceController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Derece boş olamaz')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Derece boş olamaz')));
       return;
     }
     setState(() => _kaydediliyor = true);
@@ -1628,13 +2082,19 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
         'athlete_id': widget.sporcuId,
         'stil': _seciliStil,
         'mesafe': _seciliMesafe,
-        'derece': double.tryParse(_dereceController.text.trim().replaceAll(',', '.')) ?? 0.0,
+        'derece':
+            double.tryParse(
+              _dereceController.text.trim().replaceAll(',', '.'),
+            ) ??
+            0.0,
         'tarih': _tarihController.text.trim(),
       });
       if (context.mounted) Navigator.pop(context);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     } finally {
       if (mounted) setState(() => _kaydediliyor = false);
@@ -1654,13 +2114,19 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('Yeni Performans Kaydı', style: TextStyle(color: Colors.lightGreenAccent)),
+        title: const Text(
+          'Yeni Performans Kaydı',
+          style: TextStyle(color: Colors.lightGreenAccent),
+        ),
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text('Yüzme Stili', style: TextStyle(color: Colors.grey, fontSize: 13)),
+          const Text(
+            'Yüzme Stili',
+            style: TextStyle(color: Colors.grey, fontSize: 13),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -1670,20 +2136,34 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
               return GestureDetector(
                 onTap: () => setState(() => _seciliStil = stil),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
-                    color: seciliMi ? Colors.lightGreenAccent : const Color(0xFF1A1A1A),
+                    color: seciliMi
+                        ? Colors.lightGreenAccent
+                        : const Color(0xFF1A1A1A),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.lightGreenAccent),
                   ),
-                  child: Text(stil,
-                      style: TextStyle(color: seciliMi ? Colors.black : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                  child: Text(
+                    stil,
+                    style: TextStyle(
+                      color: seciliMi ? Colors.black : Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
               );
             }).toList(),
           ),
           const SizedBox(height: 18),
-          const Text('Mesafe', style: TextStyle(color: Colors.grey, fontSize: 13)),
+          const Text(
+            'Mesafe',
+            style: TextStyle(color: Colors.grey, fontSize: 13),
+          ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
@@ -1693,22 +2173,39 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
               return GestureDetector(
                 onTap: () => setState(() => _seciliMesafe = mesafe),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
-                    color: seciliMi ? Colors.lightGreenAccent : const Color(0xFF1A1A1A),
+                    color: seciliMi
+                        ? Colors.lightGreenAccent
+                        : const Color(0xFF1A1A1A),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.lightGreenAccent),
                   ),
-                  child: Text(mesafe,
-                      style: TextStyle(color: seciliMi ? Colors.black : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                  child: Text(
+                    mesafe,
+                    style: TextStyle(
+                      color: seciliMi ? Colors.black : Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                  ),
                 ),
               );
             }).toList(),
           ),
           const SizedBox(height: 18),
-          _FormAlani(controller: _dereceController, etiket: 'Derece - saniye (örn. 27.45)'),
+          _FormAlani(
+            controller: _dereceController,
+            etiket: 'Derece - saniye (örn. 27.45)',
+          ),
           const SizedBox(height: 12),
-          _FormAlani(controller: _tarihController, etiket: 'Tarih (örn. 10.05)'),
+          _FormAlani(
+            controller: _tarihController,
+            etiket: 'Tarih (örn. 10.05)',
+          ),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -1720,8 +2217,18 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
               child: _kaydediliyor
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                  : const Text('Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.black,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Kaydet',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
             ),
           ),
         ],
@@ -1768,17 +2275,31 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
           future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: Colors.lightGreenAccent));
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.lightGreenAccent,
+                ),
+              );
             }
             if (snapshot.hasError) {
-              return Center(child: Text('Hata: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
+              return Center(
+                child: Text(
+                  'Hata: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
+                ),
+              );
             }
             final belgeler = snapshot.data ?? [];
             if (belgeler.isEmpty) {
               return ListView(
                 children: const [
                   SizedBox(height: 100),
-                  Center(child: Text('Henüz antrenman eklenmemiş', style: TextStyle(color: Colors.grey))),
+                  Center(
+                    child: Text(
+                      'Henüz antrenman eklenmemiş',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
                 ],
               );
             }
@@ -1793,7 +2314,11 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => AntrenmanDetayEkrani(antrenman: antrenman, antrenorMu: widget.antrenorMu)),
+                        builder: (context) => AntrenmanDetayEkrani(
+                          antrenman: antrenman,
+                          antrenorMu: widget.antrenorMu,
+                        ),
+                      ),
                     );
                     _reload();
                   },
@@ -1803,7 +2328,10 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                     decoration: BoxDecoration(
                       color: const Color(0xFF1A1A1A),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.lightGreenAccent, width: 1),
+                      border: Border.all(
+                        color: Colors.lightGreenAccent,
+                        width: 1,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1812,20 +2340,47 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
-                              child: Text(antrenman.baslik,
-                                  style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold)),
+                              child: Text(
+                                antrenman.baslik,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                            const Icon(Icons.chevron_right, color: Colors.lightGreenAccent, size: 22),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: Colors.lightGreenAccent,
+                              size: 22,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text(antrenman.tarih, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                        Text(
+                          antrenman.tarih,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text('${antrenman.havuz} · ${antrenman.sure}', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                        Text(
+                          '${antrenman.havuz} · ${antrenman.sure}',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
+                        ),
                         if (antrenman.setler.isNotEmpty) ...[
                           const SizedBox(height: 8),
-                          Text('${antrenman.setler.length} set · Programı görmek için dokun',
-                              style: const TextStyle(color: Colors.lightGreenAccent, fontSize: 12)),
+                          Text(
+                            '${antrenman.setler.length} set · Programı görmek için dokun',
+                            style: const TextStyle(
+                              color: Colors.lightGreenAccent,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -1840,7 +2395,12 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
           ? FloatingActionButton(
               backgroundColor: Colors.lightGreenAccent,
               onPressed: () async {
-                await Navigator.push(context, MaterialPageRoute(builder: (context) => const AntrenmanEkleEkrani()));
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AntrenmanEkleEkrani(),
+                  ),
+                );
                 _reload();
               },
               child: const Icon(Icons.add, color: Colors.black),
@@ -1856,7 +2416,11 @@ class AntrenmanDetayEkrani extends StatefulWidget {
   final Antrenman antrenman;
   final bool antrenorMu;
 
-  const AntrenmanDetayEkrani({super.key, required this.antrenman, required this.antrenorMu});
+  const AntrenmanDetayEkrani({
+    super.key,
+    required this.antrenman,
+    required this.antrenorMu,
+  });
 
   @override
   State<AntrenmanDetayEkrani> createState() => _AntrenmanDetayEkraniState();
@@ -1889,7 +2453,10 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
-        title: Text(widget.antrenman.baslik, style: const TextStyle(color: Colors.lightGreenAccent)),
+        title: Text(
+          widget.antrenman.baslik,
+          style: const TextStyle(color: Colors.lightGreenAccent),
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -1897,20 +2464,44 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
           children: [
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today, color: Colors.lightGreenAccent, size: 18),
+                  const Icon(
+                    Icons.calendar_today,
+                    color: Colors.lightGreenAccent,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
-                  Text(widget.antrenman.tarih, style: const TextStyle(color: Colors.white)),
+                  Text(
+                    widget.antrenman.tarih,
+                    style: const TextStyle(color: Colors.white),
+                  ),
                   const SizedBox(width: 20),
-                  const Icon(Icons.pool, color: Colors.lightGreenAccent, size: 18),
+                  const Icon(
+                    Icons.pool,
+                    color: Colors.lightGreenAccent,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
-                  Text(widget.antrenman.havuz, style: const TextStyle(color: Colors.white)),
+                  Text(
+                    widget.antrenman.havuz,
+                    style: const TextStyle(color: Colors.white),
+                  ),
                   const SizedBox(width: 20),
-                  const Icon(Icons.timer, color: Colors.lightGreenAccent, size: 18),
+                  const Icon(
+                    Icons.timer,
+                    color: Colors.lightGreenAccent,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
-                  Text(widget.antrenman.sure, style: const TextStyle(color: Colors.white)),
+                  Text(
+                    widget.antrenman.sure,
+                    style: const TextStyle(color: Colors.white),
+                  ),
                 ],
               ),
             ),
@@ -1925,31 +2516,59 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
                   decoration: BoxDecoration(
                     color: const Color(0xFF1A1A1A),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.lightGreenAccent.withOpacity(0.4)),
+                    border: Border.all(
+                      color: Colors.lightGreenAccent.withOpacity(0.4),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.qr_code_scanner, color: Colors.lightGreenAccent),
+                      const Icon(
+                        Icons.qr_code_scanner,
+                        color: Colors.lightGreenAccent,
+                      ),
                       const SizedBox(width: 10),
-                      Text('Yoklama: $gelenSayisi kişi geldi', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Yoklama: $gelenSayisi kişi geldi',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const Spacer(),
                       if (widget.antrenorMu)
                         TextButton(
                           onPressed: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => YoklamaQREkrani(antrenman: widget.antrenman)));
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => YoklamaQREkrani(
+                                  antrenman: widget.antrenman,
+                                ),
+                              ),
+                            );
                           },
-                          child: const Text('QR Göster', style: TextStyle(color: Colors.lightGreenAccent)),
+                          child: const Text(
+                            'QR Göster',
+                            style: TextStyle(color: Colors.lightGreenAccent),
+                          ),
                         )
                       else
                         TextButton(
                           onPressed: () async {
                             await Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => QrTaramaEkrani(antrenmanId: widget.antrenman.id)),
+                              MaterialPageRoute(
+                                builder: (context) => QrTaramaEkrani(
+                                  antrenmanId: widget.antrenman.id,
+                                ),
+                              ),
                             );
                             _reloadYoklama();
                           },
-                          child: const Text('QR Okut', style: TextStyle(color: Colors.lightGreenAccent)),
+                          child: const Text(
+                            'QR Okut',
+                            style: TextStyle(color: Colors.lightGreenAccent),
+                          ),
                         ),
                     ],
                   ),
@@ -1960,7 +2579,12 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
             if (gruplanmis.isEmpty)
               const Padding(
                 padding: EdgeInsets.only(top: 40),
-                child: Center(child: Text('Bu antrenman için henüz set girilmemiş', style: TextStyle(color: Colors.grey))),
+                child: Center(
+                  child: Text(
+                    'Bu antrenman için henüz set girilmemiş',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
               )
             else
               ...gruplanmis.entries.map((grup) {
@@ -1969,18 +2593,41 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(grup.key, style: const TextStyle(color: Colors.lightGreenAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+                      Text(
+                        grup.key,
+                        style: const TextStyle(
+                          color: Colors.lightGreenAccent,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      ...grup.value.map((set) => Padding(
-                            padding: const EdgeInsets.only(bottom: 6),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('•  ', style: TextStyle(color: Colors.white, fontSize: 15)),
-                                Expanded(child: Text(set.aciklama, style: const TextStyle(color: Colors.white, fontSize: 15))),
-                              ],
-                            ),
-                          )),
+                      ...grup.value.map(
+                        (set) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                '•  ',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  set.aciklama,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -2014,11 +2661,18 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
 
   void _setEkle() {
     if (_setAciklamaController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Set açıklaması boş olamaz')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Set açıklaması boş olamaz')),
+      );
       return;
     }
     setState(() {
-      _eklenenSetler.add(AntrenmanSeti(kategori: _seciliKategori, aciklama: _setAciklamaController.text.trim()));
+      _eklenenSetler.add(
+        AntrenmanSeti(
+          kategori: _seciliKategori,
+          aciklama: _setAciklamaController.text.trim(),
+        ),
+      );
       _setAciklamaController.clear();
     });
   }
@@ -2027,7 +2681,9 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
 
   Future<void> _antrenmanKaydet() async {
     if (_baslikController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Başlık boş olamaz')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Başlık boş olamaz')));
       return;
     }
     setState(() => _kaydediliyor = true);
@@ -2042,7 +2698,9 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
       if (context.mounted) Navigator.pop(context);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     } finally {
       if (mounted) setState(() => _kaydediliyor = false);
@@ -2065,21 +2723,40 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('Yeni Antrenman', style: TextStyle(color: Colors.lightGreenAccent)),
+        title: const Text(
+          'Yeni Antrenman',
+          style: TextStyle(color: Colors.lightGreenAccent),
+        ),
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _FormAlani(controller: _baslikController, etiket: 'Başlık (örn. Dayanıklılık + Teknik)'),
+          _FormAlani(
+            controller: _baslikController,
+            etiket: 'Başlık (örn. Dayanıklılık + Teknik)',
+          ),
           const SizedBox(height: 12),
-          _FormAlani(controller: _tarihController, etiket: 'Tarih (örn. 20 Mayıs, Pazartesi)'),
+          _FormAlani(
+            controller: _tarihController,
+            etiket: 'Tarih (örn. 20 Mayıs, Pazartesi)',
+          ),
           const SizedBox(height: 12),
-          _FormAlani(controller: _havuzController, etiket: 'Havuz (örn. Havuz 1)'),
+          _FormAlani(
+            controller: _havuzController,
+            etiket: 'Havuz (örn. Havuz 1)',
+          ),
           const SizedBox(height: 12),
           _FormAlani(controller: _sureController, etiket: 'Süre (örn. 30dk)'),
           const SizedBox(height: 28),
-          const Text('Antrenman Setleri (Drill\'ler)', style: TextStyle(color: Colors.lightGreenAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text(
+            'Antrenman Setleri (Drill\'ler)',
+            style: TextStyle(
+              color: Colors.lightGreenAccent,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 12),
           Row(
             children: _kategoriler.map((kategori) {
@@ -2093,12 +2770,20 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: seciliMi ? Colors.lightGreenAccent : const Color(0xFF1A1A1A),
+                        color: seciliMi
+                            ? Colors.lightGreenAccent
+                            : const Color(0xFF1A1A1A),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: Colors.lightGreenAccent),
                       ),
-                      child: Text(kategori,
-                          style: TextStyle(color: seciliMi ? Colors.black : Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      child: Text(
+                        kategori,
+                        style: TextStyle(
+                          color: seciliMi ? Colors.black : Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -2108,19 +2793,39 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: _FormAlani(controller: _setAciklamaController, etiket: 'örn. 4 x 50m Serbest @1:00')),
+              Expanded(
+                child: _FormAlani(
+                  controller: _setAciklamaController,
+                  etiket: 'örn. 4 x 50m Serbest @1:00',
+                ),
+              ),
               const SizedBox(width: 8),
               ElevatedButton(
                 onPressed: _setEkle,
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.lightGreenAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16)),
-                child: const Text('Ekle', style: TextStyle(fontWeight: FontWeight.bold)),
+                  backgroundColor: Colors.lightGreenAccent,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 18,
+                    horizontal: 16,
+                  ),
+                ),
+                child: const Text(
+                  'Ekle',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
           if (_eklenenSetler.isEmpty)
-            const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Text('Henüz set eklenmedi', style: TextStyle(color: Colors.grey)))
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Text(
+                'Henüz set eklenmedi',
+                style: TextStyle(color: Colors.grey),
+              ),
+            )
           else
             ..._eklenenSetler.asMap().entries.map((entry) {
               final index = entry.key;
@@ -2128,17 +2833,45 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.lightGreenAccent, borderRadius: BorderRadius.circular(6)),
-                      child: Text(set.kategori, style: const TextStyle(color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.lightGreenAccent,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        set.kategori,
+                        style: const TextStyle(
+                          color: Colors.black,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 10),
-                    Expanded(child: Text(set.aciklama, style: const TextStyle(color: Colors.white))),
-                    IconButton(icon: const Icon(Icons.close, color: Colors.grey, size: 18), onPressed: () => _setSil(index)),
+                    Expanded(
+                      child: Text(
+                        set.aciklama,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.close,
+                        color: Colors.grey,
+                        size: 18,
+                      ),
+                      onPressed: () => _setSil(index),
+                    ),
                   ],
                 ),
               );
@@ -2149,10 +2882,23 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
             child: ElevatedButton(
               onPressed: _kaydediliyor ? null : _antrenmanKaydet,
               style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightGreenAccent, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(vertical: 14)),
+                backgroundColor: Colors.lightGreenAccent,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
               child: _kaydediliyor
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
-                  : const Text('Antrenmanı Kaydet', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.black,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Text(
+                      'Antrenmanı Kaydet',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
             ),
           ),
         ],
@@ -2175,7 +2921,10 @@ class YoklamaQREkrani extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
-        title: const Text('Yoklama - QR Giriş', style: TextStyle(color: Colors.lightGreenAccent)),
+        title: const Text(
+          'Yoklama - QR Giriş',
+          style: TextStyle(color: Colors.lightGreenAccent),
+        ),
       ),
       body: Center(
         child: Padding(
@@ -2183,21 +2932,45 @@ class YoklamaQREkrani extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(antrenman.baslik, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                antrenman.baslik,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
               const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                child: QrImageView(data: antrenman.id.toString(), size: 220, backgroundColor: Colors.white),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: QrImageView(
+                  data: antrenman.id.toString(),
+                  size: 220,
+                  backgroundColor: Colors.white,
+                ),
               ),
               const SizedBox(height: 20),
-              const Text('Sporcular bu kodu okutarak yoklamaya katılabilir', style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
+              const Text(
+                'Sporcular bu kodu okutarak yoklamaya katılabilir',
+                style: TextStyle(color: Colors.grey),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 32),
               FutureBuilder<List<dynamic>>(
                 future: dbService.getYoklama(antrenman.id),
                 builder: (context, snapshot) {
                   final sayi = snapshot.data?.length ?? 0;
-                  return Text('Şu ana kadar $sayi kişi okuttu', style: const TextStyle(color: Colors.lightGreenAccent, fontWeight: FontWeight.bold));
+                  return Text(
+                    'Şu ana kadar $sayi kişi okuttu',
+                    style: const TextStyle(
+                      color: Colors.lightGreenAccent,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  );
                 },
               ),
             ],
@@ -2229,7 +3002,9 @@ class _QrTaramaEkraniState extends State<QrTaramaEkrani> {
     final okunanIdInt = int.tryParse(okunanId);
     if (okunanIdInt != widget.antrenmanId) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bu kod bu antrenmana ait değil')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bu kod bu antrenmana ait değil')),
+        );
         Navigator.pop(context);
       }
       return;
@@ -2238,12 +3013,16 @@ class _QrTaramaEkraniState extends State<QrTaramaEkrani> {
     try {
       await dbService.yoklamaEkle({'training_id': okunanIdInt});
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Yoklama alındı ✓')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Yoklama alındı ✓')));
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
         Navigator.pop(context);
       }
     }
@@ -2256,7 +3035,10 @@ class _QrTaramaEkraniState extends State<QrTaramaEkrani> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
-        title: const Text('QR Kodu Okut', style: TextStyle(color: Colors.lightGreenAccent)),
+        title: const Text(
+          'QR Kodu Okut',
+          style: TextStyle(color: Colors.lightGreenAccent),
+        ),
       ),
       body: MobileScanner(
         onDetect: (capture) {
@@ -2291,7 +3073,9 @@ class _TakvimSekmesiState extends State<TakvimSekmesi> {
 
   @override
   Widget build(BuildContext context) {
-    final etkinlikler = _secilenGun != null ? _gununEtkinlikleri(_secilenGun!) : <String>[];
+    final etkinlikler = _secilenGun != null
+        ? _gununEtkinlikleri(_secilenGun!)
+        : <String>[];
 
     return Container(
       color: Colors.black,
@@ -2311,23 +3095,53 @@ class _TakvimSekmesiState extends State<TakvimSekmesi> {
               defaultTextStyle: TextStyle(color: Colors.white),
               weekendTextStyle: TextStyle(color: Colors.white),
               outsideTextStyle: TextStyle(color: Colors.grey),
-              todayDecoration: BoxDecoration(color: Colors.grey, shape: BoxShape.circle),
-              selectedDecoration: BoxDecoration(color: Colors.lightGreenAccent, shape: BoxShape.circle),
-              selectedTextStyle: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-              markerDecoration: BoxDecoration(color: Colors.lightGreenAccent, shape: BoxShape.circle),
+              todayDecoration: BoxDecoration(
+                color: Colors.grey,
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: BoxDecoration(
+                color: Colors.lightGreenAccent,
+                shape: BoxShape.circle,
+              ),
+              selectedTextStyle: TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+              markerDecoration: BoxDecoration(
+                color: Colors.lightGreenAccent,
+                shape: BoxShape.circle,
+              ),
             ),
             headerStyle: const HeaderStyle(
               formatButtonVisible: false,
-              titleTextStyle: TextStyle(color: Colors.lightGreenAccent, fontSize: 18, fontWeight: FontWeight.bold),
-              leftChevronIcon: Icon(Icons.chevron_left, color: Colors.lightGreenAccent),
-              rightChevronIcon: Icon(Icons.chevron_right, color: Colors.lightGreenAccent),
+              titleTextStyle: TextStyle(
+                color: Colors.lightGreenAccent,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              leftChevronIcon: Icon(
+                Icons.chevron_left,
+                color: Colors.lightGreenAccent,
+              ),
+              rightChevronIcon: Icon(
+                Icons.chevron_right,
+                color: Colors.lightGreenAccent,
+              ),
             ),
-            daysOfWeekStyle: const DaysOfWeekStyle(weekdayStyle: TextStyle(color: Colors.grey), weekendStyle: TextStyle(color: Colors.grey)),
+            daysOfWeekStyle: const DaysOfWeekStyle(
+              weekdayStyle: TextStyle(color: Colors.grey),
+              weekendStyle: TextStyle(color: Colors.grey),
+            ),
           ),
           const SizedBox(height: 12),
           Expanded(
             child: etkinlikler.isEmpty
-                ? const Center(child: Text('Bu günde etkinlik yok', style: TextStyle(color: Colors.grey)))
+                ? const Center(
+                    child: Text(
+                      'Bu günde etkinlik yok',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: etkinlikler.length,
@@ -2335,12 +3149,22 @@ class _TakvimSekmesiState extends State<TakvimSekmesi> {
                       return Container(
                         margin: const EdgeInsets.only(bottom: 8),
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: const Color(0xFF1A1A1A), borderRadius: BorderRadius.circular(10)),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A1A1A),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         child: Row(
                           children: [
-                            const Icon(Icons.emoji_events, color: Colors.lightGreenAccent, size: 20),
+                            const Icon(
+                              Icons.emoji_events,
+                              color: Colors.lightGreenAccent,
+                              size: 20,
+                            ),
                             const SizedBox(width: 10),
-                            Text(etkinlikler[index], style: const TextStyle(color: Colors.white)),
+                            Text(
+                              etkinlikler[index],
+                              style: const TextStyle(color: Colors.white),
+                            ),
                           ],
                         ),
                       );
@@ -2351,7 +3175,7 @@ class _TakvimSekmesiState extends State<TakvimSekmesi> {
       ),
     );
   }
-} 
+}
 // ---------------- AİDAT SEKMESİ ----------------
 
 String _guncelAy() {
@@ -2363,7 +3187,11 @@ class AidatSekmesi extends StatefulWidget {
   final bool antrenorMu;
   final int? filtreSporcuId;
 
-  const AidatSekmesi({super.key, required this.antrenorMu, this.filtreSporcuId});
+  const AidatSekmesi({
+    super.key,
+    required this.antrenorMu,
+    this.filtreSporcuId,
+  });
 
   @override
   State<AidatSekmesi> createState() => _AidatSekmesiState();
@@ -2389,7 +3217,10 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
   Map<String, dynamic>? _buAyinAidati(List<dynamic> aidatlar, int sporcuId) {
     final ay = _guncelAy();
     try {
-      return aidatlar.firstWhere((a) => int.parse(a['athlete_id'].toString()) == sporcuId && a['ay'] == ay);
+      return aidatlar.firstWhere(
+        (a) =>
+            int.parse(a['athlete_id'].toString()) == sporcuId && a['ay'] == ay,
+      );
     } catch (e) {
       return null;
     }
@@ -2401,12 +3232,17 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
         'athlete_id': sporcuId,
         'ay': _guncelAy(),
         'tutar': 1750,
-        'son_odeme_tarihi': DateTime.now().add(const Duration(days: 10)).toIso8601String().substring(0, 10),
+        'son_odeme_tarihi': DateTime.now()
+            .add(const Duration(days: 10))
+            .toIso8601String()
+            .substring(0, 10),
       });
       _reload();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata (oluştur): $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata (oluştur): $e')));
       }
     }
   }
@@ -2417,7 +3253,9 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
       _reload();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Hata (ödeme): $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata (ödeme): $e')));
       }
     }
   }
@@ -2434,11 +3272,20 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
           future: _sporcularFuture,
           builder: (context, sporcuSnapshot) {
             if (sporcuSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: Colors.lightGreenAccent));
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.lightGreenAccent,
+                ),
+              );
             }
             var sporcular = sporcuSnapshot.data ?? [];
             if (widget.filtreSporcuId != null) {
-              sporcular = sporcular.where((s) => int.parse(s['id'].toString()) == widget.filtreSporcuId).toList();
+              sporcular = sporcular
+                  .where(
+                    (s) =>
+                        int.parse(s['id'].toString()) == widget.filtreSporcuId,
+                  )
+                  .toList();
             }
 
             return FutureBuilder<List<dynamic>>(
@@ -2449,8 +3296,14 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
                 return ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    Text('${_guncelAy()} Aidat Durumu',
-                        style: const TextStyle(color: Colors.lightGreenAccent, fontSize: 16, fontWeight: FontWeight.bold)),
+                    Text(
+                      '${_guncelAy()} Aidat Durumu',
+                      style: const TextStyle(
+                        color: Colors.lightGreenAccent,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 14),
                     ...sporcular.map((s) {
                       final sporcu = Sporcu.fromJson(s);
@@ -2463,39 +3316,78 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
                         decoration: BoxDecoration(
                           color: const Color(0xFF1A1A1A),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: odendiMi ? Colors.lightGreenAccent : Colors.grey.withOpacity(0.3)),
+                          border: Border.all(
+                            color: odendiMi
+                                ? Colors.lightGreenAccent
+                                : Colors.grey.withOpacity(0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
                             Icon(
-                              odendiMi ? Icons.check_circle : Icons.radio_button_unchecked,
-                              color: odendiMi ? Colors.lightGreenAccent : Colors.grey,
+                              odendiMi
+                                  ? Icons.check_circle
+                                  : Icons.radio_button_unchecked,
+                              color: odendiMi
+                                  ? Colors.lightGreenAccent
+                                  : Colors.grey,
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(sporcu.isim, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  Text(
+                                    sporcu.isim,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                   if (aidat != null)
                                     Text(
-                                      odendiMi ? 'Ödendi' : 'Son ödeme: ${aidat['son_odeme_tarihi'].toString().substring(0, 10)}',
-                                      style: TextStyle(color: odendiMi ? Colors.lightGreenAccent : Colors.grey, fontSize: 12),
+                                      odendiMi
+                                          ? 'Ödendi'
+                                          : 'Son ödeme: ${aidat['son_odeme_tarihi'].toString().substring(0, 10)}',
+                                      style: TextStyle(
+                                        color: odendiMi
+                                            ? Colors.lightGreenAccent
+                                            : Colors.grey,
+                                        fontSize: 12,
+                                      ),
                                     )
                                   else
-                                    const Text('Bu ay için aidat kaydı yok', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                                    const Text(
+                                      'Bu ay için aidat kaydı yok',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
                             if (aidat == null && widget.antrenorMu)
                               TextButton(
                                 onPressed: () => _aidatOlustur(sporcu.id),
-                                child: const Text('Oluştur', style: TextStyle(color: Colors.lightGreenAccent)),
+                                child: const Text(
+                                  'Oluştur',
+                                  style: TextStyle(
+                                    color: Colors.lightGreenAccent,
+                                  ),
+                                ),
                               )
                             else if (aidat != null && !odendiMi)
                               TextButton(
-                                onPressed: () => _odendiIsaretle(int.parse(aidat['id'].toString())),
-                                child: const Text('Ödendi İşaretle', style: TextStyle(color: Colors.lightGreenAccent)),
+                                onPressed: () => _odendiIsaretle(
+                                  int.parse(aidat['id'].toString()),
+                                ),
+                                child: const Text(
+                                  'Ödendi İşaretle',
+                                  style: TextStyle(
+                                    color: Colors.lightGreenAccent,
+                                  ),
+                                ),
                               ),
                           ],
                         ),
