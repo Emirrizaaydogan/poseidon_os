@@ -150,18 +150,16 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   late final VideoPlayerController _videoController;
-
-  static const _loopBaslangic = Duration(seconds: 7);
-  static const _loopBitis = Duration(seconds: 8);
+  bool _videoDurduruldu = false;
 
   @override
   void initState() {
     super.initState();
     _videoController =
         VideoPlayerController.asset('assets/videos/trident_rising.mp4')
-          ..setLooping(false) // döngüyü artık kendimiz yönetiyoruz
+          ..setLooping(false)
           ..setVolume(0)
-          ..addListener(_videoPozisyonuKontrolEt)
+          ..addListener(_videoBitisiniKontrolEt)
           ..initialize().then((_) {
             if (mounted) {
               setState(() {});
@@ -170,17 +168,17 @@ class _LoginScreenState extends State<LoginScreen> {
           });
   }
 
-  void _videoPozisyonuKontrolEt() {
+  void _videoBitisiniKontrolEt() {
+    if (_videoDurduruldu) return;
     final deger = _videoController.value;
-    if (!deger.isInitialized) return;
-    // 8. saniyeye ulaşınca (veya video bittiğinde) 7. saniyeye geri sar
-    if (deger.position >= _loopBitis ||
-        !deger.isPlaying &&
-            deger.position >= _loopBaslangic &&
-            deger.duration - deger.position <
-                const Duration(milliseconds: 200)) {
-      _videoController.seekTo(_loopBaslangic);
-      _videoController.play();
+    if (!deger.isInitialized || deger.duration == Duration.zero) return;
+
+    // Son kareye 100ms'den az kaldıysa VİDEOYU ZORLA DURDUR.
+    // Platformun kendi "bitince ne yapacağı" davranışına güvenmiyoruz.
+    final kalanSure = deger.duration - deger.position;
+    if (kalanSure <= const Duration(milliseconds: 100)) {
+      _videoDurduruldu = true;
+      _videoController.pause();
     }
   }
 
@@ -240,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _sifreController.dispose();
-    _videoController.removeListener(_videoPozisyonuKontrolEt);
+    _videoController.removeListener(_videoBitisiniKontrolEt);
     _videoController.dispose();
     super.dispose();
   }
