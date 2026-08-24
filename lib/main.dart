@@ -7,6 +7,7 @@ import 'services/database_service.dart';
 import 'package:video_player/video_player.dart';
 
 // ---------------- VERİ MODELLERİ ----------------
+final DatabaseService dbService = DatabaseService();
 
 class Sporcu {
   final int id;
@@ -1065,13 +1066,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
-      const AnaSayfaSekmesi(),
+      AnaSayfaSekmesi(
+        antrenorMu: _antrenorMu,
+        filtreSporcuId: widget.veliSporcuId,
+      ),
       SporcularSekmesi(
         antrenorMu: _antrenorMu,
         filtreSporcuId: widget.veliSporcuId,
       ),
       AntrenmanSekmesi(antrenorMu: _antrenorMu),
-      const TakvimSekmesi(),
+      TakvimSekmesi(
+        antrenorMu: _antrenorMu,
+        filtreSporcuId: widget.veliSporcuId,
+      ),
       AidatSekmesi(
         antrenorMu: _antrenorMu,
         filtreSporcuId: widget.veliSporcuId,
@@ -1156,7 +1163,14 @@ class _HomeScreenState extends State<HomeScreen> {
 // ---------------- ANA SAYFA SEKMESİ ----------------
 
 class AnaSayfaSekmesi extends StatefulWidget {
-  const AnaSayfaSekmesi({super.key});
+  final bool antrenorMu;
+  final int? filtreSporcuId;
+
+  const AnaSayfaSekmesi({
+    super.key,
+    required this.antrenorMu,
+    this.filtreSporcuId,
+  });
 
   @override
   State<AnaSayfaSekmesi> createState() => _AnaSayfaSekmesiState();
@@ -1172,7 +1186,7 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
     super.initState();
     _sporcularFuture = dbService.getSporcular();
     _antrenmanlarFuture = dbService.getAntrenmanlar();
-    _aidatlarFuture = dbService.getAidatlar();
+    _aidatlarFuture = dbService.getAidatlar(sporcuId: widget.filtreSporcuId);
   }
 
   @override
@@ -1187,15 +1201,37 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
             future: _aidatlarFuture,
             builder: (context, snapshot) {
               final aidatlar = snapshot.data ?? [];
+
               final simdi = DateTime.now();
+
+              final bugun = DateTime(simdi.year, simdi.month, simdi.day);
+
               final yaklasanlar = aidatlar.where((a) {
-                if (a['odendi'] == true) return false;
+                // Aidat ödenmişse uyarı gösterme
+                if (a['odendi'] == true) {
+                  return false;
+                }
+
                 final sonTarih = DateTime.tryParse(
                   a['son_odeme_tarihi'].toString(),
                 );
-                if (sonTarih == null) return false;
-                final kalanGun = sonTarih.difference(simdi).inDays;
-                return kalanGun <= 7 && kalanGun >= 0;
+
+                if (sonTarih == null) {
+                  return false;
+                }
+
+                // Saat bilgisini sıfırlıyoruz.
+                // Böylece 7 gün hesabı saatten etkilenmiyor.
+                final sonGun = DateTime(
+                  sonTarih.year,
+                  sonTarih.month,
+                  sonTarih.day,
+                );
+
+                final kalanGun = sonGun.difference(bugun).inDays;
+
+                // Son 7 gün içerisindeyse göster
+                return kalanGun >= 0 && kalanGun <= 7;
               }).toList();
 
               if (yaklasanlar.isEmpty) return const SizedBox.shrink();
@@ -3097,123 +3133,358 @@ class _QrTaramaEkraniState extends State<QrTaramaEkrani> {
 
 // ---------------- TAKVİM SEKMESİ ----------------
 
+// ---------------- TAKVİM SEKMESİ ----------------
+
 class TakvimSekmesi extends StatefulWidget {
-  const TakvimSekmesi({super.key});
+  final bool antrenorMu;
+  final int? filtreSporcuId;
+
+  const TakvimSekmesi({
+    super.key,
+    required this.antrenorMu,
+    this.filtreSporcuId,
+  });
 
   @override
   State<TakvimSekmesi> createState() => _TakvimSekmesiState();
 }
 
 class _TakvimSekmesiState extends State<TakvimSekmesi> {
-  DateTime _odakGun = DateTime.utc(2024, 5, 15);
-  DateTime? _secilenGun = DateTime.utc(2024, 5, 15);
+  late Future<List<dynamic>> _aidatlarFuture;
 
-  List<String> _gununEtkinlikleri(DateTime gun) {
-    final anahtar = DateTime.utc(gun.year, gun.month, gun.day);
-    return ornekEtkinlikler[anahtar] ?? [];
+  DateTime _odakGun = DateTime.now();
+  DateTime? _secilenGun;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _secilenGun = DateTime.now();
+
+    _aidatlarFuture = _aidatlariGetir();
+  }
+
+  Future<List<dynamic>> _aidatlariGetir() {
+    return dbService.getAidatlar(sporcuId: widget.filtreSporcuId);
+  }
+
+  void _yenile() {
+    setState(() {
+      _aidatlarFuture = _aidatlariGetir();
+    });
+  }
+
+  DateTime? _tarihParse(dynamic deger) {
+    if (deger == null) return null;
+
+    return DateTime.tryParse(deger.toString());
+  }
+
+  bool _ayniGun(DateTime? a, DateTime b) {
+    if (a == null) return false;
+
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  List<dynamic> _tarihtekiAidatlar(List<dynamic> aidatlar, DateTime gun) {
+    return aidatlar.where((aidat) {
+      final tarih = _tarihParse(aidat['son_odeme_tarihi']);
+
+      return _ayniGun(tarih, gun);
+    }).toList();
+  }
+
+  String _tarihFormatla(DateTime tarih) {
+    return '${tarih.day.toString().padLeft(2, '0')}.'
+        '${tarih.month.toString().padLeft(2, '0')}.'
+        '${tarih.year}';
+  }
+
+  Future<void> _sonOdemeTarihiBelirle(DateTime tarih) async {
+    final tarihMetni =
+        '${tarih.year}-'
+        '${tarih.month.toString().padLeft(2, '0')}-'
+        '${tarih.day.toString().padLeft(2, '0')}';
+
+    try {
+      await dbService.aidatSonOdemeTarihiGuncelle(tarihMetni);
+
+      if (!mounted) return;
+
+      _yenile();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Son ödeme tarihi ${_tarihFormatla(tarih)} olarak belirlendi.',
+          ),
+          backgroundColor: const Color(0xFF17351B),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Hata: $e'),
+          backgroundColor: const Color(0xFF351515),
+        ),
+      );
+    }
+  }
+
+  Future<void> _tarihSec() async {
+    final bugun = DateTime.now();
+
+    final secilen = await showDatePicker(
+      context: context,
+      initialDate: _secilenGun ?? bugun,
+      firstDate: DateTime(bugun.year, bugun.month, bugun.day),
+      lastDate: DateTime(bugun.year + 2, 12, 31),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.lightGreenAccent,
+              onPrimary: Colors.black,
+              surface: Color(0xFF151515),
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (secilen == null) return;
+
+    setState(() {
+      _secilenGun = secilen;
+      _odakGun = secilen;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final etkinlikler = _secilenGun != null
-        ? _gununEtkinlikleri(_secilenGun!)
-        : <String>[];
-
     return Container(
       color: Colors.black,
-      child: Column(
-        children: [
-          TableCalendar(
-            firstDay: DateTime.utc(2024, 1, 1),
-            lastDay: DateTime.utc(2026, 12, 31),
-            focusedDay: _odakGun,
-            selectedDayPredicate: (gun) => isSameDay(_secilenGun, gun),
-            eventLoader: _gununEtkinlikleri,
-            onDaySelected: (secilen, odaklanan) => setState(() {
-              _secilenGun = secilen;
-              _odakGun = odaklanan;
-            }),
-            calendarStyle: const CalendarStyle(
-              defaultTextStyle: TextStyle(color: Colors.white),
-              weekendTextStyle: TextStyle(color: Colors.white),
-              outsideTextStyle: TextStyle(color: Colors.grey),
-              todayDecoration: BoxDecoration(
-                color: Colors.grey,
-                shape: BoxShape.circle,
-              ),
-              selectedDecoration: BoxDecoration(
-                color: Colors.lightGreenAccent,
-                shape: BoxShape.circle,
-              ),
-              selectedTextStyle: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-              ),
-              markerDecoration: BoxDecoration(
-                color: Colors.lightGreenAccent,
-                shape: BoxShape.circle,
-              ),
-            ),
-            headerStyle: const HeaderStyle(
-              formatButtonVisible: false,
-              titleTextStyle: TextStyle(
-                color: Colors.lightGreenAccent,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              leftChevronIcon: Icon(
-                Icons.chevron_left,
-                color: Colors.lightGreenAccent,
-              ),
-              rightChevronIcon: Icon(
-                Icons.chevron_right,
-                color: Colors.lightGreenAccent,
-              ),
-            ),
-            daysOfWeekStyle: const DaysOfWeekStyle(
-              weekdayStyle: TextStyle(color: Colors.grey),
-              weekendStyle: TextStyle(color: Colors.grey),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: etkinlikler.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Bu günde etkinlik yok',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: etkinlikler.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.emoji_events,
-                              color: Colors.lightGreenAccent,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              etkinlikler[index],
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+      child: FutureBuilder<List<dynamic>>(
+        future: _aidatlarFuture,
+        builder: (context, snapshot) {
+          final aidatlar = snapshot.data ?? [];
+
+          final secilenAidatlar = _secilenGun == null
+              ? <dynamic>[]
+              : _tarihtekiAidatlar(aidatlar, _secilenGun!);
+
+          return Column(
+            children: [
+              TableCalendar(
+                firstDay: DateTime(2024, 1, 1),
+                lastDay: DateTime(2028, 12, 31),
+                focusedDay: _odakGun,
+                selectedDayPredicate: (gun) {
+                  return isSameDay(_secilenGun, gun);
+                },
+                eventLoader: (gun) {
+                  final bulunanlar = _tarihtekiAidatlar(aidatlar, gun);
+
+                  return bulunanlar.map((e) => 'aidat').toList();
+                },
+                onDaySelected: (secilen, odaklanan) {
+                  setState(() {
+                    _secilenGun = secilen;
+                    _odakGun = odaklanan;
+                  });
+                },
+                calendarStyle: const CalendarStyle(
+                  defaultTextStyle: TextStyle(color: Colors.white),
+                  weekendTextStyle: TextStyle(color: Colors.white),
+                  outsideTextStyle: TextStyle(color: Colors.grey),
+                  todayDecoration: BoxDecoration(
+                    color: Colors.grey,
+                    shape: BoxShape.circle,
                   ),
-          ),
-        ],
+                  selectedDecoration: BoxDecoration(
+                    color: Colors.lightGreenAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  selectedTextStyle: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  markerDecoration: BoxDecoration(
+                    color: Colors.orangeAccent,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                headerStyle: const HeaderStyle(
+                  formatButtonVisible: false,
+                  titleTextStyle: TextStyle(
+                    color: Colors.lightGreenAccent,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  leftChevronIcon: Icon(
+                    Icons.chevron_left,
+                    color: Colors.lightGreenAccent,
+                  ),
+                  rightChevronIcon: Icon(
+                    Icons.chevron_right,
+                    color: Colors.lightGreenAccent,
+                  ),
+                ),
+                daysOfWeekStyle: const DaysOfWeekStyle(
+                  weekdayStyle: TextStyle(color: Colors.grey),
+                  weekendStyle: TextStyle(color: Colors.grey),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              if (widget.antrenorMu)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _tarihSec,
+                      icon: const Icon(
+                        Icons.calendar_month,
+                        color: Colors.black,
+                      ),
+                      label: const Text(
+                        'Son Ödeme Tarihi Belirle',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.lightGreenAccent,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                      ),
+                    ),
+                  ),
+                ),
+
+              const SizedBox(height: 12),
+
+              Expanded(
+                child: _secilenGun == null
+                    ? const Center(
+                        child: Text(
+                          'Bir gün seçin',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      )
+                    : secilenAidatlar.isEmpty
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.event_available,
+                                color: Colors.grey,
+                                size: 42,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                _tarihFormatla(_secilenGun!),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Bu tarihte son ödeme tarihi bulunmuyor.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: secilenAidatlar.length,
+                        itemBuilder: (context, index) {
+                          final aidat = secilenAidatlar[index];
+
+                          final odendi = aidat['odendi'] == true;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1A1A1A),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: odendi
+                                    ? Colors.lightGreenAccent
+                                    : Colors.orangeAccent.withOpacity(0.5),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  odendi
+                                      ? Icons.check_circle
+                                      : Icons.payments_outlined,
+                                  color: odendi
+                                      ? Colors.lightGreenAccent
+                                      : Colors.orangeAccent,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Aidat Son Ödeme Tarihi',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _tarihFormatla(_secilenGun!),
+                                        style: const TextStyle(
+                                          color: Colors.lightGreenAccent,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Text(
+                                  odendi ? 'Ödendi' : 'Ödenmedi',
+                                  style: TextStyle(
+                                    color: odendi
+                                        ? Colors.lightGreenAccent
+                                        : Colors.orangeAccent,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

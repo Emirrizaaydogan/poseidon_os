@@ -56,7 +56,12 @@ class DatabaseService {
     final response = await http.post(
       Uri.parse('$apiBaseUrl/auth/register'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': sifre, 'role': rol, 'athlete_id': sporcuId}),
+      body: jsonEncode({
+        'email': email,
+        'password': sifre,
+        'role': rol,
+        'athlete_id': sporcuId,
+      }),
     );
     if (response.statusCode != 201) {
       final govde = jsonDecode(response.body);
@@ -84,7 +89,10 @@ class DatabaseService {
   // ---------------- SPORCULAR ----------------
 
   Future<List<dynamic>> getSporcular() async {
-    final response = await http.get(Uri.parse('$apiBaseUrl/athletes'), headers: _headers);
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/athletes'),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
@@ -103,7 +111,10 @@ class DatabaseService {
   }
 
   Future<void> sporcuSil(int id) async {
-    final response = await http.delete(Uri.parse('$apiBaseUrl/athletes/$id'), headers: _headers);
+    final response = await http.delete(
+      Uri.parse('$apiBaseUrl/athletes/$id'),
+      headers: _headers,
+    );
     if (response.statusCode != 204) {
       _hataFirlat(response, 'Sporcu silinemedi');
     }
@@ -112,7 +123,10 @@ class DatabaseService {
   // ---------------- ANTRENMANLAR ----------------
 
   Future<List<dynamic>> getAntrenmanlar() async {
-    final response = await http.get(Uri.parse('$apiBaseUrl/trainings'), headers: _headers);
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/trainings'),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
@@ -133,7 +147,10 @@ class DatabaseService {
   // ---------------- PERFORMANS ----------------
 
   Future<List<dynamic>> getPerformans(int sporcuId) async {
-    final response = await http.get(Uri.parse('$apiBaseUrl/performance?athleteId=$sporcuId'), headers: _headers);
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/performance?athleteId=$sporcuId'),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
@@ -154,7 +171,10 @@ class DatabaseService {
   // ---------------- YOKLAMA ----------------
 
   Future<List<dynamic>> getYoklama(int antrenmanId) async {
-    final response = await http.get(Uri.parse('$apiBaseUrl/attendance?trainingId=$antrenmanId'), headers: _headers);
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/attendance?trainingId=$antrenmanId'),
+      headers: _headers,
+    );
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
@@ -175,11 +195,16 @@ class DatabaseService {
   // ---------------- AİDAT ----------------
 
   Future<List<dynamic>> getAidatlar({int? sporcuId}) async {
-    final url = sporcuId != null ? '$apiBaseUrl/dues?athleteId=$sporcuId' : '$apiBaseUrl/dues';
+    final url = sporcuId != null
+        ? '$apiBaseUrl/dues?athleteId=$sporcuId'
+        : '$apiBaseUrl/dues';
+
     final response = await http.get(Uri.parse(url), headers: _headers);
+
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
+
     _hataFirlat(response, 'Aidatlar getirilemedi');
   }
 
@@ -189,17 +214,41 @@ class DatabaseService {
       headers: _headers,
       body: jsonEncode(veri),
     );
+
     if (response.statusCode != 201) {
       _hataFirlat(response, 'Aidat eklenemedi');
     }
   }
 
   Future<void> aidatOdendiIsaretle(int aidatId) async {
-    final response = await http.patch(Uri.parse('$apiBaseUrl/dues/$aidatId/pay'), headers: _headers);
+    final response = await http.patch(
+      Uri.parse('$apiBaseUrl/dues/$aidatId/pay'),
+      headers: _headers,
+    );
+
     if (response.statusCode != 200) {
       _hataFirlat(response, 'Ödeme işaretlenemedi');
     }
   }
-}
 
-final dbService = DatabaseService();
+  /// Antrenörün belirlediği son ödeme tarihini
+  /// mevcut ayın aidatlarına uygular.
+  Future<void> aidatSonOdemeTarihiGuncelle(String tarih, {String? ay}) async {
+    final response = await http.patch(
+      Uri.parse('$apiBaseUrl/dues/deadline'),
+      headers: _headers,
+      body: jsonEncode({'tarih': tarih, 'ay': ay ?? _guncelAyApi()}),
+    );
+
+    if (response.statusCode != 200) {
+      _hataFirlat(response, 'Aidat son ödeme tarihi güncellenemedi');
+    }
+  }
+
+  String _guncelAyApi() {
+    final simdi = DateTime.now();
+
+    return '${simdi.year}-'
+        '${simdi.month.toString().padLeft(2, '0')}';
+  }
+}
