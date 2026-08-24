@@ -656,11 +656,17 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  Future<List<dynamic>>? _kayitSporcularFuture;
   final _emailController = TextEditingController();
   final _sifreController = TextEditingController();
   String _seciliRol = 'antrenor';
   int? _seciliSporcuId;
   bool _kayitOluyor = false;
+  @override
+  void initState() {
+    super.initState();
+    _kayitSporcularFuture = dbService.getKayitSporcular();
+  }
 
   Future<void> _kayitOl() async {
     if (_emailController.text.trim().isEmpty ||
@@ -781,7 +787,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
             const SizedBox(height: 8),
             FutureBuilder<List<dynamic>>(
-              future: dbService.getSporcular(),
+              future: _kayitSporcularFuture,
               builder: (context, snapshot) {
                 final sporcular = snapshot.data ?? [];
                 if (snapshot.connectionState == ConnectionState.waiting) {

@@ -93,10 +93,27 @@ class DatabaseService {
       Uri.parse('$apiBaseUrl/athletes'),
       headers: _headers,
     );
+
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
+
     _hataFirlat(response, 'Sporcular getirilemedi');
+  }
+
+  /// Kayıt ekranında veli çocuğunu seçebilsin diye
+  /// giriş yapmadan sporcu listesini getirir.
+  Future<List<dynamic>> getKayitSporcular() async {
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/athletes/register-list'),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    _hataFirlat(response, 'Kayıt için sporcular getirilemedi');
   }
 
   Future<void> sporcuEkle(Map<String, dynamic> veri) async {
@@ -105,6 +122,7 @@ class DatabaseService {
       headers: _headers,
       body: jsonEncode(veri),
     );
+
     if (response.statusCode != 201) {
       _hataFirlat(response, 'Sporcu eklenemedi');
     }
@@ -115,6 +133,7 @@ class DatabaseService {
       Uri.parse('$apiBaseUrl/athletes/$id'),
       headers: _headers,
     );
+
     if (response.statusCode != 204) {
       _hataFirlat(response, 'Sporcu silinemedi');
     }
