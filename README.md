@@ -29,8 +29,8 @@ samples, guidance on mobile development, and a full API reference.
 *Bu karneler sporcu ve veli arayüzünde profil sekmesinde gözüksün
 *Sporcu ve Veli profilinde yüzücünün yarıştığı yarışlar ile yaptığı dereceleri gösterelim
 -------SPORCU PANELİ------------
-*sporcu panelinden aidat sekmesini kaldır
-*Sporcu panelinden takvim sekmesini kaldır
+*sporcu panelinden aidat sekmesini kaldır+
+*Sporcu panelinden takvim sekmesini kaldır+
 
 
 

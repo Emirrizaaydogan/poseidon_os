@@ -270,4 +270,64 @@ class DatabaseService {
     return '${simdi.year}-'
         '${simdi.month.toString().padLeft(2, '0')}';
   }
+
+  // ---------------- KULLANICI YÖNETİMİ (VELİ / SPORCU HESAPLARI) ----------------
+
+  /// Antrenör panelinde: sisteme kayıtlı tüm veli/sporcu hesaplarını listeler.
+  Future<List<dynamic>> getKullanicilar() async {
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/users'),
+      headers: _headers,
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    _hataFirlat(response, 'Kullanıcılar getirilemedi');
+  }
+
+  /// Antrenör, doğrudan bir veli/sporcu hesabı açar; isterse aynı anda
+  /// bir sporcu kaydıyla eşleştirir (sporcuId null bırakılabilir).
+  Future<void> kullaniciEkle({
+    required String email,
+    required String sifre,
+    required String rol,
+    int? sporcuId,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$apiBaseUrl/users'),
+      headers: _headers,
+      body: jsonEncode({
+        'email': email,
+        'password': sifre,
+        'role': rol,
+        'athlete_id': sporcuId,
+      }),
+    );
+    if (response.statusCode != 201) {
+      _hataFirlat(response, 'Kullanıcı eklenemedi');
+    }
+  }
+
+  /// Var olan bir veli/sporcu hesabının bağlı olduğu sporcuyu değiştirir.
+  Future<void> kullaniciSporcuEslestir(int kullaniciId, int? sporcuId) async {
+    final response = await http.patch(
+      Uri.parse('$apiBaseUrl/users/$kullaniciId/link-athlete'),
+      headers: _headers,
+      body: jsonEncode({'athlete_id': sporcuId}),
+    );
+    if (response.statusCode != 200) {
+      _hataFirlat(response, 'Eşleştirme güncellenemedi');
+    }
+  }
+
+  /// Bir veli/sporcu hesabının erişimini tamamen kaldırır.
+  Future<void> kullaniciSil(int id) async {
+    final response = await http.delete(
+      Uri.parse('$apiBaseUrl/users/$id'),
+      headers: _headers,
+    );
+    if (response.statusCode != 204) {
+      _hataFirlat(response, 'Kullanıcı silinemedi');
+    }
+  }
 }
