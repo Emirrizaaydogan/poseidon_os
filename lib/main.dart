@@ -16,7 +16,6 @@ class Sporcu {
   final String grup;
   final String enIyiDerece;
   final String enIyiDereceStil;
-  final String enIyiDereceMesafe;
 
   const Sporcu({
     required this.id,
@@ -25,7 +24,6 @@ class Sporcu {
     required this.grup,
     required this.enIyiDerece,
     required this.enIyiDereceStil,
-    required this.enIyiDereceMesafe,
   });
 
   factory Sporcu.fromJson(Map<String, dynamic> veri) {
@@ -35,8 +33,7 @@ class Sporcu {
       dogumYili: veri['dogum_yili'] ?? 0,
       grup: veri['grup'] ?? '',
       enIyiDerece: veri['en_iyi_derece'] ?? '',
-      enIyiDereceStil: veri['en_iyi_derece_stil']?.toString() ?? '',
-      enIyiDereceMesafe: veri['en_iyi_derece_mesafe']?.toString() ?? '',
+      enIyiDereceStil: veri['en_iyi_derece_stil'] ?? '',
     );
   }
 }
@@ -119,6 +116,59 @@ const List<String> yuzmeStilleri = [
   'Kelebek',
 ];
 const List<String> yuzmeMesafeleri = ['25m', '50m', '100m', '200m'];
+
+// ---------------- TARİH YARDIMCILARI ----------------
+
+const List<String> _turkceAylar = [
+  'Ocak',
+  'Şubat',
+  'Mart',
+  'Nisan',
+  'Mayıs',
+  'Haziran',
+  'Temmuz',
+  'Ağustos',
+  'Eylül',
+  'Ekim',
+  'Kasım',
+  'Aralık',
+];
+
+const List<String> _turkceGunler = [
+  'Pazartesi',
+  'Salı',
+  'Çarşamba',
+  'Perşembe',
+  'Cuma',
+  'Cumartesi',
+  'Pazar',
+];
+
+/// Bir DateTime'ı "20 Mayıs, Pazartesi" biçiminde Türkçe metne çevirir.
+String turkceTarihMetni(DateTime tarih) {
+  final gunAdi = _turkceGunler[tarih.weekday - 1];
+  final ayAdi = _turkceAylar[tarih.month - 1];
+  return '${tarih.day} $ayAdi, $gunAdi';
+}
+
+/// Bir DateTime'ı veritabanında saklanacak 'yyyy-MM-dd' biçimine çevirir.
+String antrenmanTarihiKaydet(DateTime tarih) {
+  final ay = tarih.month.toString().padLeft(2, '0');
+  final gun = tarih.day.toString().padLeft(2, '0');
+  return '${tarih.year}-$ay-$gun';
+}
+
+/// 'yyyy-MM-dd' biçimindeki bir antrenman tarihini DateTime'a çevirir.
+/// Bu özellikten ÖNCE serbest metinle ("20 Mayıs, Pazartesi" gibi)
+/// eklenmiş eski antrenmanlarda parse başarısız olur, null döner —
+/// bu antrenmanlar "Son 7 Gün" / "Arşiv" filtrelerinde görünmez.
+DateTime? antrenmanTarihiAyristir(String tarih) {
+  try {
+    return DateTime.parse(tarih);
+  } catch (_) {
+    return null;
+  }
+}
 
 final Map<DateTime, List<String>> ornekEtkinlikler = {
   DateTime.utc(2024, 5, 15): ['Türkiye Gelişim Ligi - İstanbul'],
@@ -531,11 +581,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       // =================================================
                       GestureDetector(
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Şifre yenileme özelliği yakında eklenecek.',
-                              ),
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const SifremiUnuttumEkrani(),
                             ),
                           );
                         },
@@ -1053,6 +1103,283 @@ class IstatistikKarti extends StatelessWidget {
             style: const TextStyle(color: Colors.grey, fontSize: 12),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ---------------- ŞİFREMİ UNUTTUM (KOD GÖNDER) ----------------
+
+class SifremiUnuttumEkrani extends StatefulWidget {
+  const SifremiUnuttumEkrani({super.key});
+
+  @override
+  State<SifremiUnuttumEkrani> createState() => _SifremiUnuttumEkraniState();
+}
+
+class _SifremiUnuttumEkraniState extends State<SifremiUnuttumEkrani> {
+  final _emailController = TextEditingController();
+  bool _gonderiliyor = false;
+
+  Future<void> _kodGonder() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Geçerli bir e-posta gir')));
+      return;
+    }
+
+    setState(() => _gonderiliyor = true);
+    try {
+      await dbService.sifremiUnuttum(email);
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SifreSifirlaEkrani(email: email),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _gonderiliyor = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Şifremi Unuttum',
+              style: TextStyle(
+                color: Colors.lightGreenAccent,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Hesabına kayıtlı e-postayı gir, sana 6 haneli bir '
+              'sıfırlama kodu gönderelim.',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 28),
+            _PoseidonLoginInput(
+              controller: _emailController,
+              hint: 'E-posta adresiniz',
+              icon: Icons.mail_outline,
+              keyboardType: TextInputType.emailAddress,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OkluButon(
+                metin: _gonderiliyor ? 'Gönderiliyor...' : 'Kod Gönder',
+                onTap: _gonderiliyor ? () {} : _kodGonder,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------- ŞİFRE SIFIRLA (KOD + YENİ ŞİFRE) ----------------
+
+class SifreSifirlaEkrani extends StatefulWidget {
+  final String email;
+
+  const SifreSifirlaEkrani({super.key, required this.email});
+
+  @override
+  State<SifreSifirlaEkrani> createState() => _SifreSifirlaEkraniState();
+}
+
+class _SifreSifirlaEkraniState extends State<SifreSifirlaEkrani> {
+  final _kodController = TextEditingController();
+  final _yeniSifreController = TextEditingController();
+  final _yeniSifreTekrarController = TextEditingController();
+  bool _gonderiliyor = false;
+  bool _yenidenGonderiliyor = false;
+
+  Future<void> _sifreyiGuncelle() async {
+    final kod = _kodController.text.trim();
+    final yeniSifre = _yeniSifreController.text.trim();
+    final tekrar = _yeniSifreTekrarController.text.trim();
+
+    if (kod.length != 6) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lütfen 6 haneli kodu gir')));
+      return;
+    }
+    if (yeniSifre.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Şifre en az 6 karakter olmalı')),
+      );
+      return;
+    }
+    if (yeniSifre != tekrar) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Şifreler eşleşmiyor')));
+      return;
+    }
+
+    setState(() => _gonderiliyor = true);
+    try {
+      await dbService.sifreSifirla(
+        email: widget.email,
+        kod: kod,
+        yeniSifre: yeniSifre,
+      );
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Şifren güncellendi, şimdi giriş yapabilirsin'),
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _gonderiliyor = false);
+    }
+  }
+
+  Future<void> _koduTekrarGonder() async {
+    setState(() => _yenidenGonderiliyor = true);
+    try {
+      await dbService.sifremiUnuttum(widget.email);
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Kod tekrar gönderildi')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _yenidenGonderiliyor = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _kodController.dispose();
+    _yeniSifreController.dispose();
+    _yeniSifreTekrarController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Kodu Gir',
+              style: TextStyle(
+                color: Colors.lightGreenAccent,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${widget.email} adresine gönderdiğimiz 6 haneli kodu ve '
+              'yeni şifreni gir.',
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 28),
+            _PoseidonLoginInput(
+              controller: _kodController,
+              hint: '6 haneli kod',
+              icon: Icons.pin_outlined,
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 14),
+            _PoseidonLoginInput(
+              controller: _yeniSifreController,
+              hint: 'Yeni şifre',
+              icon: Icons.lock_outline,
+              obscureText: true,
+            ),
+            const SizedBox(height: 14),
+            _PoseidonLoginInput(
+              controller: _yeniSifreTekrarController,
+              hint: 'Yeni şifre (tekrar)',
+              icon: Icons.lock_outline,
+              obscureText: true,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: OkluButon(
+                metin: _gonderiliyor ? 'Güncelleniyor...' : 'Şifreyi Güncelle',
+                onTap: _gonderiliyor ? () {} : _sifreyiGuncelle,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Center(
+              child: GestureDetector(
+                onTap: _yenidenGonderiliyor ? null : _koduTekrarGonder,
+                child: Text(
+                  _yenidenGonderiliyor
+                      ? 'Gönderiliyor...'
+                      : 'Kodu tekrar gönder',
+                  style: const TextStyle(
+                    color: Color(0xFFD0D8DB),
+                    fontSize: 13,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2962,129 +3289,178 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: RefreshIndicator(
-        onRefresh: () async => _reload(),
-        color: Colors.lightGreenAccent,
-        backgroundColor: Colors.black,
-        child: FutureBuilder<List<dynamic>>(
-          future: _future,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(
-                  color: Colors.lightGreenAccent,
-                ),
-              );
-            }
-            if (snapshot.hasError) {
-              return Center(
-                child: Text(
-                  'Hata: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.red),
-                ),
-              );
-            }
-            final belgeler = snapshot.data ?? [];
-            if (belgeler.isEmpty) {
-              return ListView(
-                children: const [
-                  SizedBox(height: 100),
-                  Center(
-                    child: Text(
-                      'Henüz antrenman eklenmemiş',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ],
-              );
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: belgeler.length,
-              itemBuilder: (context, index) {
-                final antrenman = Antrenman.fromJson(belgeler[index]);
-                return InkWell(
-                  borderRadius: BorderRadius.circular(12),
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AntrenmanDetayEkrani(
-                          antrenman: antrenman,
-                          antrenorMu: widget.antrenorMu,
-                        ),
-                      ),
-                    );
-                    _reload();
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.lightGreenAccent,
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                antrenman.baslik,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            const Icon(
-                              Icons.chevron_right,
-                              color: Colors.lightGreenAccent,
-                              size: 22,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          antrenman.tarih,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${antrenman.havuz} · ${antrenman.sure}',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
-                          ),
-                        ),
-                        if (antrenman.setler.isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            '${antrenman.setler.length} set · Programı görmek için dokun',
-                            style: const TextStyle(
-                              color: Colors.lightGreenAccent,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GecmisAntrenmanlarEkrani(),
                   ),
                 );
               },
-            );
-          },
-        ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFF2A2A2A)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.history,
+                      color: Colors.lightGreenAccent,
+                      size: 18,
+                    ),
+                    SizedBox(width: 10),
+                    Text(
+                      'Geçmiş Antrenmanlar',
+                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                    Spacer(),
+                    Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: () async => _reload(),
+              color: Colors.lightGreenAccent,
+              backgroundColor: Colors.black,
+              child: FutureBuilder<List<dynamic>>(
+                future: _future,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.lightGreenAccent,
+                      ),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        'Hata: ${snapshot.error}',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    );
+                  }
+                  final belgeler = snapshot.data ?? [];
+                  if (belgeler.isEmpty) {
+                    return ListView(
+                      children: const [
+                        SizedBox(height: 100),
+                        Center(
+                          child: Text(
+                            'Henüz antrenman eklenmemiş',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: belgeler.length,
+                    itemBuilder: (context, index) {
+                      final antrenman = Antrenman.fromJson(belgeler[index]);
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AntrenmanDetayEkrani(
+                                antrenman: antrenman,
+                                antrenorMu: widget.antrenorMu,
+                              ),
+                            ),
+                          );
+                          _reload();
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1A1A1A),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.lightGreenAccent,
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      antrenman.baslik,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.lightGreenAccent,
+                                    size: 22,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                antrenman.tarih,
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${antrenman.havuz} · ${antrenman.sure}',
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              if (antrenman.setler.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${antrenman.setler.length} set · Programı görmek için dokun',
+                                  style: const TextStyle(
+                                    color: Colors.lightGreenAccent,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: widget.antrenorMu
           ? FloatingActionButton(
@@ -3101,6 +3477,248 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
               child: const Icon(Icons.add, color: Colors.black),
             )
           : null,
+    );
+  }
+}
+
+// ---------------- GEÇMİŞ ANTRENMANLAR / ARŞİV ----------------
+
+class GecmisAntrenmanlarEkrani extends StatefulWidget {
+  const GecmisAntrenmanlarEkrani({super.key});
+
+  @override
+  State<GecmisAntrenmanlarEkrani> createState() =>
+      _GecmisAntrenmanlarEkraniState();
+}
+
+class _GecmisAntrenmanlarEkraniState extends State<GecmisAntrenmanlarEkrani> {
+  late Future<List<dynamic>> _future;
+
+  // true: "Son 7 Gün" görünümü, false: "Arşiv" görünümü
+  bool _son7GunSekmesi = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = dbService.getAntrenmanlar();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bugun = DateTime.now();
+    final bugunGunBasi = DateTime(bugun.year, bugun.month, bugun.day);
+    final yediGunOnce = bugunGunBasi.subtract(const Duration(days: 7));
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        title: const Text(
+          'Geçmiş Antrenmanlar',
+          style: TextStyle(color: Colors.lightGreenAccent, fontSize: 16),
+        ),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _GecmisSekmeButonu(
+                    etiket: 'Son 7 Gün',
+                    secili: _son7GunSekmesi,
+                    onTap: () => setState(() => _son7GunSekmesi = true),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _GecmisSekmeButonu(
+                    etiket: 'Arşiv',
+                    secili: !_son7GunSekmesi,
+                    onTap: () => setState(() => _son7GunSekmesi = false),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: FutureBuilder<List<dynamic>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.lightGreenAccent,
+                    ),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Hata: ${snapshot.error}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+
+                final tumAntrenmanlar = (snapshot.data ?? [])
+                    .map((v) => Antrenman.fromJson(v))
+                    .toList();
+
+                // Her antrenmanı tarihine göre üç kovadan birine ayır:
+                // gelecek/parse edilemeyen kayıtlar bu ekranda hiç gösterilmez,
+                // sadece geçmişte kalanlar "son 7 gün" ya da "arşiv"e girer.
+                final List<Antrenman> son7Gun = [];
+                final List<Antrenman> arsiv = [];
+                for (final a in tumAntrenmanlar) {
+                  final tarih = antrenmanTarihiAyristir(a.tarih);
+                  if (tarih == null) continue; // eski serbest metin tarihli
+                  final tarihGunBasi = DateTime(
+                    tarih.year,
+                    tarih.month,
+                    tarih.day,
+                  );
+                  if (tarihGunBasi.isAfter(bugunGunBasi)) {
+                    continue; // henüz gerçekleşmemiş antrenman, bu ekranda yok
+                  }
+                  if (!tarihGunBasi.isBefore(yediGunOnce)) {
+                    son7Gun.add(a);
+                  } else {
+                    arsiv.add(a);
+                  }
+                }
+
+                // En yeni tarih en üstte görünsün.
+                int tarihKarsilastir(Antrenman a, Antrenman b) {
+                  final ta = antrenmanTarihiAyristir(a.tarih)!;
+                  final tb = antrenmanTarihiAyristir(b.tarih)!;
+                  return tb.compareTo(ta);
+                }
+
+                son7Gun.sort(tarihKarsilastir);
+                arsiv.sort(tarihKarsilastir);
+
+                final gosterilecekler = _son7GunSekmesi ? son7Gun : arsiv;
+
+                if (gosterilecekler.isEmpty) {
+                  return Center(
+                    child: Text(
+                      _son7GunSekmesi
+                          ? 'Son 7 günde geçmiş antrenman yok'
+                          : 'Arşivde antrenman yok',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  itemCount: gosterilecekler.length,
+                  itemBuilder: (context, index) {
+                    final antrenman = gosterilecekler[index];
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AntrenmanDetayEkrani(
+                              antrenman: antrenman,
+                              antrenorMu: false, // geçmiş kayıt, düzenlenmez
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1A1A1A),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    antrenman.baslik,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    antrenman.tarih,
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GecmisSekmeButonu extends StatelessWidget {
+  final String etiket;
+  final bool secili;
+  final VoidCallback onTap;
+
+  const _GecmisSekmeButonu({
+    required this.etiket,
+    required this.secili,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: secili ? Colors.lightGreenAccent : const Color(0xFF1A1A1A),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: secili ? Colors.lightGreenAccent : const Color(0xFF2A2A2A),
+          ),
+        ),
+        child: Center(
+          child: Text(
+            etiket,
+            style: TextStyle(
+              color: secili ? Colors.black : Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -3345,14 +3963,39 @@ class AntrenmanEkleEkrani extends StatefulWidget {
 
 class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
   final _baslikController = TextEditingController();
-  final _tarihController = TextEditingController();
   final _havuzController = TextEditingController();
   final _sureController = TextEditingController();
   final _setAciklamaController = TextEditingController();
+  DateTime? _seciliTarih;
   String _seciliKategori = 'Isınma';
   final List<String> _kategoriler = ['Isınma', 'Ana Set', 'Soğuma'];
   final List<AntrenmanSeti> _eklenenSetler = [];
   bool _kaydediliyor = false;
+
+  Future<void> _tarihSec() async {
+    final bugun = DateTime.now();
+    final secilen = await showDatePicker(
+      context: context,
+      initialDate: _seciliTarih ?? bugun,
+      firstDate: DateTime(bugun.year - 1, 1, 1),
+      lastDate: DateTime(bugun.year + 2, 12, 31),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.lightGreenAccent,
+              onPrimary: Colors.black,
+              surface: Color(0xFF151515),
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (secilen == null) return;
+    setState(() => _seciliTarih = secilen);
+  }
 
   void _setEkle() {
     if (_setAciklamaController.text.trim().isEmpty) {
@@ -3381,11 +4024,17 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
       ).showSnackBar(const SnackBar(content: Text('Başlık boş olamaz')));
       return;
     }
+    if (_seciliTarih == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lütfen bir tarih seç')));
+      return;
+    }
     setState(() => _kaydediliyor = true);
     try {
       await dbService.antrenmanEkle({
         'baslik': _baslikController.text.trim(),
-        'tarih': _tarihController.text.trim(),
+        'tarih': antrenmanTarihiKaydet(_seciliTarih!),
         'havuz': _havuzController.text.trim(),
         'sure': _sureController.text.trim(),
         'setler': _eklenenSetler.map((s) => s.toMap()).toList(),
@@ -3405,7 +4054,6 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
   @override
   void dispose() {
     _baslikController.dispose();
-    _tarihController.dispose();
     _havuzController.dispose();
     _sureController.dispose();
     _setAciklamaController.dispose();
@@ -3432,9 +4080,37 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
             etiket: 'Başlık (örn. Dayanıklılık + Teknik)',
           ),
           const SizedBox(height: 12),
-          _FormAlani(
-            controller: _tarihController,
-            etiket: 'Tarih (örn. 20 Mayıs, Pazartesi)',
+          InkWell(
+            onTap: _tarihSec,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1A1A1A),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFF2A2A2A)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today,
+                    color: Colors.lightGreenAccent,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    _seciliTarih != null
+                        ? turkceTarihMetni(_seciliTarih!)
+                        : 'Tarih seç',
+                    style: TextStyle(
+                      color: _seciliTarih != null ? Colors.white : Colors.grey,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           _FormAlani(

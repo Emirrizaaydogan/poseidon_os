@@ -330,4 +330,34 @@ class DatabaseService {
       _hataFirlat(response, 'Kullanıcı silinemedi');
     }
   }
+
+  // ---------------- ŞİFRE SIFIRLAMA ----------------
+
+  /// E-posta adresine 6 haneli bir sıfırlama kodu gönderilmesini ister.
+  Future<void> sifremiUnuttum(String email) async {
+    final response = await http.post(
+      Uri.parse('$apiBaseUrl/auth/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email}),
+    );
+    if (response.statusCode != 200) {
+      _hataFirlat(response, 'Kod gönderilemedi');
+    }
+  }
+
+  /// E-postaya gelen kod ile yeni şifreyi belirler.
+  Future<void> sifreSifirla({
+    required String email,
+    required String kod,
+    required String yeniSifre,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$apiBaseUrl/auth/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'kod': kod, 'yeniSifre': yeniSifre}),
+    );
+    if (response.statusCode != 200) {
+      _hataFirlat(response, 'Şifre güncellenemedi');
+    }
+  }
 }
