@@ -16,6 +16,7 @@ class Sporcu {
   final String grup;
   final String enIyiDerece;
   final String enIyiDereceStil;
+  final String enIyiDereceMesafe;
 
   const Sporcu({
     required this.id,
@@ -24,16 +25,18 @@ class Sporcu {
     required this.grup,
     required this.enIyiDerece,
     required this.enIyiDereceStil,
+    required this.enIyiDereceMesafe,
   });
 
   factory Sporcu.fromJson(Map<String, dynamic> veri) {
     return Sporcu(
       id: int.parse(veri['id'].toString()),
-      isim: veri['isim'] ?? '',
-      dogumYili: veri['dogum_yili'] ?? 0,
-      grup: veri['grup'] ?? '',
-      enIyiDerece: veri['en_iyi_derece'] ?? '',
-      enIyiDereceStil: veri['en_iyi_derece_stil'] ?? '',
+      isim: veri['isim']?.toString() ?? '',
+      dogumYili: int.tryParse(veri['dogum_yili'].toString()) ?? 0,
+      grup: veri['grup']?.toString() ?? '',
+      enIyiDerece: veri['en_iyi_derece']?.toString() ?? '',
+      enIyiDereceStil: veri['en_iyi_derece_stil']?.toString() ?? '',
+      enIyiDereceMesafe: veri['en_iyi_derece_mesafe']?.toString() ?? '',
     );
   }
 }
@@ -2254,21 +2257,42 @@ class SporcularSekmesi extends StatefulWidget {
 }
 
 class _SporcularSekmesiState extends State<SporcularSekmesi> {
-  late Future<List<dynamic>> _future;
+  String _seciliStil = 'Serbest';
+  String _seciliMesafe = '50m';
+
+  late Future<List<dynamic>> _siralamaFuture;
 
   @override
   void initState() {
     super.initState();
-    _reload();
+    _siralamayiYukle();
   }
 
-  void _reload() {
+  void _siralamayiYukle() {
+    _siralamaFuture = dbService.getSiralama(
+      stil: _seciliStil,
+      mesafe: _seciliMesafe,
+    );
+  }
+
+  void _stilDegistir(String stil) {
     setState(() {
-      _future = dbService.getSporcular();
+      _seciliStil = stil;
+      _siralamayiYukle();
     });
   }
 
-  Future<void> _silmeyiOnayla(BuildContext context, Sporcu sporcu) async {
+  void _mesafeDegistir(String mesafe) {
+    setState(() {
+      _seciliMesafe = mesafe;
+      _siralamayiYukle();
+    });
+  }
+
+  Future<void> _silmeyiOnayla(
+    BuildContext context,
+    Map<String, dynamic> sporcu,
+  ) async {
     final onayVerdiMi = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -2278,7 +2302,8 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
           style: TextStyle(color: Colors.white),
         ),
         content: Text(
-          '${sporcu.isim} adlı sporcuyu silmek istediğine emin misin? Bu işlem geri alınamaz, sporcuya ait tüm performans ve aidat kayıtları da silinecek.',
+          '${sporcu['isim']} adlı sporcuyu silmek istediğine emin misin?\n\n'
+          'Bu işlem geri alınamaz.',
           style: const TextStyle(color: Colors.grey),
         ),
         actions: [
@@ -2303,15 +2328,18 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
     if (onayVerdiMi != true) return;
 
     try {
-      await dbService.sporcuSil(sporcu.id);
-      _reload();
-      if (context.mounted) {
+      await dbService.sporcuSil(int.parse(sporcu['athlete_id'].toString()));
+
+      _siralamayiYukle();
+
+      if (mounted) {
+        setState(() {});
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('${sporcu.isim} silindi')));
+        ).showSnackBar(SnackBar(content: Text('${sporcu['isim']} silindi')));
       }
     } catch (e) {
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Hata: $e')));
@@ -2319,69 +2347,211 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
     }
   }
 
-  Widget _sporcuKarti(BuildContext context, Sporcu sporcu) {
+  String _dereceGoster(dynamic derece) {
+    final sayi = double.tryParse(derece.toString());
+
+    if (sayi == null) {
+      return derece.toString();
+    }
+
+    return sayi.toStringAsFixed(2);
+  }
+
+  Widget _stilSecim() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: yuzmeStilleri.map((stil) {
+          final seciliMi = _seciliStil == stil;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(stil),
+              selected: seciliMi,
+              onSelected: (_) => _stilDegistir(stil),
+              selectedColor: Colors.lightGreenAccent,
+              backgroundColor: const Color(0xFF1A1A1A),
+              labelStyle: TextStyle(
+                color: seciliMi ? Colors.black : Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _mesafeSecim() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: yuzmeMesafeleri.map((mesafe) {
+          final seciliMi = _seciliMesafe == mesafe;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(mesafe),
+              selected: seciliMi,
+              onSelected: (_) => _mesafeDegistir(mesafe),
+              selectedColor: const Color(0xFF36525E),
+              backgroundColor: const Color(0xFF1A1A1A),
+              labelStyle: TextStyle(
+                color: seciliMi ? Colors.lightGreenAccent : Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _siralamadakiSporcuKarti(
+    BuildContext context,
+    Map<String, dynamic> sporcu,
+    int index,
+  ) {
+    final sira = index + 1;
+
+    String madalya = '';
+
+    if (sira == 1) {
+      madalya = '🥇';
+    } else if (sira == 2) {
+      madalya = '🥈';
+    } else if (sira == 3) {
+      madalya = '🥉';
+    }
+
+    final isim = sporcu['isim']?.toString() ?? '';
+    final grup = sporcu['grup']?.toString() ?? '';
+    final derece = _dereceGoster(sporcu['derece']);
+
+    final athleteId = int.tryParse(sporcu['athlete_id'].toString());
+
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => SporcuDetayEkrani(
-              sporcu: sporcu,
-              antrenorMu: widget.antrenorMu,
-            ),
-          ),
-        );
-      },
+      onTap: athleteId == null
+          ? null
+          : () async {
+              final mevcutSporcu = Sporcu(
+                id: athleteId,
+                isim: isim,
+                dogumYili: int.tryParse(sporcu['dogum_yili'].toString()) ?? 0,
+                grup: grup,
+                enIyiDerece: derece,
+                enIyiDereceStil: _seciliStil,
+                enIyiDereceMesafe: _seciliMesafe,
+              );
+
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SporcuDetayEkrani(
+                    sporcu: mevcutSporcu,
+                    antrenorMu: widget.antrenorMu,
+                  ),
+                ),
+              );
+
+              _siralamayiYukle();
+              if (mounted) setState(() {});
+            },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: sira <= 3
+                ? Colors.lightGreenAccent.withOpacity(0.35)
+                : Colors.white.withOpacity(0.05),
+          ),
         ),
         child: Row(
           children: [
+            SizedBox(
+              width: 42,
+              child: Column(
+                children: [
+                  if (madalya.isNotEmpty)
+                    Text(madalya, style: const TextStyle(fontSize: 22))
+                  else
+                    Text(
+                      '$sira',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 10),
+
             CircleAvatar(
+              radius: 21,
               backgroundColor: Colors.lightGreenAccent,
               child: Text(
-                sporcu.isim.isNotEmpty ? sporcu.isim[0] : '?',
+                isim.isNotEmpty ? isim[0].toUpperCase() : '?',
                 style: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
+
             const SizedBox(width: 12),
+
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    sporcu.isim,
+                    isim,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
+                  const SizedBox(height: 3),
                   Text(
-                    '${sporcu.dogumYili} · ${sporcu.grup}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    grup,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],
               ),
             ),
-            Text(
-              sporcu.enIyiDerece,
-              style: const TextStyle(
-                color: Colors.lightGreenAccent,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '$derece sn',
+                  style: const TextStyle(
+                    color: Colors.lightGreenAccent,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  '$_seciliMesafe $_seciliStil',
+                  style: const TextStyle(color: Colors.grey, fontSize: 10),
+                ),
+              ],
             ),
-            if (widget.antrenorMu) ...[
-              const SizedBox(width: 4),
+
+            if (widget.antrenorMu)
               IconButton(
                 icon: const Icon(
                   Icons.delete_outline,
@@ -2390,7 +2560,6 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 ),
                 onPressed: () => _silmeyiOnayla(context, sporcu),
               ),
-            ],
           ],
         ),
       ),
@@ -2402,11 +2571,15 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: RefreshIndicator(
-        onRefresh: () async => _reload(),
+        onRefresh: () async {
+          setState(() {
+            _siralamayiYukle();
+          });
+        },
         color: Colors.lightGreenAccent,
         backgroundColor: Colors.black,
         child: FutureBuilder<List<dynamic>>(
-          future: _future,
+          future: _siralamaFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
@@ -2415,103 +2588,155 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 ),
               );
             }
+
             if (snapshot.hasError) {
               return Center(
-                child: Text(
-                  'Hata: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.red),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'Sıralama yüklenemedi:\n${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
                 ),
               );
             }
-            var belgeler = snapshot.data ?? [];
+
+            var siralama = snapshot.data ?? [];
 
             if (widget.filtreSporcuId != null) {
-              belgeler = belgeler
+              siralama = siralama
                   .where(
-                    (b) =>
-                        int.parse(b['id'].toString()) == widget.filtreSporcuId,
+                    (s) =>
+                        int.tryParse(s['athlete_id'].toString()) ==
+                        widget.filtreSporcuId,
                   )
                   .toList();
-            }
-
-            if (belgeler.isEmpty) {
-              return ListView(
-                children: [
-                  const SizedBox(height: 100),
-                  Center(
-                    child: Text(
-                      widget.filtreSporcuId != null
-                          ? 'Sporcu bulunamadı'
-                          : 'Henüz sporcu eklenmemiş',
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ],
-              );
-            }
-
-            final sporcular = belgeler.map((b) => Sporcu.fromJson(b)).toList();
-
-            // Sporcuları en iyi derecelerinin stiline göre 4 gruba ayır.
-            // Stili henüz girilmemiş sporcular en altta "Stil Belirtilmemiş"
-            // başlığı altında toplanır ki listeden hiç kaybolmasınlar.
-            final Map<String, List<Sporcu>> gruplar = {
-              for (final stil in yuzmeStilleri) stil: [],
-              'Stil Belirtilmemiş': [],
-            };
-            for (final sporcu in sporcular) {
-              final anahtarStil = yuzmeStilleri.contains(sporcu.enIyiDereceStil)
-                  ? sporcu.enIyiDereceStil
-                  : 'Stil Belirtilmemiş';
-              gruplar[anahtarStil]!.add(sporcu);
             }
 
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                for (final grupAdi in gruplar.keys)
-                  if (gruplar[grupAdi]!.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8, bottom: 12),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: Colors.lightGreenAccent,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            grupAdi,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '(${gruplar[grupAdi]!.length})',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
+                const Text(
+                  'Kulüp Sıralaması',
+                  style: TextStyle(
+                    color: Colors.lightGreenAccent,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  '$_seciliMesafe $_seciliStil',
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+
+                const SizedBox(height: 18),
+
+                const Text(
+                  'Yüzme Stili',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                _stilSecim(),
+
+                const SizedBox(height: 18),
+
+                const Text(
+                  'Mesafe',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                _mesafeSecim(),
+
+                const SizedBox(height: 20),
+
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF101010),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.lightGreenAccent.withOpacity(0.15),
                     ),
-                    for (final sporcu in gruplar[grupAdi]!)
-                      _sporcuKarti(context, sporcu),
-                    const SizedBox(height: 12),
-                  ],
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.emoji_events,
+                        color: Colors.lightGreenAccent,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '$_seciliMesafe $_seciliStil sıralaması',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${siralama.length} sporcu',
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                if (siralama.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(30),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.pool, color: Colors.grey, size: 40),
+                        SizedBox(height: 12),
+                        Text(
+                          'Bu stil ve mesafede henüz performans kaydı yok.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...siralama.asMap().entries.map(
+                    (entry) => _siralamadakiSporcuKarti(
+                      context,
+                      Map<String, dynamic>.from(entry.value),
+                      entry.key,
+                    ),
+                  ),
               ],
             );
           },
         ),
       ),
+
       floatingActionButton: widget.antrenorMu
           ? FloatingActionButton(
               backgroundColor: Colors.lightGreenAccent,
@@ -2522,7 +2747,12 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                     builder: (context) => const SporcuEkleEkrani(),
                   ),
                 );
-                _reload();
+
+                _siralamayiYukle();
+
+                if (mounted) {
+                  setState(() {});
+                }
               },
               child: const Icon(Icons.add, color: Colors.black),
             )

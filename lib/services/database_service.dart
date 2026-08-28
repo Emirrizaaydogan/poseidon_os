@@ -187,6 +187,25 @@ class DatabaseService {
     }
   }
 
+  Future<List<dynamic>> getSiralama({
+    required String stil,
+    required String mesafe,
+  }) async {
+    final response = await http.get(
+      Uri.parse(
+        '$apiBaseUrl/rankings'
+        '?stil=${Uri.encodeComponent(stil)}'
+        '&mesafe=${Uri.encodeComponent(mesafe)}',
+      ),
+      headers: _headers,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    _hataFirlat(response, 'Sıralama getirilemedi');
+  }
   // ---------------- YOKLAMA ----------------
 
   Future<List<dynamic>> getYoklama(int antrenmanId) async {
