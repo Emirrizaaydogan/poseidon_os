@@ -277,6 +277,29 @@ class DatabaseService {
       headers: _headers,
       body: jsonEncode({'tarih': tarih, 'ay': ay ?? _guncelAyApi()}),
     );
+    // ---------------- KARNE ----------------
+
+    Future<List<dynamic>> getKarneler({int? sporcuId}) async {
+      final url = sporcuId != null
+          ? '$apiBaseUrl/karneler?athleteId=$sporcuId'
+          : '$apiBaseUrl/karneler';
+      final response = await http.get(Uri.parse(url), headers: _headers);
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      _hataFirlat(response, 'Karneler getirilemedi');
+    }
+
+    Future<void> karneEkle(Map<String, dynamic> veri) async {
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/karneler'),
+        headers: _headers,
+        body: jsonEncode(veri),
+      );
+      if (response.statusCode != 201) {
+        _hataFirlat(response, 'Karne eklenemedi');
+      }
+    }
 
     if (response.statusCode != 200) {
       _hataFirlat(response, 'Aidat son ödeme tarihi güncellenemedi');

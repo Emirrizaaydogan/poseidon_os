@@ -31,7 +31,8 @@ samples, guidance on mobile development, and a full API reference.
 -------SPORCU PANELİ------------
 *sporcu panelinden aidat sekmesini kaldır+
 *Sporcu panelinden takvim sekmesini kaldır+
-
+---------------GÜvenlik----------
+*Şifremi unuttum işlemi için domain alınmalı
 
 
 
