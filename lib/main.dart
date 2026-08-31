@@ -2261,11 +2261,20 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
   String _seciliMesafe = '50m';
 
   late Future<List<dynamic>> _siralamaFuture;
+  late Future<List<dynamic>> _tumSporcularFuture;
+  late Future<List<dynamic>> _tumPerformanslarFuture;
 
   @override
   void initState() {
     super.initState();
-    _siralamayiYukle();
+
+    _siralamaFuture = dbService.getSiralama(
+      stil: _seciliStil,
+      mesafe: _seciliMesafe,
+    );
+
+    _tumSporcularFuture = dbService.getSporcular();
+    _tumPerformanslarFuture = dbService.getTumPerformanslar();
   }
 
   void _siralamayiYukle() {
@@ -2273,6 +2282,18 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
       stil: _seciliStil,
       mesafe: _seciliMesafe,
     );
+  }
+
+  void _tumVerileriYenile() {
+    setState(() {
+      _siralamaFuture = dbService.getSiralama(
+        stil: _seciliStil,
+        mesafe: _seciliMesafe,
+      );
+
+      _tumSporcularFuture = dbService.getSporcular();
+      _tumPerformanslarFuture = dbService.getTumPerformanslar();
+    });
   }
 
   void _stilDegistir(String stil) {
@@ -2462,6 +2483,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
               _siralamayiYukle();
               if (mounted) setState(() {});
             },
+
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
@@ -2566,15 +2588,95 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
     );
   }
 
+  Widget _derecesiOlmayanSporcuKarti(
+    BuildContext context,
+    Map<String, dynamic> veri,
+  ) {
+    final sporcu = Sporcu.fromJson(veri);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orangeAccent.withOpacity(0.25)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 21,
+            backgroundColor: const Color(0xFF2A2A2A),
+            child: Text(
+              sporcu.isim.isNotEmpty ? sporcu.isim[0].toUpperCase() : '?',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  sporcu.isim,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  sporcu.grup,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Henüz performans kaydı yok',
+                  style: TextStyle(color: Colors.orangeAccent, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      PerformansEkleEkrani(sporcuId: sporcu.id),
+                ),
+              );
+
+              if (mounted) {
+                _tumVerileriYenile();
+              }
+            },
+            icon: const Icon(Icons.add, size: 17, color: Colors.black),
+            label: const Text(
+              'Derece Ekle',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.lightGreenAccent,
+              foregroundColor: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: RefreshIndicator(
         onRefresh: () async {
-          setState(() {
-            _siralamayiYukle();
-          });
+          _tumVerileriYenile();
         },
         color: Colors.lightGreenAccent,
         backgroundColor: Colors.black,
@@ -2731,6 +2833,141 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                       entry.key,
                     ),
                   ),
+
+                if (widget.antrenorMu) ...[
+                  const SizedBox(height: 30),
+
+                  Row(
+                    children: const [
+                      Icon(
+                        Icons.person_add_alt_1,
+                        color: Colors.orangeAccent,
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Derecesi Olmayan Sporcular',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  const Text(
+                    'Henüz hiçbir performans kaydı girilmemiş sporcular',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  FutureBuilder<List<dynamic>>(
+                    future: _tumSporcularFuture,
+                    builder: (context, sporcuSnapshot) {
+                      if (sporcuSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16),
+                            child: CircularProgressIndicator(
+                              color: Colors.lightGreenAccent,
+                            ),
+                          ),
+                        );
+                      }
+
+                      final tumSporcular = sporcuSnapshot.data ?? [];
+
+                      return FutureBuilder<List<dynamic>>(
+                        future: _tumPerformanslarFuture,
+                        builder: (context, performansSnapshot) {
+                          if (performansSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16),
+                                child: CircularProgressIndicator(
+                                  color: Colors.lightGreenAccent,
+                                ),
+                              ),
+                            );
+                          }
+
+                          final tumPerformanslar =
+                              performansSnapshot.data ?? [];
+
+                          final performansiOlanSporcuIdleri = tumPerformanslar
+                              .map(
+                                (p) => int.tryParse(p['athlete_id'].toString()),
+                              )
+                              .whereType<int>()
+                              .toSet();
+
+                          final derecesiOlmayanlar = tumSporcular.where((s) {
+                            final sporcuId = int.tryParse(s['id'].toString());
+
+                            if (sporcuId == null) {
+                              return false;
+                            }
+
+                            return !performansiOlanSporcuIdleri.contains(
+                              sporcuId,
+                            );
+                          }).toList();
+
+                          if (derecesiOlmayanlar.isEmpty) {
+                            return Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(18),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF101510),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.lightGreenAccent.withOpacity(
+                                    0.15,
+                                  ),
+                                ),
+                              ),
+                              child: const Row(
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: Colors.lightGreenAccent,
+                                  ),
+                                  SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Tüm sporcuların en az bir performans kaydı bulunuyor.',
+                                      style: TextStyle(
+                                        color: Colors.lightGreenAccent,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+
+                          return Column(
+                            children: derecesiOlmayanlar
+                                .map<Widget>(
+                                  (s) => _derecesiOlmayanSporcuKarti(
+                                    context,
+                                    Map<String, dynamic>.from(s),
+                                  ),
+                                )
+                                .toList(),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
               ],
             );
           },

@@ -176,6 +176,19 @@ class DatabaseService {
     _hataFirlat(response, 'Performans kayıtları getirilemedi');
   }
 
+  Future<List<dynamic>> getTumPerformanslar() async {
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/performance'),
+      headers: _headers,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    _hataFirlat(response, 'Performans kayıtları getirilemedi');
+  }
+
   Future<void> performansEkle(Map<String, dynamic> veri) async {
     final response = await http.post(
       Uri.parse('$apiBaseUrl/performance'),
