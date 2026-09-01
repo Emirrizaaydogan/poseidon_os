@@ -187,6 +187,38 @@ class DatabaseService {
     }
   }
 
+  Future<List<dynamic>> getTumPerformanslar() async {
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/performance'),
+      headers: _headers,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    _hataFirlat(response, 'Performans kayıtları getirilemedi');
+  }
+
+  Future<List<dynamic>> getSiralama({
+    required String stil,
+    required String mesafe,
+  }) async {
+    final response = await http.get(
+      Uri.parse(
+        '$apiBaseUrl/rankings'
+        '?stil=${Uri.encodeComponent(stil)}'
+        '&mesafe=${Uri.encodeComponent(mesafe)}',
+      ),
+      headers: _headers,
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    _hataFirlat(response, 'Sıralama getirilemedi');
+  }
   // ---------------- YOKLAMA (GİRİŞ / ÇIKIŞ) ----------------
 
   /// [antrenmanId] ve/veya [sporcuId] verilirse sonuçlar buna göre filtrelenir.
