@@ -16,7 +16,6 @@ class Sporcu {
   final String grup;
   final String enIyiDerece;
   final String enIyiDereceStil;
-  final String enIyiDereceMesafe;
 
   const Sporcu({
     required this.id,
@@ -25,18 +24,16 @@ class Sporcu {
     required this.grup,
     required this.enIyiDerece,
     required this.enIyiDereceStil,
-    required this.enIyiDereceMesafe,
   });
 
   factory Sporcu.fromJson(Map<String, dynamic> veri) {
     return Sporcu(
       id: int.parse(veri['id'].toString()),
-      isim: veri['isim']?.toString() ?? '',
-      dogumYili: int.tryParse(veri['dogum_yili'].toString()) ?? 0,
-      grup: veri['grup']?.toString() ?? '',
-      enIyiDerece: veri['en_iyi_derece']?.toString() ?? '',
-      enIyiDereceStil: veri['en_iyi_derece_stil']?.toString() ?? '',
-      enIyiDereceMesafe: veri['en_iyi_derece_mesafe']?.toString() ?? '',
+      isim: veri['isim'] ?? '',
+      dogumYili: veri['dogum_yili'] ?? 0,
+      grup: veri['grup'] ?? '',
+      enIyiDerece: veri['en_iyi_derece'] ?? '',
+      enIyiDereceStil: veri['en_iyi_derece_stil'] ?? '',
     );
   }
 }
@@ -1416,7 +1413,7 @@ class _HomeScreenState extends State<HomeScreen> {
         antrenorMu: _antrenorMu,
         filtreSporcuId: widget.veliSporcuId,
       ),
-      AntrenmanSekmesi(antrenorMu: _antrenorMu),
+      AntrenmanSekmesi(antrenorMu: _antrenorMu, sporcuId: widget.veliSporcuId),
       TakvimSekmesi(
         antrenorMu: _antrenorMu,
         filtreSporcuId: widget.veliSporcuId,
@@ -2121,66 +2118,137 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
               );
             },
           ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: const Color(0xFF141414),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: const Color(0xFF2A2A2A)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: const [
-                    Icon(
-                      Icons.calendar_month,
-                      color: Colors.lightGreenAccent,
-                      size: 16,
+          FutureBuilder<List<dynamic>>(
+            future: _antrenmanlarFuture,
+            builder: (context, snapshot) {
+              final tumAntrenmanlar = (snapshot.data ?? [])
+                  .map((v) => Antrenman.fromJson(v))
+                  .toList();
+
+              final simdi = DateTime.now();
+              final bugun = DateTime(simdi.year, simdi.month, simdi.day);
+
+              Antrenman? bugununAntrenmani;
+              for (final a in tumAntrenmanlar) {
+                final tarih = antrenmanTarihiAyristir(a.tarih);
+                if (tarih == null) continue;
+                final tarihGunBasi = DateTime(
+                  tarih.year,
+                  tarih.month,
+                  tarih.day,
+                );
+                if (tarihGunBasi == bugun) {
+                  bugununAntrenmani = a;
+                  break;
+                }
+              }
+
+              if (bugununAntrenmani == null) {
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF141414),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: const Color(0xFF2A2A2A)),
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.calendar_month, color: Colors.grey, size: 18),
+                      SizedBox(width: 10),
+                      Text(
+                        'Bugün için planlanmış antrenman yok',
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final antrenman = bugununAntrenmani;
+
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF141414),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF2A2A2A)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(
+                          Icons.calendar_month,
+                          color: Colors.lightGreenAccent,
+                          size: 16,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'Bugünkü Antrenman',
+                          style: TextStyle(
+                            color: Colors.lightGreenAccent,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 6),
+                    const SizedBox(height: 10),
                     Text(
-                      'Bugünkü Antrenman',
-                      style: TextStyle(
-                        color: Colors.lightGreenAccent,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                      antrenman.baslik,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.pool, color: Colors.grey, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          antrenman.havuz,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.timer, color: Colors.grey, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          antrenman.sure,
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 18),
+                    OkluButon(
+                      metin: 'Antrenmanı Gör',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AntrenmanDetayEkrani(
+                              antrenman: antrenman,
+                              antrenorMu: widget.antrenorMu,
+                              sporcuId: widget.filtreSporcuId,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Dayanıklılık + Teknik',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: const [
-                    Icon(Icons.pool, color: Colors.grey, size: 14),
-                    SizedBox(width: 4),
-                    Text(
-                      'Havuz',
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-                    SizedBox(width: 12),
-                    Icon(Icons.timer, color: Colors.grey, size: 14),
-                    SizedBox(width: 4),
-                    Text(
-                      '25dk',
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 18),
-                OkluButon(metin: 'Antrenmanı Gör', onTap: () {}),
-              ],
-            ),
+              );
+            },
           ),
           const SizedBox(height: 20),
           const Text(
@@ -2257,63 +2325,21 @@ class SporcularSekmesi extends StatefulWidget {
 }
 
 class _SporcularSekmesiState extends State<SporcularSekmesi> {
-  String _seciliStil = 'Serbest';
-  String _seciliMesafe = '50m';
-
-  late Future<List<dynamic>> _siralamaFuture;
-  late Future<List<dynamic>> _tumSporcularFuture;
-  late Future<List<dynamic>> _tumPerformanslarFuture;
+  late Future<List<dynamic>> _future;
 
   @override
   void initState() {
     super.initState();
-
-    _siralamaFuture = dbService.getSiralama(
-      stil: _seciliStil,
-      mesafe: _seciliMesafe,
-    );
-
-    _tumSporcularFuture = dbService.getSporcular();
-    _tumPerformanslarFuture = dbService.getTumPerformanslar();
+    _reload();
   }
 
-  void _siralamayiYukle() {
-    _siralamaFuture = dbService.getSiralama(
-      stil: _seciliStil,
-      mesafe: _seciliMesafe,
-    );
-  }
-
-  void _tumVerileriYenile() {
+  void _reload() {
     setState(() {
-      _siralamaFuture = dbService.getSiralama(
-        stil: _seciliStil,
-        mesafe: _seciliMesafe,
-      );
-
-      _tumSporcularFuture = dbService.getSporcular();
-      _tumPerformanslarFuture = dbService.getTumPerformanslar();
+      _future = dbService.getSporcular();
     });
   }
 
-  void _stilDegistir(String stil) {
-    setState(() {
-      _seciliStil = stil;
-      _siralamayiYukle();
-    });
-  }
-
-  void _mesafeDegistir(String mesafe) {
-    setState(() {
-      _seciliMesafe = mesafe;
-      _siralamayiYukle();
-    });
-  }
-
-  Future<void> _silmeyiOnayla(
-    BuildContext context,
-    Map<String, dynamic> sporcu,
-  ) async {
+  Future<void> _silmeyiOnayla(BuildContext context, Sporcu sporcu) async {
     final onayVerdiMi = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -2323,8 +2349,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
           style: TextStyle(color: Colors.white),
         ),
         content: Text(
-          '${sporcu['isim']} adlı sporcuyu silmek istediğine emin misin?\n\n'
-          'Bu işlem geri alınamaz.',
+          '${sporcu.isim} adlı sporcuyu silmek istediğine emin misin? Bu işlem geri alınamaz, sporcuya ait tüm performans ve aidat kayıtları da silinecek.',
           style: const TextStyle(color: Colors.grey),
         ),
         actions: [
@@ -2349,18 +2374,15 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
     if (onayVerdiMi != true) return;
 
     try {
-      await dbService.sporcuSil(int.parse(sporcu['athlete_id'].toString()));
-
-      _siralamayiYukle();
-
-      if (mounted) {
-        setState(() {});
+      await dbService.sporcuSil(sporcu.id);
+      _reload();
+      if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('${sporcu['isim']} silindi')));
+        ).showSnackBar(SnackBar(content: Text('${sporcu.isim} silindi')));
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Hata: $e')));
@@ -2368,212 +2390,69 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
     }
   }
 
-  String _dereceGoster(dynamic derece) {
-    final sayi = double.tryParse(derece.toString());
-
-    if (sayi == null) {
-      return derece.toString();
-    }
-
-    return sayi.toStringAsFixed(2);
-  }
-
-  Widget _stilSecim() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: yuzmeStilleri.map((stil) {
-          final seciliMi = _seciliStil == stil;
-
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(stil),
-              selected: seciliMi,
-              onSelected: (_) => _stilDegistir(stil),
-              selectedColor: Colors.lightGreenAccent,
-              backgroundColor: const Color(0xFF1A1A1A),
-              labelStyle: TextStyle(
-                color: seciliMi ? Colors.black : Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _mesafeSecim() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: yuzmeMesafeleri.map((mesafe) {
-          final seciliMi = _seciliMesafe == mesafe;
-
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(mesafe),
-              selected: seciliMi,
-              onSelected: (_) => _mesafeDegistir(mesafe),
-              selectedColor: const Color(0xFF36525E),
-              backgroundColor: const Color(0xFF1A1A1A),
-              labelStyle: TextStyle(
-                color: seciliMi ? Colors.lightGreenAccent : Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  Widget _siralamadakiSporcuKarti(
-    BuildContext context,
-    Map<String, dynamic> sporcu,
-    int index,
-  ) {
-    final sira = index + 1;
-
-    String madalya = '';
-
-    if (sira == 1) {
-      madalya = '🥇';
-    } else if (sira == 2) {
-      madalya = '🥈';
-    } else if (sira == 3) {
-      madalya = '🥉';
-    }
-
-    final isim = sporcu['isim']?.toString() ?? '';
-    final grup = sporcu['grup']?.toString() ?? '';
-    final derece = _dereceGoster(sporcu['derece']);
-
-    final athleteId = int.tryParse(sporcu['athlete_id'].toString());
-
+  Widget _sporcuKarti(BuildContext context, Sporcu sporcu) {
     return InkWell(
       borderRadius: BorderRadius.circular(12),
-      onTap: athleteId == null
-          ? null
-          : () async {
-              final mevcutSporcu = Sporcu(
-                id: athleteId,
-                isim: isim,
-                dogumYili: int.tryParse(sporcu['dogum_yili'].toString()) ?? 0,
-                grup: grup,
-                enIyiDerece: derece,
-                enIyiDereceStil: _seciliStil,
-                enIyiDereceMesafe: _seciliMesafe,
-              );
-
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => SporcuDetayEkrani(
-                    sporcu: mevcutSporcu,
-                    antrenorMu: widget.antrenorMu,
-                  ),
-                ),
-              );
-
-              _siralamayiYukle();
-              if (mounted) setState(() {});
-            },
-
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SporcuDetayEkrani(
+              sporcu: sporcu,
+              antrenorMu: widget.antrenorMu,
+            ),
+          ),
+        );
+      },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: sira <= 3
-                ? Colors.lightGreenAccent.withOpacity(0.35)
-                : Colors.white.withOpacity(0.05),
-          ),
         ),
         child: Row(
           children: [
-            SizedBox(
-              width: 42,
-              child: Column(
-                children: [
-                  if (madalya.isNotEmpty)
-                    Text(madalya, style: const TextStyle(fontSize: 22))
-                  else
-                    Text(
-                      '$sira',
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            const SizedBox(width: 10),
-
             CircleAvatar(
-              radius: 21,
               backgroundColor: Colors.lightGreenAccent,
               child: Text(
-                isim.isNotEmpty ? isim[0].toUpperCase() : '?',
+                sporcu.isim.isNotEmpty ? sporcu.isim[0] : '?',
                 style: const TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-
             const SizedBox(width: 12),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    isim,
+                    sporcu.isim,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 3),
                   Text(
-                    grup,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    '${sporcu.dogumYili} · ${sporcu.grup}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 13),
                   ),
                 ],
               ),
             ),
-
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '$derece sn',
-                  style: const TextStyle(
-                    color: Colors.lightGreenAccent,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '$_seciliMesafe $_seciliStil',
-                  style: const TextStyle(color: Colors.grey, fontSize: 10),
-                ),
-              ],
+            Text(
+              sporcu.enIyiDerece,
+              style: const TextStyle(
+                color: Colors.lightGreenAccent,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-
-            if (widget.antrenorMu)
+            if (widget.antrenorMu) ...[
+              const SizedBox(width: 4),
               IconButton(
                 icon: const Icon(
                   Icons.delete_outline,
@@ -2582,90 +2461,9 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 ),
                 onPressed: () => _silmeyiOnayla(context, sporcu),
               ),
+            ],
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _derecesiOlmayanSporcuKarti(
-    BuildContext context,
-    Map<String, dynamic> veri,
-  ) {
-    final sporcu = Sporcu.fromJson(veri);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orangeAccent.withOpacity(0.25)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 21,
-            backgroundColor: const Color(0xFF2A2A2A),
-            child: Text(
-              sporcu.isim.isNotEmpty ? sporcu.isim[0].toUpperCase() : '?',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  sporcu.isim,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  sporcu.grup,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Henüz performans kaydı yok',
-                  style: TextStyle(color: Colors.orangeAccent, fontSize: 11),
-                ),
-              ],
-            ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      PerformansEkleEkrani(sporcuId: sporcu.id),
-                ),
-              );
-
-              if (mounted) {
-                _tumVerileriYenile();
-              }
-            },
-            icon: const Icon(Icons.add, size: 17, color: Colors.black),
-            label: const Text(
-              'Derece Ekle',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.lightGreenAccent,
-              foregroundColor: Colors.black,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -2675,13 +2473,11 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: RefreshIndicator(
-        onRefresh: () async {
-          _tumVerileriYenile();
-        },
+        onRefresh: () async => _reload(),
         color: Colors.lightGreenAccent,
         backgroundColor: Colors.black,
         child: FutureBuilder<List<dynamic>>(
-          future: _siralamaFuture,
+          future: _future,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
@@ -2690,290 +2486,103 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 ),
               );
             }
-
             if (snapshot.hasError) {
               return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    'Sıralama yüklenemedi:\n${snapshot.error}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.redAccent),
-                  ),
+                child: Text(
+                  'Hata: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.red),
                 ),
               );
             }
-
-            var siralama = snapshot.data ?? [];
+            var belgeler = snapshot.data ?? [];
 
             if (widget.filtreSporcuId != null) {
-              siralama = siralama
+              belgeler = belgeler
                   .where(
-                    (s) =>
-                        int.tryParse(s['athlete_id'].toString()) ==
-                        widget.filtreSporcuId,
+                    (b) =>
+                        int.parse(b['id'].toString()) == widget.filtreSporcuId,
                   )
                   .toList();
+            }
+
+            if (belgeler.isEmpty) {
+              return ListView(
+                children: [
+                  const SizedBox(height: 100),
+                  Center(
+                    child: Text(
+                      widget.filtreSporcuId != null
+                          ? 'Sporcu bulunamadı'
+                          : 'Henüz sporcu eklenmemiş',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            final sporcular = belgeler.map((b) => Sporcu.fromJson(b)).toList();
+
+            // Sporcuları en iyi derecelerinin stiline göre 4 gruba ayır.
+            // Stili henüz girilmemiş sporcular en altta "Stil Belirtilmemiş"
+            // başlığı altında toplanır ki listeden hiç kaybolmasınlar.
+            final Map<String, List<Sporcu>> gruplar = {
+              for (final stil in yuzmeStilleri) stil: [],
+              'Stil Belirtilmemiş': [],
+            };
+            for (final sporcu in sporcular) {
+              final anahtarStil = yuzmeStilleri.contains(sporcu.enIyiDereceStil)
+                  ? sporcu.enIyiDereceStil
+                  : 'Stil Belirtilmemiş';
+              gruplar[anahtarStil]!.add(sporcu);
             }
 
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const Text(
-                  'Kulüp Sıralaması',
-                  style: TextStyle(
-                    color: Colors.lightGreenAccent,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 6),
-
-                Text(
-                  '$_seciliMesafe $_seciliStil',
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
-                ),
-
-                const SizedBox(height: 18),
-
-                const Text(
-                  'Yüzme Stili',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                _stilSecim(),
-
-                const SizedBox(height: 18),
-
-                const Text(
-                  'Mesafe',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                _mesafeSecim(),
-
-                const SizedBox(height: 20),
-
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF101010),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.lightGreenAccent.withOpacity(0.15),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.emoji_events,
-                        color: Colors.lightGreenAccent,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '$_seciliMesafe $_seciliStil sıralaması',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        '${siralama.length} sporcu',
-                        style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                if (siralama.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.all(30),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Column(
-                      children: [
-                        Icon(Icons.pool, color: Colors.grey, size: 40),
-                        SizedBox(height: 12),
-                        Text(
-                          'Bu stil ve mesafede henüz performans kaydı yok.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  ...siralama.asMap().entries.map(
-                    (entry) => _siralamadakiSporcuKarti(
-                      context,
-                      Map<String, dynamic>.from(entry.value),
-                      entry.key,
-                    ),
-                  ),
-
-                if (widget.antrenorMu) ...[
-                  const SizedBox(height: 30),
-
-                  Row(
-                    children: const [
-                      Icon(
-                        Icons.person_add_alt_1,
-                        color: Colors.orangeAccent,
-                        size: 20,
-                      ),
-                      SizedBox(width: 8),
-                      Text(
-                        'Derecesi Olmayan Sporcular',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  const Text(
-                    'Henüz hiçbir performans kaydı girilmemiş sporcular',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  FutureBuilder<List<dynamic>>(
-                    future: _tumSporcularFuture,
-                    builder: (context, sporcuSnapshot) {
-                      if (sporcuSnapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(16),
-                            child: CircularProgressIndicator(
+                for (final grupAdi in gruplar.keys)
+                  if (gruplar[grupAdi]!.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
                               color: Colors.lightGreenAccent,
+                              shape: BoxShape.circle,
                             ),
                           ),
-                        );
-                      }
-
-                      final tumSporcular = sporcuSnapshot.data ?? [];
-
-                      return FutureBuilder<List<dynamic>>(
-                        future: _tumPerformanslarFuture,
-                        builder: (context, performansSnapshot) {
-                          if (performansSnapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16),
-                                child: CircularProgressIndicator(
-                                  color: Colors.lightGreenAccent,
-                                ),
-                              ),
-                            );
-                          }
-
-                          final tumPerformanslar =
-                              performansSnapshot.data ?? [];
-
-                          final performansiOlanSporcuIdleri = tumPerformanslar
-                              .map(
-                                (p) => int.tryParse(p['athlete_id'].toString()),
-                              )
-                              .whereType<int>()
-                              .toSet();
-
-                          final derecesiOlmayanlar = tumSporcular.where((s) {
-                            final sporcuId = int.tryParse(s['id'].toString());
-
-                            if (sporcuId == null) {
-                              return false;
-                            }
-
-                            return !performansiOlanSporcuIdleri.contains(
-                              sporcuId,
-                            );
-                          }).toList();
-
-                          if (derecesiOlmayanlar.isEmpty) {
-                            return Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF101510),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.lightGreenAccent.withOpacity(
-                                    0.15,
-                                  ),
-                                ),
-                              ),
-                              child: const Row(
-                                children: [
-                                  Icon(
-                                    Icons.check_circle,
-                                    color: Colors.lightGreenAccent,
-                                  ),
-                                  SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      'Tüm sporcuların en az bir performans kaydı bulunuyor.',
-                                      style: TextStyle(
-                                        color: Colors.lightGreenAccent,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }
-
-                          return Column(
-                            children: derecesiOlmayanlar
-                                .map<Widget>(
-                                  (s) => _derecesiOlmayanSporcuKarti(
-                                    context,
-                                    Map<String, dynamic>.from(s),
-                                  ),
-                                )
-                                .toList(),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ],
+                          const SizedBox(width: 8),
+                          Text(
+                            grupAdi,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '(${gruplar[grupAdi]!.length})',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    for (final sporcu in gruplar[grupAdi]!)
+                      _sporcuKarti(context, sporcu),
+                    const SizedBox(height: 12),
+                  ],
               ],
             );
           },
         ),
       ),
-
       floatingActionButton: widget.antrenorMu
           ? FloatingActionButton(
               backgroundColor: Colors.lightGreenAccent,
@@ -2984,12 +2593,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                     builder: (context) => const SporcuEkleEkrani(),
                   ),
                 );
-
-                _siralamayiYukle();
-
-                if (mounted) {
-                  setState(() {});
-                }
+                _reload();
               },
               child: const Icon(Icons.add, color: Colors.black),
             )
@@ -3730,8 +3334,9 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
 
 class AntrenmanSekmesi extends StatefulWidget {
   final bool antrenorMu;
+  final int? sporcuId;
 
-  const AntrenmanSekmesi({super.key, required this.antrenorMu});
+  const AntrenmanSekmesi({super.key, required this.antrenorMu, this.sporcuId});
 
   @override
   State<AntrenmanSekmesi> createState() => _AntrenmanSekmesiState();
@@ -3766,7 +3371,8 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const GecmisAntrenmanlarEkrani(),
+                    builder: (context) =>
+                        GecmisAntrenmanlarEkrani(sporcuId: widget.sporcuId),
                   ),
                 );
               },
@@ -3851,6 +3457,7 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                               builder: (context) => AntrenmanDetayEkrani(
                                 antrenman: antrenman,
                                 antrenorMu: widget.antrenorMu,
+                                sporcuId: widget.sporcuId,
                               ),
                             ),
                           );
@@ -3951,7 +3558,9 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
 // ---------------- GEÇMİŞ ANTRENMANLAR / ARŞİV ----------------
 
 class GecmisAntrenmanlarEkrani extends StatefulWidget {
-  const GecmisAntrenmanlarEkrani({super.key});
+  final int? sporcuId;
+
+  const GecmisAntrenmanlarEkrani({super.key, this.sporcuId});
 
   @override
   State<GecmisAntrenmanlarEkrani> createState() =>
@@ -4094,6 +3703,7 @@ class _GecmisAntrenmanlarEkraniState extends State<GecmisAntrenmanlarEkrani> {
                             builder: (context) => AntrenmanDetayEkrani(
                               antrenman: antrenman,
                               antrenorMu: false, // geçmiş kayıt, düzenlenmez
+                              sporcuId: widget.sporcuId,
                             ),
                           ),
                         );
@@ -4195,11 +3805,13 @@ class _GecmisSekmeButonu extends StatelessWidget {
 class AntrenmanDetayEkrani extends StatefulWidget {
   final Antrenman antrenman;
   final bool antrenorMu;
+  final int? sporcuId;
 
   const AntrenmanDetayEkrani({
     super.key,
     required this.antrenman,
     required this.antrenorMu,
+    this.sporcuId,
   });
 
   @override
@@ -4217,8 +3829,25 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
 
   void _reloadYoklama() {
     setState(() {
-      _yoklamaFuture = dbService.getYoklama(widget.antrenman.id);
+      _yoklamaFuture = dbService.getYoklama(
+        antrenmanId: widget.antrenman.id,
+        sporcuId: widget.sporcuId,
+      );
     });
+  }
+
+  /// Saat:dakika biçiminde gösterir (örn. "18:32"). Sunucudan gelen
+  /// zaman damgası null ise null döner.
+  String? _saatMetni(dynamic zamanDamgasi) {
+    if (zamanDamgasi == null) return null;
+    try {
+      final d = DateTime.parse(zamanDamgasi.toString()).toLocal();
+      final saat = d.hour.toString().padLeft(2, '0');
+      final dakika = d.minute.toString().padLeft(2, '0');
+      return '$saat:$dakika';
+    } catch (_) {
+      return null;
+    }
   }
 
   @override
@@ -4289,7 +3918,21 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
             FutureBuilder<List<dynamic>>(
               future: _yoklamaFuture,
               builder: (context, snapshot) {
-                final gelenSayisi = snapshot.data?.length ?? 0;
+                final kayitlar = snapshot.data ?? [];
+
+                Map<String, dynamic>? kendiKaydi;
+                if (!widget.antrenorMu &&
+                    widget.sporcuId != null &&
+                    kayitlar.isNotEmpty) {
+                  kendiKaydi = kayitlar.first as Map<String, dynamic>;
+                }
+                final girisSaati = kendiKaydi != null
+                    ? _saatMetni(kendiKaydi['giris_zamani'])
+                    : null;
+                final cikisSaati = kendiKaydi != null
+                    ? _saatMetni(kendiKaydi['cikis_zamani'])
+                    : null;
+
                 return Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(14),
@@ -4300,56 +3943,213 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
                       color: Colors.lightGreenAccent.withOpacity(0.4),
                     ),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.qr_code_scanner,
-                        color: Colors.lightGreenAccent,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Yoklama: $gelenSayisi kişi geldi',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (widget.antrenorMu)
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => YoklamaQREkrani(
-                                  antrenman: widget.antrenman,
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.qr_code_scanner,
+                            color: Colors.lightGreenAccent,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            widget.antrenorMu
+                                ? 'Yoklama: ${kayitlar.length} kişi'
+                                : 'Yoklama',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (widget.antrenorMu)
+                            TextButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => YoklamaQREkrani(
+                                      antrenman: widget.antrenman,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'QR Göster',
+                                style: TextStyle(
+                                  color: Colors.lightGreenAccent,
                                 ),
                               ),
-                            );
-                          },
-                          child: const Text(
-                            'QR Göster',
-                            style: TextStyle(color: Colors.lightGreenAccent),
-                          ),
-                        )
-                      else
-                        TextButton(
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => QrTaramaEkrani(
-                                  antrenmanId: widget.antrenman.id,
-                                ),
+                            ),
+                        ],
+                      ),
+                      if (widget.antrenorMu) ...[
+                        const SizedBox(height: 12),
+                        if (kayitlar.isEmpty)
+                          const Text(
+                            'Henüz kimse QR okutmadı',
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          )
+                        else
+                          ...kayitlar.map((k) {
+                            final giris = _saatMetni(k['giris_zamani']);
+                            final cikis = _saatMetni(k['cikis_zamani']);
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      k['athlete_isim'] ?? '',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    'Giriş: ${giris ?? '—'}',
+                                    style: const TextStyle(
+                                      color: Colors.lightGreenAccent,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Çıkış: ${cikis ?? '—'}',
+                                    style: TextStyle(
+                                      color: cikis != null
+                                          ? Colors.orangeAccent
+                                          : Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
                               ),
                             );
-                            _reloadYoklama();
-                          },
-                          child: const Text(
-                            'QR Okut',
-                            style: TextStyle(color: Colors.lightGreenAccent),
+                          }),
+                      ] else ...[
+                        const SizedBox(height: 12),
+                        if (widget.sporcuId == null)
+                          const Text(
+                            'Hesabınız bir sporcu kaydıyla eşleştirilmemiş. '
+                            'Antrenörünüzle iletişime geçin.',
+                            style: TextStyle(color: Colors.grey, fontSize: 13),
+                          )
+                        else ...[
+                          Row(
+                            children: [
+                              Icon(
+                                girisSaati != null
+                                    ? Icons.check_circle
+                                    : Icons.radio_button_unchecked,
+                                color: girisSaati != null
+                                    ? Colors.lightGreenAccent
+                                    : Colors.grey,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  girisSaati != null
+                                      ? 'Derse girdi: $girisSaati'
+                                      : 'Henüz derse girmedi',
+                                  style: TextStyle(
+                                    color: girisSaati != null
+                                        ? Colors.white
+                                        : Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                cikisSaati != null
+                                    ? Icons.check_circle
+                                    : Icons.radio_button_unchecked,
+                                color: cikisSaati != null
+                                    ? Colors.orangeAccent
+                                    : Colors.grey,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  cikisSaati != null
+                                      ? 'Dersten çıktı: $cikisSaati'
+                                      : 'Henüz dersten çıkmadı',
+                                  style: TextStyle(
+                                    color: cikisSaati != null
+                                        ? Colors.white
+                                        : Colors.grey,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          Row(
+                            children: [
+                              if (girisSaati == null)
+                                Expanded(
+                                  child: OkluButon(
+                                    metin: 'Giriş Yap (QR)',
+                                    onTap: () async {
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => QrTaramaEkrani(
+                                            antrenmanId: widget.antrenman.id,
+                                            sporcuId: widget.sporcuId!,
+                                            tip: 'giris',
+                                          ),
+                                        ),
+                                      );
+                                      _reloadYoklama();
+                                    },
+                                  ),
+                                )
+                              else if (cikisSaati == null)
+                                Expanded(
+                                  child: OkluButon(
+                                    metin: 'Çıkış Yap (QR)',
+                                    onTap: () async {
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => QrTaramaEkrani(
+                                            antrenmanId: widget.antrenman.id,
+                                            sporcuId: widget.sporcuId!,
+                                            tip: 'cikis',
+                                          ),
+                                        ),
+                                      );
+                                      _reloadYoklama();
+                                    },
+                                  ),
+                                )
+                              else
+                                const Expanded(
+                                  child: Text(
+                                    'Bugünkü antrenman tamamlandı ✓',
+                                    style: TextStyle(
+                                      color: Colors.lightGreenAccent,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
                     ],
                   ),
                 );
@@ -4799,15 +4599,59 @@ class YoklamaQREkrani extends StatelessWidget {
               ),
               const SizedBox(height: 32),
               FutureBuilder<List<dynamic>>(
-                future: dbService.getYoklama(antrenman.id),
+                future: dbService.getYoklama(antrenmanId: antrenman.id),
                 builder: (context, snapshot) {
-                  final sayi = snapshot.data?.length ?? 0;
-                  return Text(
-                    'Şu ana kadar $sayi kişi okuttu',
-                    style: const TextStyle(
-                      color: Colors.lightGreenAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  final kayitlar = snapshot.data ?? [];
+                  return Column(
+                    children: [
+                      Text(
+                        'Şu ana kadar ${kayitlar.length} kişi okuttu',
+                        style: const TextStyle(
+                          color: Colors.lightGreenAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (kayitlar.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 220),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: kayitlar.length,
+                            itemBuilder: (context, index) {
+                              final k = kayitlar[index];
+                              final cikisVar = k['cikis_zamani'] != null;
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      cikisVar
+                                          ? Icons.check_circle
+                                          : Icons.login,
+                                      color: cikisVar
+                                          ? Colors.orangeAccent
+                                          : Colors.lightGreenAccent,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      k['athlete_isim'] ?? '',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ],
                   );
                 },
               ),
@@ -4823,8 +4667,15 @@ class YoklamaQREkrani extends StatelessWidget {
 
 class QrTaramaEkrani extends StatefulWidget {
   final int antrenmanId;
+  final int sporcuId;
+  final String tip; // 'giris' ya da 'cikis'
 
-  const QrTaramaEkrani({super.key, required this.antrenmanId});
+  const QrTaramaEkrani({
+    super.key,
+    required this.antrenmanId,
+    required this.sporcuId,
+    required this.tip,
+  });
 
   @override
   State<QrTaramaEkrani> createState() => _QrTaramaEkraniState();
@@ -4849,11 +4700,25 @@ class _QrTaramaEkraniState extends State<QrTaramaEkrani> {
     }
 
     try {
-      await dbService.yoklamaEkle({'training_id': okunanIdInt});
+      if (widget.tip == 'giris') {
+        await dbService.yoklamaGirisYap(
+          antrenmanId: widget.antrenmanId,
+          sporcuId: widget.sporcuId,
+        );
+      } else {
+        await dbService.yoklamaCikisYap(
+          antrenmanId: widget.antrenmanId,
+          sporcuId: widget.sporcuId,
+        );
+      }
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Yoklama alındı ✓')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              widget.tip == 'giris' ? 'Giriş alındı ✓' : 'Çıkış alındı ✓',
+            ),
+          ),
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -4873,9 +4738,9 @@ class _QrTaramaEkraniState extends State<QrTaramaEkrani> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
-        title: const Text(
-          'QR Kodu Okut',
-          style: TextStyle(color: Colors.lightGreenAccent),
+        title: Text(
+          widget.tip == 'giris' ? 'Giriş İçin QR Okut' : 'Çıkış İçin QR Okut',
+          style: const TextStyle(color: Colors.lightGreenAccent),
         ),
       ),
       body: MobileScanner(

@@ -24,13 +24,11 @@ samples, guidance on mobile development, and a full API reference.
 *Antremanlar ekranında bulunan antremanlar için o sekmede geçmiş antremanlar bölümü olsun oraya girildiğinde sadece son 7 günde olan antremanlar gözüksün 7 günden sonraki antremanlar silinsin.+(Zamanla kontrol et )
 *Fiziksel uygunluk karnesi oluşturulsun.Çocukların vücut kütle indeksi,otur eriş testi,Sırt kaşıma Test,flamingo denge testi.Antremanlara yeterli katılım yapıp yapmadığınıda sistemdeki giriş çıkışlardan alsın.
 *Antrenör her öğrencinin bütün stillerini değerlendireceği bir panel olsun.Örneğin Geliştirilmeli-orta düzey-başarılı şeklinde 
-*Sporcular sekmesine girdiğimizde yanda olan dereceyle birlikte o dereceyi hangi stilde yaptığınıda görelim 
+*Qr kod yoklmasında sadece sayılar gözüküyo velinin çocuğunun giriş ve çıkışını takip etmesi gerekiyor--claude  emiraydogan02
 -----PROFİL Sekmesi------------
-*Bu karneler sporcu ve veli arayüzünde profil sekmesinde gözüksün
-*Sporcu ve Veli profilinde yüzücünün yarıştığı yarışlar ile yaptığı dereceleri gösterelim
+*Bu karneler sporcu ve veli arayüzünde profil sekmesinde gözüksün-2230656819 cloud
+*Sporcu ve Veli profilinde yüzücünün yarıştığı yarışlar ile yaptığı dereceleri gösterelim-2230656819 cloud
 -------SPORCU PANELİ------------
-*sporcu panelinden aidat sekmesini kaldır+
-*Sporcu panelinden takvim sekmesini kaldır+
 ---------------GÜvenlik----------
 *Şifremi unuttum işlemi için domain alınmalı
 

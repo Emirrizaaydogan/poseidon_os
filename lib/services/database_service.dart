@@ -176,19 +176,6 @@ class DatabaseService {
     _hataFirlat(response, 'Performans kayıtları getirilemedi');
   }
 
-  Future<List<dynamic>> getTumPerformanslar() async {
-    final response = await http.get(
-      Uri.parse('$apiBaseUrl/performance'),
-      headers: _headers,
-    );
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-
-    _hataFirlat(response, 'Performans kayıtları getirilemedi');
-  }
-
   Future<void> performansEkle(Map<String, dynamic> veri) async {
     final response = await http.post(
       Uri.parse('$apiBaseUrl/performance'),
@@ -200,30 +187,19 @@ class DatabaseService {
     }
   }
 
-  Future<List<dynamic>> getSiralama({
-    required String stil,
-    required String mesafe,
-  }) async {
+  // ---------------- YOKLAMA (GİRİŞ / ÇIKIŞ) ----------------
+
+  /// [antrenmanId] ve/veya [sporcuId] verilirse sonuçlar buna göre filtrelenir.
+  /// Antrenör hiçbirini vermezse tüm kayıtları görür; veli/sporcu için
+  /// backend zaten sadece kendi sporcusununkini döner.
+  Future<List<dynamic>> getYoklama({int? antrenmanId, int? sporcuId}) async {
+    final parametreler = <String>[];
+    if (antrenmanId != null) parametreler.add('trainingId=$antrenmanId');
+    if (sporcuId != null) parametreler.add('athleteId=$sporcuId');
+    final sorgu = parametreler.isNotEmpty ? '?${parametreler.join('&')}' : '';
+
     final response = await http.get(
-      Uri.parse(
-        '$apiBaseUrl/rankings'
-        '?stil=${Uri.encodeComponent(stil)}'
-        '&mesafe=${Uri.encodeComponent(mesafe)}',
-      ),
-      headers: _headers,
-    );
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    }
-
-    _hataFirlat(response, 'Sıralama getirilemedi');
-  }
-  // ---------------- YOKLAMA ----------------
-
-  Future<List<dynamic>> getYoklama(int antrenmanId) async {
-    final response = await http.get(
-      Uri.parse('$apiBaseUrl/attendance?trainingId=$antrenmanId'),
+      Uri.parse('$apiBaseUrl/attendance$sorgu'),
       headers: _headers,
     );
     if (response.statusCode == 200) {
@@ -232,14 +208,41 @@ class DatabaseService {
     _hataFirlat(response, 'Yoklama kayıtları getirilemedi');
   }
 
-  Future<void> yoklamaEkle(Map<String, dynamic> veri) async {
+  /// QR okutularak derse GİRİŞ kaydı oluşturur.
+  Future<void> yoklamaGirisYap({
+    required int antrenmanId,
+    required int sporcuId,
+  }) async {
     final response = await http.post(
       Uri.parse('$apiBaseUrl/attendance'),
       headers: _headers,
-      body: jsonEncode(veri),
+      body: jsonEncode({
+        'training_id': antrenmanId,
+        'athlete_id': sporcuId,
+        'tip': 'giris',
+      }),
     );
-    if (response.statusCode != 201) {
-      _hataFirlat(response, 'Yoklama eklenemedi');
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      _hataFirlat(response, 'Giriş kaydedilemedi');
+    }
+  }
+
+  /// QR okutularak dersten ÇIKIŞ kaydı oluşturur.
+  Future<void> yoklamaCikisYap({
+    required int antrenmanId,
+    required int sporcuId,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$apiBaseUrl/attendance'),
+      headers: _headers,
+      body: jsonEncode({
+        'training_id': antrenmanId,
+        'athlete_id': sporcuId,
+        'tip': 'cikis',
+      }),
+    );
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      _hataFirlat(response, 'Çıkış kaydedilemedi');
     }
   }
 
@@ -290,29 +293,6 @@ class DatabaseService {
       headers: _headers,
       body: jsonEncode({'tarih': tarih, 'ay': ay ?? _guncelAyApi()}),
     );
-    // ---------------- KARNE ----------------
-
-    Future<List<dynamic>> getKarneler({int? sporcuId}) async {
-      final url = sporcuId != null
-          ? '$apiBaseUrl/karneler?athleteId=$sporcuId'
-          : '$apiBaseUrl/karneler';
-      final response = await http.get(Uri.parse(url), headers: _headers);
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      }
-      _hataFirlat(response, 'Karneler getirilemedi');
-    }
-
-    Future<void> karneEkle(Map<String, dynamic> veri) async {
-      final response = await http.post(
-        Uri.parse('$apiBaseUrl/karneler'),
-        headers: _headers,
-        body: jsonEncode(veri),
-      );
-      if (response.statusCode != 201) {
-        _hataFirlat(response, 'Karne eklenemedi');
-      }
-    }
 
     if (response.statusCode != 200) {
       _hataFirlat(response, 'Aidat son ödeme tarihi güncellenemedi');
