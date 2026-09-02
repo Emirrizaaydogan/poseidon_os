@@ -1856,7 +1856,8 @@ class KarneDetayEkrani extends StatelessWidget {
       // KURBAĞALAMA
       'kol_mekanigi_simetri': 'Kol Mekaniği / Simetri',
       'nefes_zamanlamasi': 'Nefes Zamanlaması',
-      'streamline': 'Streamline Pozisyonu',
+      'streamline_pozisyonu': 'Streamline Pozisyonu',
+      'streamline': 'Streamline Pozisyonu', // eski kayıt uyumluluğu
       '25m_kurbagalama': '25 m Kurbağalama',
 
       // KELEBEK
@@ -1956,22 +1957,95 @@ class KarneDetayEkrani extends StatelessWidget {
     );
   }
 
+  String _stilGenelDurumu(Map<String, dynamic> veriler) {
+    if (veriler.isEmpty) {
+      return 'degerlendirilmedi';
+    }
+
+    final iyiSayisi = veriler.values
+        .where((deger) => deger.toString() == 'iyi')
+        .length;
+
+    final gelistirilmeliSayisi = veriler.values
+        .where((deger) => deger.toString() == 'gelistirilmeli')
+        .length;
+
+    // Her yüzme stilinde 5 değerlendirme maddesi var.
+    // Beşi de tamamlanmadan genel stil sonucu üretmiyoruz.
+    if (iyiSayisi + gelistirilmeliSayisi < 5) {
+      return 'degerlendirilmedi';
+    }
+
+    // Çoğunluk kuralı: 3 veya daha fazla "İyi" => stil genel olarak İYİ.
+    return iyiSayisi >= 3 ? 'iyi' : 'gelistirilmeli';
+  }
+
   Widget _teknikBolum({
     required String baslik,
     required Map<String, dynamic> veriler,
+    bool genelSonucGoster = false,
   }) {
     if (veriler.isEmpty) {
       return const SizedBox.shrink();
     }
 
+    final genelDurum = genelSonucGoster
+        ? _stilGenelDurumu(veriler)
+        : 'degerlendirilmedi';
+    final stilIyiMi = genelDurum == 'iyi';
+    final genelDegerlendirildiMi = genelDurum != 'degerlendirilmedi';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _bolumBasligi(Icons.pool, baslik),
+        Row(
+          children: [
+            const Icon(Icons.pool, color: Colors.lightGreenAccent, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                baslik,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            if (genelSonucGoster)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: !genelDegerlendirildiMi
+                      ? Colors.grey
+                      : stilIyiMi
+                      ? Colors.lightGreenAccent
+                      : Colors.orangeAccent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  !genelDegerlendirildiMi
+                      ? 'DEĞERLENDİRİLMEDİ'
+                      : stilIyiMi
+                      ? 'İYİ'
+                      : 'GELİŞTİRİLMELİ',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+          ],
+        ),
+
+        const SizedBox(height: 10),
 
         ...veriler.entries.map((entry) {
           final durum = entry.value.toString();
-
           final iyiMi = durum == 'iyi';
 
           return Container(
@@ -1994,7 +2068,6 @@ class KarneDetayEkrani extends StatelessWidget {
                     style: const TextStyle(color: Colors.white, fontSize: 13),
                   ),
                 ),
-
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -2170,13 +2243,29 @@ class KarneDetayEkrani extends StatelessWidget {
           // ===============================================
           _teknikBolum(baslik: 'Temel Yüzme', veriler: temelYuzme),
 
-          _teknikBolum(baslik: 'Serbest Teknik', veriler: serbest),
+          _teknikBolum(
+            baslik: 'Serbest Teknik',
+            veriler: serbest,
+            genelSonucGoster: true,
+          ),
 
-          _teknikBolum(baslik: 'Sırtüstü Teknik', veriler: sirtustu),
+          _teknikBolum(
+            baslik: 'Sırtüstü Teknik',
+            veriler: sirtustu,
+            genelSonucGoster: true,
+          ),
 
-          _teknikBolum(baslik: 'Kurbağalama Teknik', veriler: kurbagalama),
+          _teknikBolum(
+            baslik: 'Kurbağalama Teknik',
+            veriler: kurbagalama,
+            genelSonucGoster: true,
+          ),
 
-          _teknikBolum(baslik: 'Kelebek Teknik', veriler: kelebek),
+          _teknikBolum(
+            baslik: 'Kelebek Teknik',
+            veriler: kelebek,
+            genelSonucGoster: true,
+          ),
 
           // ===============================================
           // ANTRENÖR NOTU
@@ -2418,7 +2507,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
   @override
   void initState() {
     super.initState();
-    _yenile();
+    _karnelerFuture = dbService.getKarneler(sporcuId: widget.sporcu.id);
   }
 
   void _yenile() {
@@ -2439,6 +2528,1098 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
     return '${tarih.day.toString().padLeft(2, '0')}.'
         '${tarih.month.toString().padLeft(2, '0')}.'
         '${tarih.year}';
+  }
+
+  Map<String, dynamic> _karneMapAl(dynamic veri) {
+    if (veri == null) return {};
+    if (veri is Map<String, dynamic>) return veri;
+    if (veri is Map) return Map<String, dynamic>.from(veri);
+    return {};
+  }
+
+  double? _karneSayiAl(Map<String, dynamic> karne, String bolum, String alan) {
+    final map = _karneMapAl(karne[bolum]);
+    final deger = map[alan];
+    if (deger == null) return null;
+    if (deger is num) return deger.toDouble();
+    return double.tryParse(deger.toString().replaceAll(',', '.'));
+  }
+
+  int? _testYasi(Map<String, dynamic> karne) {
+    final testTarihi = DateTime.tryParse(karne['test_date']?.toString() ?? '');
+    if (testTarihi == null) return null;
+
+    DateTime? dogumTarihi = DateTime.tryParse(
+      karne['dogum_tarihi']?.toString() ?? '',
+    );
+
+    if (dogumTarihi == null && widget.sporcu.dogumYili > 0) {
+      dogumTarihi = DateTime(widget.sporcu.dogumYili, 1, 1);
+    }
+
+    if (dogumTarihi == null) return null;
+
+    var yas = testTarihi.year - dogumTarihi.year;
+    final dogumGunuGecmedi =
+        testTarihi.month < dogumTarihi.month ||
+        (testTarihi.month == dogumTarihi.month &&
+            testTarihi.day < dogumTarihi.day);
+    if (dogumGunuGecmedi) yas--;
+    return yas;
+  }
+
+  String _cinsiyet(Map<String, dynamic> karne) {
+    final ham = karne['cinsiyet']?.toString().trim().toLowerCase() ?? '';
+    if (ham == 'erkek' || ham == 'male' || ham == 'e') return 'erkek';
+    if (ham == 'kız' ||
+        ham == 'kiz' ||
+        ham == 'kadın' ||
+        ham == 'kadin' ||
+        ham == 'female' ||
+        ham == 'k') {
+      return 'kiz';
+    }
+    return '';
+  }
+
+  Map<String, double>? _oturErisNormu(int yas, String cinsiyet) {
+    if (cinsiyet != 'erkek' && cinsiyet != 'kiz') return null;
+    if (yas >= 6 && yas <= 9) {
+      return cinsiyet == 'erkek'
+          ? {'min': 15, 'max': 20}
+          : {'min': 17, 'max': 22};
+    }
+    if (yas >= 10 && yas <= 12) {
+      return cinsiyet == 'erkek'
+          ? {'min': 16, 'max': 22}
+          : {'min': 18, 'max': 24};
+    }
+    if (yas >= 13 && yas <= 15) {
+      return cinsiyet == 'erkek'
+          ? {'min': 18, 'max': 24}
+          : {'min': 20, 'max': 27};
+    }
+    if (yas >= 16 && yas <= 17) {
+      return cinsiyet == 'erkek'
+          ? {'min': 20, 'max': 28}
+          : {'min': 24, 'max': 30};
+    }
+    return null;
+  }
+
+  Map<String, double>? _flamingoNormu(int yas) {
+    if (yas >= 6 && yas <= 9) return {'min': 5, 'max': 8};
+    if (yas >= 10 && yas <= 12) return {'min': 4, 'max': 6};
+    if (yas >= 13 && yas <= 15) return {'min': 3, 'max': 5};
+    if (yas >= 16 && yas <= 17) return {'min': 2, 'max': 4};
+    return null;
+  }
+
+  Map<String, double>? _sirtKasimaNormu(int yas) {
+    if (yas >= 6 && yas <= 9) return {'min': 2, 'max': 5};
+    if (yas >= 10 && yas <= 12) return {'min': 0, 'max': 3};
+    if (yas >= 13 && yas <= 15) return {'min': 0, 'max': 0};
+    if (yas >= 16 && yas <= 17) return {'min': -2, 'max': 2};
+    return null;
+  }
+
+  String? _fizikselDurum({
+    required Map<String, dynamic> karne,
+    required String test,
+    required double deger,
+  }) {
+    final yas = _testYasi(karne);
+    if (yas == null) return null;
+
+    if (test == 'otur_eris') {
+      final norm = _oturErisNormu(yas, _cinsiyet(karne));
+      if (norm == null) return null;
+      if (deger > norm['max']!) return 'iyi';
+      if (deger >= norm['min']!) return 'normal';
+      return 'gelistirilmeli';
+    }
+
+    if (test == 'flamingo') {
+      final norm = _flamingoNormu(yas);
+      if (norm == null) return null;
+      // Flamingo testinde düşük düşme sayısı daha iyidir.
+      if (deger < norm['min']!) return 'iyi';
+      if (deger <= norm['max']!) return 'normal';
+      return 'gelistirilmeli';
+    }
+
+    if (test == 'sirt_kasima') {
+      final norm = _sirtKasimaNormu(yas);
+      if (norm == null) return null;
+      if (deger > norm['max']!) return 'iyi';
+      if (deger >= norm['min']!) return 'normal';
+      return 'gelistirilmeli';
+    }
+
+    if (test == 'vki') {
+      // VKİ ham sayıdan değil, yaş+cinsiyete göre persentilden değerlendirilir.
+      // Backend/karneye vki_persentil geldiğinde renk sınıflaması otomatik çalışır.
+      final motor = _karneMapAl(karne['motor_tests']);
+      final pHam = motor['vki_persentil'] ?? karne['vki_persentil'];
+      final p = pHam is num
+          ? pHam.toDouble()
+          : double.tryParse(pHam?.toString().replaceAll(',', '.') ?? '');
+      if (p == null) return null;
+      if (p >= 5 && p < 85) return 'normal';
+      // VKİ'de hedef "sağlıklı aralık"tır; düşük/fazla değerleri "iyi" diye göstermiyoruz.
+      return 'gelistirilmeli';
+    }
+
+    return null;
+  }
+
+  Color _durumRengi(String? durum) {
+    switch (durum) {
+      case 'iyi':
+        return const Color(0xFF42C5C7);
+      case 'normal':
+        return const Color(0xFFC9BFE7);
+      case 'gelistirilmeli':
+        return const Color(0xFFF56A86);
+      default:
+        return const Color(0xFF2E4F8F);
+    }
+  }
+
+  String _durumEtiketi(String? durum) {
+    switch (durum) {
+      case 'iyi':
+        return 'İYİ';
+      case 'normal':
+        return 'NORMAL';
+      case 'gelistirilmeli':
+        return 'GELİŞTİRİLMELİ';
+      default:
+        return 'DEĞERLENDİRİLEMEDİ';
+    }
+  }
+
+  int _teknikDurumSayisi(Map<String, dynamic> karne, String arananDurum) {
+    const bolumler = [
+      'basic_swim',
+      'freestyle',
+      'backstroke',
+      'breaststroke',
+      'butterfly',
+    ];
+
+    var toplam = 0;
+    for (final bolum in bolumler) {
+      final map = _karneMapAl(karne[bolum]);
+      toplam += map.values
+          .where((deger) => deger.toString() == arananDurum)
+          .length;
+    }
+    return toplam;
+  }
+
+  String _degerMetni(double deger, String birim) {
+    final sayi = deger % 1 == 0
+        ? deger.toInt().toString()
+        : deger.toStringAsFixed(2);
+    return '$sayi${birim.isEmpty ? '' : ' $birim'}';
+  }
+
+  String _farkMetni(double fark, String birim) {
+    final mutlak = fark.abs();
+    final sayi = mutlak % 1 == 0
+        ? mutlak.toInt().toString()
+        : mutlak.toStringAsFixed(2);
+    final isaret = fark > 0
+        ? '+'
+        : fark < 0
+        ? '-'
+        : '';
+    return '$isaret$sayi${birim.isEmpty ? '' : ' $birim'}';
+  }
+
+  Widget _gelisimSatiri({
+    required String etiket,
+    required double eski,
+    required double yeni,
+    required String birim,
+  }) {
+    final fark = yeni - eski;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              etiket,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
+          ),
+          Text(
+            '${_degerMetni(eski, birim)} → ${_degerMetni(yeni, birim)}',
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF222222),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _farkMetni(fark, birim),
+              style: const TextStyle(
+                color: Colors.lightGreenAccent,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _gelisimOzetiKarti(List<dynamic> hamKarneler) {
+    if (hamKarneler.length < 2) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF141414),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFF292929)),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.insights, color: Colors.grey, size: 20),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Gelişim karşılaştırması için en az 2 karne gerekli.',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final karneler = hamKarneler
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+
+    karneler.sort((a, b) {
+      final aTarih = DateTime.tryParse(a['test_date']?.toString() ?? '');
+      final bTarih = DateTime.tryParse(b['test_date']?.toString() ?? '');
+      if (aTarih == null && bTarih == null) return 0;
+      if (aTarih == null) return 1;
+      if (bTarih == null) return -1;
+      return bTarih.compareTo(aTarih);
+    });
+
+    final son = karneler[0];
+    final onceki = karneler[1];
+
+    final alanlar = <Map<String, String>>[
+      {
+        'bolum': 'anthropometric',
+        'alan': 'boy',
+        'etiket': 'Boy',
+        'birim': 'cm',
+      },
+      {
+        'bolum': 'anthropometric',
+        'alan': 'kulac_uzunlugu',
+        'etiket': 'Kulaç Uzunluğu',
+        'birim': 'cm',
+      },
+      {
+        'bolum': 'anthropometric',
+        'alan': 'vucut_agirligi',
+        'etiket': 'Vücut Ağırlığı',
+        'birim': 'kg',
+      },
+      {
+        'bolum': 'motor_tests',
+        'alan': 'otur_eris',
+        'etiket': 'Otur-Eriş',
+        'birim': 'cm',
+      },
+      {
+        'bolum': 'motor_tests',
+        'alan': 'flamingo',
+        'etiket': 'Flamingo',
+        'birim': 'adet',
+      },
+      {'bolum': 'motor_tests', 'alan': 'vki', 'etiket': 'VKİ', 'birim': ''},
+    ];
+
+    final sayisalSatirlar = <Widget>[];
+    for (final alan in alanlar) {
+      final eski = _karneSayiAl(onceki, alan['bolum']!, alan['alan']!);
+      final yeni = _karneSayiAl(son, alan['bolum']!, alan['alan']!);
+      if (eski == null || yeni == null) continue;
+      sayisalSatirlar.add(
+        _gelisimSatiri(
+          etiket: alan['etiket']!,
+          eski: eski,
+          yeni: yeni,
+          birim: alan['birim']!,
+        ),
+      );
+    }
+
+    final eskiIyi = _teknikDurumSayisi(onceki, 'iyi');
+    final yeniIyi = _teknikDurumSayisi(son, 'iyi');
+    final eskiGelistirilmeli = _teknikDurumSayisi(onceki, 'gelistirilmeli');
+    final yeniGelistirilmeli = _teknikDurumSayisi(son, 'gelistirilmeli');
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF101510),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.lightGreenAccent.withOpacity(0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.insights, color: Colors.lightGreenAccent, size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Son Gelişim',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 5),
+          Text(
+            '${_tarihGoster(onceki['test_date'])} → ${_tarihGoster(son['test_date'])}',
+            style: const TextStyle(color: Colors.grey, fontSize: 11),
+          ),
+          if (sayisalSatirlar.isNotEmpty) ...[
+            const SizedBox(height: 15),
+            ...sayisalSatirlar,
+          ],
+          const SizedBox(height: 4),
+          const Divider(color: Color(0xFF292929)),
+          const SizedBox(height: 8),
+          const Text(
+            'Teknik Değerlendirme',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: Colors.lightGreenAccent.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'İYİ',
+                        style: TextStyle(
+                          color: Colors.lightGreenAccent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '$eskiIyi → $yeniIyi  (${yeniIyi - eskiIyi >= 0 ? '+' : ''}${yeniIyi - eskiIyi})',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: Colors.orangeAccent.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'GELİŞTİRİLMELİ',
+                        style: TextStyle(
+                          color: Colors.orangeAccent,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        '$eskiGelistirilmeli → $yeniGelistirilmeli  (${yeniGelistirilmeli - eskiGelistirilmeli >= 0 ? '+' : ''}${yeniGelistirilmeli - eskiGelistirilmeli})',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _siraliKarneler(List<dynamic> hamKarneler) {
+    final karneler = hamKarneler
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+
+    karneler.sort((a, b) {
+      final aTarih = DateTime.tryParse(a['test_date']?.toString() ?? '');
+      final bTarih = DateTime.tryParse(b['test_date']?.toString() ?? '');
+      if (aTarih == null && bTarih == null) return 0;
+      if (aTarih == null) return 1;
+      if (bTarih == null) return -1;
+      return aTarih.compareTo(bTarih);
+    });
+
+    return karneler;
+  }
+
+  Widget _sayisalGelisimGrafigi({
+    required List<Map<String, dynamic>> karneler,
+    required String baslik,
+    required String bolum,
+    required String alan,
+    required String birim,
+    List<Map<String, dynamic>> seviyeBantlari = const [],
+    String? normTesti,
+  }) {
+    final degerler = <double?>[];
+
+    for (final karne in karneler) {
+      degerler.add(_karneSayiAl(karne, bolum, alan));
+    }
+
+    final doluDegerler = degerler.whereType<double>().toList();
+
+    if (doluDegerler.length < 2) {
+      return const SizedBox.shrink();
+    }
+
+    double enBuyuk = doluDegerler.reduce((a, b) => a > b ? a : b);
+
+    for (final bant in seviyeBantlari) {
+      final max = (bant['max'] as num?)?.toDouble();
+      if (max != null && max > enBuyuk) {
+        enBuyuk = max;
+      }
+    }
+
+    double maxY = enBuyuk <= 0 ? 10 : enBuyuk * 1.12;
+    if (maxY < 10) maxY = 10;
+
+    const grafikArkaPlan = Color(0xFFF7F0E6);
+    const sutunRengi = Color(0xFF2E4F8F);
+    const eksenRengi = Color(0xFF334155);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF171717),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF292929)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  baslik,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (birim.isNotEmpty)
+                Text(
+                  birim,
+                  style: const TextStyle(
+                    color: Colors.lightGreenAccent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.fromLTRB(8, 10, 10, 8),
+            decoration: BoxDecoration(
+              color: grafikArkaPlan,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: SizedBox(
+              height: 220,
+              child: Stack(
+                children: [
+                  if (seviyeBantlari.isNotEmpty)
+                    Positioned.fill(
+                      left: 34,
+                      right: 2,
+                      top: 4,
+                      bottom: 31,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Stack(
+                            children: seviyeBantlari.map((bant) {
+                              final min =
+                                  (bant['min'] as num?)?.toDouble() ?? 0;
+                              final max =
+                                  (bant['max'] as num?)?.toDouble() ?? 0;
+                              final renk =
+                                  bant['renk'] as Color? ?? Colors.transparent;
+
+                              final yukseklik = constraints.maxHeight;
+                              final ust =
+                                  yukseklik *
+                                  (1 - (max / maxY).clamp(0.0, 1.0));
+                              final alt =
+                                  yukseklik * ((min / maxY).clamp(0.0, 1.0));
+
+                              return Positioned(
+                                left: 0,
+                                right: 0,
+                                top: ust,
+                                bottom: alt,
+                                child: Container(color: renk),
+                              );
+                            }).toList(),
+                          );
+                        },
+                      ),
+                    ),
+                  BarChart(
+                    BarChartData(
+                      minY: 0,
+                      maxY: maxY,
+                      alignment: BarChartAlignment.spaceAround,
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        getDrawingHorizontalLine: (value) => FlLine(
+                          color: const Color(0xFF6B7280).withOpacity(0.20),
+                          strokeWidth: 1,
+                        ),
+                      ),
+                      borderData: FlBorderData(
+                        show: true,
+                        border: const Border(
+                          left: BorderSide(color: Color(0xFF64748B)),
+                          bottom: BorderSide(color: Color(0xFF64748B)),
+                        ),
+                      ),
+                      titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 34,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                value.toStringAsFixed(value % 1 == 0 ? 0 : 1),
+                                style: const TextStyle(
+                                  color: eksenRengi,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 31,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index < 0 || index >= karneler.length) {
+                                return const SizedBox.shrink();
+                              }
+
+                              final tarih = _tarihGoster(
+                                karneler[index]['test_date'],
+                              );
+
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 5),
+                                child: Text(
+                                  tarih,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: eksenRengi,
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                      barGroups: List.generate(karneler.length, (index) {
+                        final deger = degerler[index] ?? 0;
+                        final durum =
+                            normTesti == null || degerler[index] == null
+                            ? null
+                            : _fizikselDurum(
+                                karne: karneler[index],
+                                test: normTesti,
+                                deger: deger,
+                              );
+
+                        return BarChartGroupData(
+                          x: index,
+                          barRods: [
+                            BarChartRodData(
+                              toY: deger,
+                              width: 24,
+                              color: normTesti == null
+                                  ? sutunRengi
+                                  : _durumRengi(durum),
+                              borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(2),
+                              ),
+                            ),
+                          ],
+                          showingTooltipIndicators: const [],
+                        );
+                      }),
+                      barTouchData: BarTouchData(
+                        enabled: true,
+                        touchTooltipData: BarTouchTooltipData(
+                          getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                            final deger = degerler[group.x];
+                            if (deger == null) return null;
+                            return BarTooltipItem(
+                              '${_degerMetni(deger, birim)}\n'
+                              '${_tarihGoster(karneler[group.x]['test_date'])}',
+                              const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (seviyeBantlari.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: seviyeBantlari.map((bant) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 13,
+                      height: 13,
+                      decoration: BoxDecoration(
+                        color: bant['renk'] as Color,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      bant['etiket']?.toString() ?? '',
+                      style: const TextStyle(color: Colors.grey, fontSize: 10),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
+          if (normTesti != null) ...[
+            const SizedBox(height: 11),
+            Builder(
+              builder: (context) {
+                int? sonIndex;
+                for (var i = degerler.length - 1; i >= 0; i--) {
+                  if (degerler[i] != null) {
+                    sonIndex = i;
+                    break;
+                  }
+                }
+                if (sonIndex == null) return const SizedBox.shrink();
+                final sonDeger = degerler[sonIndex]!;
+                final durum = _fizikselDurum(
+                  karne: karneler[sonIndex],
+                  test: normTesti,
+                  deger: sonDeger,
+                );
+                final yas = _testYasi(karneler[sonIndex]);
+                final cinsiyet = _cinsiyet(karneler[sonIndex]);
+                final bilgiEksik = durum == null;
+                final renk = _durumRengi(durum);
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(11),
+                  decoration: BoxDecoration(
+                    color: bilgiEksik
+                        ? const Color(0xFF222222)
+                        : renk.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: bilgiEksik
+                          ? Colors.grey.shade800
+                          : renk.withOpacity(0.55),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: bilgiEksik ? Colors.grey : renk,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Text(
+                          bilgiEksik
+                              ? (normTesti == 'vki'
+                                    ? 'VKİ için yaş+cinsiyete göre persentil bilgisi gerekli.'
+                                    : 'Yaş/cinsiyet bilgisi eksik olduğu için norm değerlendirmesi yapılamadı.')
+                              : '${_durumEtiketi(durum)} · ${yas ?? '-'} yaş${cinsiyet.isEmpty ? '' : ' · ${cinsiyet == 'erkek' ? 'Erkek' : 'Kız'}'}',
+                          style: TextStyle(
+                            color: bilgiEksik ? Colors.grey : renk,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _teknikGelisimGrafigi(List<Map<String, dynamic>> karneler) {
+    if (karneler.length < 2) return const SizedBox.shrink();
+
+    final iyiDegerleri = <int>[];
+    final gelistirilmeliDegerleri = <int>[];
+
+    for (final karne in karneler) {
+      iyiDegerleri.add(_teknikDurumSayisi(karne, 'iyi'));
+      gelistirilmeliDegerleri.add(_teknikDurumSayisi(karne, 'gelistirilmeli'));
+    }
+
+    final enBuyukIyi = iyiDegerleri.reduce((a, b) => a > b ? a : b);
+    final enBuyukGel = gelistirilmeliDegerleri.reduce((a, b) => a > b ? a : b);
+    final enBuyuk = enBuyukIyi > enBuyukGel ? enBuyukIyi : enBuyukGel;
+    final maxY = (enBuyuk + 3).toDouble();
+
+    const iyiRengi = Color(0xFF42C5C7);
+    const gelistirilmeliRengi = Color(0xFFF56A86);
+    const grafikArkaPlan = Color(0xFFF7F0E6);
+    const eksenRengi = Color(0xFF334155);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF171717),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF292929)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Teknik Değerlendirme Gelişimi',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 9),
+          const Row(
+            children: [
+              Icon(Icons.square, color: iyiRengi, size: 12),
+              SizedBox(width: 5),
+              Text('İyi', style: TextStyle(color: Colors.grey, fontSize: 10)),
+              SizedBox(width: 16),
+              Icon(Icons.square, color: gelistirilmeliRengi, size: 12),
+              SizedBox(width: 5),
+              Text(
+                'Geliştirilmeli',
+                style: TextStyle(color: Colors.grey, fontSize: 10),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.fromLTRB(8, 10, 10, 8),
+            decoration: BoxDecoration(
+              color: grafikArkaPlan,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: SizedBox(
+              height: 220,
+              child: BarChart(
+                BarChartData(
+                  minY: 0,
+                  maxY: maxY,
+                  alignment: BarChartAlignment.spaceAround,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: const Color(0xFF6B7280).withOpacity(0.20),
+                      strokeWidth: 1,
+                    ),
+                  ),
+                  borderData: FlBorderData(
+                    show: true,
+                    border: const Border(
+                      left: BorderSide(color: Color(0xFF64748B)),
+                      bottom: BorderSide(color: Color(0xFF64748B)),
+                    ),
+                  ),
+                  titlesData: FlTitlesData(
+                    topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        getTitlesWidget: (value, meta) => Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(
+                            color: eksenRengi,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 31,
+                        getTitlesWidget: (value, meta) {
+                          final index = value.toInt();
+                          if (index < 0 || index >= karneler.length) {
+                            return const SizedBox.shrink();
+                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 5),
+                            child: Text(
+                              _tarihGoster(karneler[index]['test_date']),
+                              style: const TextStyle(
+                                color: eksenRengi,
+                                fontSize: 8,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  barGroups: List.generate(karneler.length, (index) {
+                    return BarChartGroupData(
+                      x: index,
+                      barsSpace: 4,
+                      barRods: [
+                        BarChartRodData(
+                          toY: iyiDegerleri[index].toDouble(),
+                          width: 12,
+                          color: iyiRengi,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(2),
+                          ),
+                        ),
+                        BarChartRodData(
+                          toY: gelistirilmeliDegerleri[index].toDouble(),
+                          width: 12,
+                          color: gelistirilmeliRengi,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(2),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _gelisimGrafikleri(List<dynamic> hamKarneler) {
+    final karneler = _siraliKarneler(hamKarneler);
+
+    if (karneler.length < 2) {
+      return const SizedBox.shrink();
+    }
+
+    final grafikler = <Widget>[
+      _sayisalGelisimGrafigi(
+        karneler: karneler,
+        baslik: 'Boy Gelişimi',
+        bolum: 'anthropometric',
+        alan: 'boy',
+        birim: 'cm',
+      ),
+      _sayisalGelisimGrafigi(
+        karneler: karneler,
+        baslik: 'Kulaç Uzunluğu',
+        bolum: 'anthropometric',
+        alan: 'kulac_uzunlugu',
+        birim: 'cm',
+      ),
+      _sayisalGelisimGrafigi(
+        karneler: karneler,
+        baslik: 'Vücut Ağırlığı',
+        bolum: 'anthropometric',
+        alan: 'vucut_agirligi',
+        birim: 'kg',
+      ),
+      _sayisalGelisimGrafigi(
+        karneler: karneler,
+        baslik: 'Vücut Kütle İndeksi',
+        bolum: 'motor_tests',
+        alan: 'vki',
+        birim: '',
+        normTesti: 'vki',
+      ),
+      _sayisalGelisimGrafigi(
+        karneler: karneler,
+        baslik: 'Otur-Eriş Testi',
+        bolum: 'motor_tests',
+        alan: 'otur_eris',
+        birim: 'cm',
+        normTesti: 'otur_eris',
+      ),
+      _sayisalGelisimGrafigi(
+        karneler: karneler,
+        baslik: 'Sırt Kaşıma Testi · Sağ',
+        bolum: 'motor_tests',
+        alan: 'sirt_kasima_sag',
+        birim: 'cm',
+        normTesti: 'sirt_kasima',
+      ),
+      _sayisalGelisimGrafigi(
+        karneler: karneler,
+        baslik: 'Sırt Kaşıma Testi · Sol',
+        bolum: 'motor_tests',
+        alan: 'sirt_kasima_sol',
+        birim: 'cm',
+        normTesti: 'sirt_kasima',
+      ),
+      _sayisalGelisimGrafigi(
+        karneler: karneler,
+        baslik: 'Flamingo Denge Testi',
+        bolum: 'motor_tests',
+        alan: 'flamingo',
+        birim: 'adet',
+        normTesti: 'flamingo',
+      ),
+      _teknikGelisimGrafigi(karneler),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.bar_chart, color: Colors.lightGreenAccent, size: 20),
+            SizedBox(width: 8),
+            Text(
+              'Gelişim Grafikleri',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          'Her ölçüm, test tarihindeki yaş ve uygun olduğunda cinsiyet normuna göre değerlendirilir.',
+          style: TextStyle(color: Colors.grey, fontSize: 11),
+        ),
+        const SizedBox(height: 10),
+        const Wrap(
+          spacing: 12,
+          runSpacing: 6,
+          children: [
+            _NormLejant(renk: Color(0xFF42C5C7), metin: 'İyi'),
+            _NormLejant(renk: Color(0xFFC9BFE7), metin: 'Normal'),
+            _NormLejant(renk: Color(0xFFF56A86), metin: 'Geliştirilmeli'),
+          ],
+        ),
+        const SizedBox(height: 14),
+        ...grafikler,
+      ],
+    );
   }
 
   @override
@@ -2552,6 +3733,15 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
 
                 const SizedBox(height: 24),
 
+                _gelisimOzetiKarti(karneler),
+
+                if (karneler.length >= 2) ...[
+                  const SizedBox(height: 24),
+                  _gelisimGrafikleri(karneler),
+                ],
+
+                const SizedBox(height: 24),
+
                 Row(
                   children: [
                     const Expanded(
@@ -2628,59 +3818,67 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                   )
                 else
                   ...karneler.map<Widget>((karne) {
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(15),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF171717),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF2A2A2A)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E2A1E),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Icon(
-                              Icons.assignment_turned_in_outlined,
-                              color: Colors.lightGreenAccent,
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => KarneDetayEkrani(
+                              karne: Map<String, dynamic>.from(karne),
                             ),
                           ),
-
-                          const SizedBox(width: 12),
-
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Ölçüm Karnesi',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-
-                                const SizedBox(height: 3),
-
-                                Text(
-                                  _tarihGoster(karne['test_date']),
-                                  style: const TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF171717),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF2A2A2A)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E2A1E),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.assignment_turned_in_outlined,
+                                color: Colors.lightGreenAccent,
+                              ),
                             ),
-                          ),
-
-                          const Icon(Icons.chevron_right, color: Colors.grey),
-                        ],
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Ölçüm Karnesi',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    _tarihGoster(karne['test_date']),
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.chevron_right, color: Colors.grey),
+                          ],
+                        ),
                       ),
                     );
                   }),
@@ -2713,6 +3911,33 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
     );
   }
 }
+
+class _NormLejant extends StatelessWidget {
+  final Color renk;
+  final String metin;
+
+  const _NormLejant({required this.renk, required this.metin});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: renk,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 5),
+        Text(metin, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+      ],
+    );
+  }
+}
+
 // ========================================================
 // KARNE OLUŞTURMA EKRANI
 // ========================================================
@@ -3326,7 +4551,7 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
 
               'nefes_zamanlamasi': 'Nefes Zamanlaması',
 
-              'streamline': 'Streamline Pozisyonu',
+              'streamline_pozisyonu': 'Streamline Pozisyonu',
 
               '25m_kurbagalama': '25 m Kurbağalama',
             },
