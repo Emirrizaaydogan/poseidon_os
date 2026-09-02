@@ -219,6 +219,46 @@ class DatabaseService {
 
     _hataFirlat(response, 'Sıralama getirilemedi');
   }
+  // ---------------- SPORCU KARNELERİ ----------------
+
+  Future<void> karneEkle(Map<String, dynamic> veri) async {
+    final response = await http.post(
+      Uri.parse('$apiBaseUrl/report-cards'),
+      headers: _headers,
+      body: jsonEncode(veri),
+    );
+
+    if (response.statusCode != 201) {
+      _hataFirlat(response, 'Karne oluşturulamadı');
+    }
+  }
+
+  Future<List<dynamic>> getKarneler({int? sporcuId}) async {
+    final url = sporcuId != null
+        ? '$apiBaseUrl/report-cards?athleteId=$sporcuId'
+        : '$apiBaseUrl/report-cards';
+
+    final response = await http.get(Uri.parse(url), headers: _headers);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+
+    _hataFirlat(response, 'Karneler getirilemedi');
+  }
+
+  Future<Map<String, dynamic>> getKarne(int karneId) async {
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/report-cards/$karneId'),
+      headers: _headers,
+    );
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(jsonDecode(response.body));
+    }
+
+    _hataFirlat(response, 'Karne getirilemedi');
+  }
   // ---------------- YOKLAMA (GİRİŞ / ÇIKIŞ) ----------------
 
   /// [antrenmanId] ve/veya [sporcuId] verilirse sonuçlar buna göre filtrelenir.

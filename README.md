@@ -19,7 +19,7 @@ samples, guidance on mobile development, and a full API reference.
 -ahmetyılmaz@gmail.com-----123 SPORCUSU=berk@gmail.com 123
 -burcubaştürk@gmail.com-----123SPORCUSU=asya@gmail.com 123
 -mehmetözbay@gmail.com------123SPORCUSU=demet@gmail.com 123
--ayşe@gmail.com--------123SPORCUSU=sema@gmail.com 123
+ceylinaykın@gmail.com-------123Sporcusu=umut@gmail.com 123
 ----------------YAPILMASI GEREKENLER-------------------
 *Antremanlar ekranında bulunan antremanlar için o sekmede geçmiş antremanlar bölümü olsun oraya girildiğinde sadece son 7 günde olan antremanlar gözüksün 7 günden sonraki antremanlar silinsin.+(Zamanla kontrol et )
 *Fiziksel uygunluk karnesi oluşturulsun.Çocukların vücut kütle indeksi,otur eriş testi,Sırt kaşıma Test,flamingo denge testi.Antremanlara yeterli katılım yapıp yapmadığınıda sistemdeki giriş çıkışlardan alsın.

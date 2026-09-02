@@ -1412,27 +1412,26 @@ class _HomeScreenState extends State<HomeScreen> {
         antrenorMu: _antrenorMu,
         filtreSporcuId: widget.veliSporcuId,
       ),
+
       SporcularSekmesi(
         antrenorMu: _antrenorMu,
         filtreSporcuId: widget.veliSporcuId,
       ),
+
       AntrenmanSekmesi(antrenorMu: _antrenorMu, sporcuId: widget.veliSporcuId),
+
       TakvimSekmesi(
         antrenorMu: _antrenorMu,
         filtreSporcuId: widget.veliSporcuId,
       ),
+
       AidatSekmesi(
         antrenorMu: _antrenorMu,
         filtreSporcuId: widget.veliSporcuId,
       ),
-      Center(
-        child: Text(
-          'Profil (${_rolAdi(widget.rol)})',
-          style: const TextStyle(color: Colors.white),
-        ),
-      ),
-    ];
 
+      ProfilSekmesi(rol: widget.rol, sporcuId: widget.veliSporcuId),
+    ];
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
@@ -1522,11 +1521,2170 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// ---------------- KULLANICI YÖNETİMİ (VELİ / SPORCU HESAPLARI) ----------------
+// ========================================================
+// PROFİL / KARNE YÖNETİMİ
+// ========================================================
 
+class ProfilSekmesi extends StatelessWidget {
+  final String rol;
+  final int? sporcuId;
+
+  const ProfilSekmesi({super.key, required this.rol, this.sporcuId});
+
+  @override
+  Widget build(BuildContext context) {
+    if (rol == 'antrenor') {
+      return const AntrenorKarneYonetimi();
+    }
+
+    if (sporcuId == null) {
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: Text(
+            'Bu hesaba bağlı sporcu bulunamadı',
+            style: TextStyle(color: Colors.grey, fontSize: 14),
+          ),
+        ),
+      );
+    }
+
+    return VeliSporcuKarneProfili(sporcuId: sporcuId!);
+  }
+}
+
+class VeliSporcuKarneProfili extends StatefulWidget {
+  final int sporcuId;
+
+  const VeliSporcuKarneProfili({super.key, required this.sporcuId});
+
+  @override
+  State<VeliSporcuKarneProfili> createState() => _VeliSporcuKarneProfiliState();
+}
+
+class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
+  late Future<List<dynamic>> _karnelerFuture;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _karnelerFuture = dbService.getKarneler(sporcuId: widget.sporcuId);
+  }
+
+  void _yenile() {
+    setState(() {
+      _karnelerFuture = dbService.getKarneler(sporcuId: widget.sporcuId);
+    });
+  }
+
+  String _tarihGoster(dynamic hamTarih) {
+    if (hamTarih == null) return '-';
+
+    final tarih = DateTime.tryParse(hamTarih.toString());
+
+    if (tarih == null) {
+      return hamTarih.toString();
+    }
+
+    return '${tarih.day.toString().padLeft(2, '0')}.'
+        '${tarih.month.toString().padLeft(2, '0')}.'
+        '${tarih.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: RefreshIndicator(
+        onRefresh: () async {
+          _yenile();
+        },
+        color: Colors.lightGreenAccent,
+        backgroundColor: Colors.black,
+        child: FutureBuilder<List<dynamic>>(
+          future: _karnelerFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.lightGreenAccent,
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  const SizedBox(height: 100),
+                  Text(
+                    'Karneler yüklenemedi:\n${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ],
+              );
+            }
+
+            final karneler = snapshot.data ?? [];
+
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'Sporcu Karnesi',
+                  style: TextStyle(
+                    color: Colors.lightGreenAccent,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                const Text(
+                  'Gelişim ve değerlendirme geçmişi',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+
+                const SizedBox(height: 22),
+
+                if (karneler.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 45,
+                      horizontal: 20,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF171717),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(
+                          Icons.description_outlined,
+                          color: Colors.grey,
+                          size: 42,
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          'Henüz karne bulunmuyor',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 5),
+                        Text(
+                          'Antrenör tarafından oluşturulan karneler burada görünecek.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...karneler.map<Widget>((karne) {
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => KarneDetayEkrani(
+                              karne: Map<String, dynamic>.from(karne),
+                            ),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF171717),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFF292929)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1E2A1E),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.assignment_turned_in_outlined,
+                                color: Colors.lightGreenAccent,
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Gelişim Karnesi',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 4),
+
+                                  Text(
+                                    _tarihGoster(karne['test_date']),
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const Icon(Icons.chevron_right, color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+// ========================================================
+// KARNE DETAY EKRANI
+// ========================================================
+
+class KarneDetayEkrani extends StatelessWidget {
+  final Map<String, dynamic> karne;
+
+  const KarneDetayEkrani({super.key, required this.karne});
+
+  String _tarihGoster(dynamic hamTarih) {
+    if (hamTarih == null) return '-';
+
+    final tarih = DateTime.tryParse(hamTarih.toString());
+
+    if (tarih == null) {
+      return hamTarih.toString();
+    }
+
+    return '${tarih.day.toString().padLeft(2, '0')}.'
+        '${tarih.month.toString().padLeft(2, '0')}.'
+        '${tarih.year}';
+  }
+
+  Map<String, dynamic> _mapAl(dynamic veri) {
+    if (veri == null) {
+      return {};
+    }
+
+    if (veri is Map<String, dynamic>) {
+      return veri;
+    }
+
+    if (veri is Map) {
+      return Map<String, dynamic>.from(veri);
+    }
+
+    return {};
+  }
+
+  String _deger(dynamic deger) {
+    if (deger == null) return '-';
+
+    if (deger is num) {
+      if (deger % 1 == 0) {
+        return deger.toInt().toString();
+      }
+
+      return deger.toString();
+    }
+
+    return deger.toString();
+  }
+
+  String _etiket(String anahtar) {
+    const etiketler = {
+      // ANTROPOMETRİK
+      'ayak_uzunlugu': 'Ayak Uzunluğu',
+      'ayak_genisligi': 'Ayak Genişliği',
+      'boy': 'Boy',
+      'el_genisligi': 'El Genişliği',
+      'el_uzunlugu': 'El Uzunluğu',
+      'gogus_cevresi': 'Göğüs Çevresi',
+      'kulac_uzunlugu': 'Kulaç Uzunluğu',
+      'oturma_yuksekligi': 'Oturma Yüksekliği',
+      'vucut_agirligi': 'Vücut Ağırlığı',
+
+      // MOTORİK
+      'vki': 'Vücut Kütle İndeksi',
+      'otur_eris': 'Otur-Eriş Testi',
+      'sirt_kasima_sag': 'Sırt Kaşıma - Sağ',
+      'sirt_kasima_sol': 'Sırt Kaşıma - Sol',
+      'flamingo': 'Flamingo Denge Testi',
+
+      // TEMEL YÜZME
+      'tahtali_serbest_ayak_nefes': 'Tahtalı Serbest Ayak + Nefes',
+      'tahtali_sirt_ayak': 'Tahtalı Sırt Ayak',
+      'yuzustu_sirtustu_kayma': 'Yüzüstü / Sırtüstü Kayma',
+      'suda_kalma_10sn': 'Suda Kalma - 10 sn',
+      'suda_ilerleme_12_5m': 'Suda İlerleme - 12,5 m',
+
+      // SERBEST
+      'ileri_uzanma': 'İleri Uzanma',
+      'nefes_bas_vucut': 'Nefeste Baş / Vücut Pozisyonu',
+      '25m_serbest': '25 m Serbest',
+
+      // SIRTÜSTÜ
+      'omuz_rotasyonu': 'Omuz Rotasyonu',
+      'bas_vucut_pozisyonu': 'Baş / Vücut Pozisyonu',
+      '25m_sirtustu': '25 m Sırtüstü',
+
+      // KURBAĞALAMA
+      'kol_mekanigi_simetri': 'Kol Mekaniği / Simetri',
+      'nefes_zamanlamasi': 'Nefes Zamanlaması',
+      'streamline': 'Streamline Pozisyonu',
+      '25m_kurbagalama': '25 m Kurbağalama',
+
+      // KELEBEK
+      'ayak_mekanigi_dolphin': 'Ayak Mekaniği / İki Dolphin',
+      '25m_kelebek': '25 m Kelebek',
+
+      // ORTAK
+      'kol_mekanigi': 'Kol Mekaniği',
+      'ayak_mekanigi': 'Ayak Mekaniği',
+    };
+
+    return etiketler[anahtar] ?? anahtar;
+  }
+
+  Widget _bolumBasligi(IconData icon, String baslik) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.lightGreenAccent, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            baslik,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 17,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sayisalBolum({
+    required String baslik,
+    required IconData icon,
+    required Map<String, dynamic> veriler,
+    required Map<String, String> birimler,
+  }) {
+    if (veriler.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _bolumBasligi(icon, baslik),
+
+        Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF171717),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFF292929)),
+          ),
+          child: Column(
+            children: veriler.entries.map((entry) {
+              final birim = birimler[entry.key] ?? '';
+
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 13,
+                ),
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Color(0xFF252525))),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _etiket(entry.key),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${_deger(entry.value)}'
+                      '${birim.isEmpty ? '' : ' $birim'}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _teknikBolum({
+    required String baslik,
+    required Map<String, dynamic> veriler,
+  }) {
+    if (veriler.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _bolumBasligi(Icons.pool, baslik),
+
+        ...veriler.entries.map((entry) {
+          final durum = entry.value.toString();
+
+          final iyiMi = durum == 'iyi';
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: const Color(0xFF171717),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: iyiMi
+                    ? Colors.lightGreenAccent.withOpacity(0.25)
+                    : Colors.orangeAccent.withOpacity(0.25),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _etiket(entry.key),
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                ),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: iyiMi
+                        ? Colors.lightGreenAccent
+                        : Colors.orangeAccent,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    iyiMi ? 'İYİ' : 'GELİŞTİRİLMELİ',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+
+        const SizedBox(height: 18),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final antropometrik = _mapAl(karne['anthropometric']);
+
+    final motorTestleri = _mapAl(karne['motor_tests']);
+
+    final temelYuzme = _mapAl(karne['basic_swim']);
+
+    final serbest = _mapAl(karne['freestyle']);
+
+    final sirtustu = _mapAl(karne['backstroke']);
+
+    final kurbagalama = _mapAl(karne['breaststroke']);
+
+    final kelebek = _mapAl(karne['butterfly']);
+
+    final antrenorNotu = karne['coach_note']?.toString() ?? '';
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        title: const Text(
+          'Gelişim Karnesi',
+          style: TextStyle(color: Colors.lightGreenAccent, fontSize: 16),
+        ),
+      ),
+
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // ===============================================
+          // ÜST BİLGİ
+          // ===============================================
+          Container(
+            padding: const EdgeInsets.all(17),
+            decoration: BoxDecoration(
+              color: const Color(0xFF171717),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.lightGreenAccent.withOpacity(0.25),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'POSEIDON AKADEMİ',
+                  style: TextStyle(
+                    color: Colors.lightGreenAccent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                Text(
+                  karne['athlete_isim']?.toString() ?? 'Sporcu',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 21,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 7),
+
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_month,
+                      color: Colors.grey,
+                      size: 15,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _tarihGoster(karne['test_date']),
+                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                    ),
+
+                    if (karne['grup'] != null) ...[
+                      const SizedBox(width: 16),
+                      const Icon(Icons.groups, color: Colors.grey, size: 15),
+                      const SizedBox(width: 6),
+                      Text(
+                        karne['grup'].toString(),
+                        style: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 25),
+
+          // ===============================================
+          // ANTROPOMETRİK
+          // ===============================================
+          _sayisalBolum(
+            baslik: 'Antropometrik Ölçümler',
+            icon: Icons.straighten,
+            veriler: antropometrik,
+            birimler: const {
+              'ayak_uzunlugu': 'cm',
+              'ayak_genisligi': 'cm',
+              'boy': 'cm',
+              'el_genisligi': 'cm',
+              'el_uzunlugu': 'cm',
+              'gogus_cevresi': 'cm',
+              'kulac_uzunlugu': 'cm',
+              'oturma_yuksekligi': 'cm',
+              'vucut_agirligi': 'kg',
+            },
+          ),
+
+          // ===============================================
+          // MOTORİK
+          // ===============================================
+          _sayisalBolum(
+            baslik: 'Fiziksel / Motorik Testler',
+            icon: Icons.accessibility_new,
+            veriler: motorTestleri,
+            birimler: const {
+              'otur_eris': 'cm',
+              'sirt_kasima_sag': 'cm',
+              'sirt_kasima_sol': 'cm',
+              'flamingo': 'adet',
+              'vki': '',
+            },
+          ),
+
+          // ===============================================
+          // TEKNİK
+          // ===============================================
+          _teknikBolum(baslik: 'Temel Yüzme', veriler: temelYuzme),
+
+          _teknikBolum(baslik: 'Serbest Teknik', veriler: serbest),
+
+          _teknikBolum(baslik: 'Sırtüstü Teknik', veriler: sirtustu),
+
+          _teknikBolum(baslik: 'Kurbağalama Teknik', veriler: kurbagalama),
+
+          _teknikBolum(baslik: 'Kelebek Teknik', veriler: kelebek),
+
+          // ===============================================
+          // ANTRENÖR NOTU
+          // ===============================================
+          if (antrenorNotu.trim().isNotEmpty) ...[
+            _bolumBasligi(Icons.edit_note, 'Antrenör Yorumu'),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: const Color(0xFF171717),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF292929)),
+              ),
+              child: Text(
+                antrenorNotu,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  height: 1.5,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 30),
+          ],
+        ],
+      ),
+    );
+  }
+}
+// ========================================================
+// ANTRENÖR - KARNE YÖNETİMİ
+// ========================================================
+
+class AntrenorKarneYonetimi extends StatefulWidget {
+  const AntrenorKarneYonetimi({super.key});
+
+  @override
+  State<AntrenorKarneYonetimi> createState() => _AntrenorKarneYonetimiState();
+}
+
+class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
+  late Future<List<dynamic>> _sporcularFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _sporcularFuture = dbService.getSporcular();
+  }
+
+  void _yenile() {
+    setState(() {
+      _sporcularFuture = dbService.getSporcular();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black,
+      child: RefreshIndicator(
+        onRefresh: () async {
+          _yenile();
+        },
+        color: Colors.lightGreenAccent,
+        backgroundColor: Colors.black,
+        child: FutureBuilder<List<dynamic>>(
+          future: _sporcularFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.lightGreenAccent,
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  const SizedBox(height: 100),
+                  Text(
+                    'Sporcular yüklenemedi:\n${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ],
+              );
+            }
+
+            final sporcular = snapshot.data ?? [];
+
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'Karne Yönetimi',
+                  style: TextStyle(
+                    color: Colors.lightGreenAccent,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                const Text(
+                  'Karne oluşturmak veya geçmiş ölçümleri görmek için bir sporcu seç.',
+                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                ),
+
+                const SizedBox(height: 20),
+
+                if (sporcular.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(30),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF171717),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Henüz sporcu bulunmuyor',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  )
+                else
+                  ...sporcular.map<Widget>((veri) {
+                    final sporcu = Sporcu.fromJson(
+                      Map<String, dynamic>.from(veri),
+                    );
+
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                SporcuKarneleriEkrani(sporcu: sporcu),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF171717),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: const Color(0xFF292929)),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 24,
+                              backgroundColor: Colors.lightGreenAccent,
+                              child: Text(
+                                sporcu.isim.isNotEmpty
+                                    ? sporcu.isim[0].toUpperCase()
+                                    : '?',
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 14),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    sporcu.isim,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+
+                                  const SizedBox(height: 3),
+
+                                  Text(
+                                    '${sporcu.dogumYili} · ${sporcu.grup}',
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const Icon(
+                              Icons.description_outlined,
+                              color: Colors.lightGreenAccent,
+                            ),
+
+                            const SizedBox(width: 6),
+
+                            const Icon(Icons.chevron_right, color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+// ========================================================
+// SEÇİLEN SPORCUNUN KARNELERİ
+// ========================================================
+
+class SporcuKarneleriEkrani extends StatefulWidget {
+  final Sporcu sporcu;
+
+  const SporcuKarneleriEkrani({super.key, required this.sporcu});
+
+  @override
+  State<SporcuKarneleriEkrani> createState() => _SporcuKarneleriEkraniState();
+}
+
+class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
+  late Future<List<dynamic>> _karnelerFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _yenile();
+  }
+
+  void _yenile() {
+    setState(() {
+      _karnelerFuture = dbService.getKarneler(sporcuId: widget.sporcu.id);
+    });
+  }
+
+  String _tarihGoster(dynamic hamTarih) {
+    if (hamTarih == null) return '-';
+
+    final tarih = DateTime.tryParse(hamTarih.toString());
+
+    if (tarih == null) {
+      return hamTarih.toString();
+    }
+
+    return '${tarih.day.toString().padLeft(2, '0')}.'
+        '${tarih.month.toString().padLeft(2, '0')}.'
+        '${tarih.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        title: Text(
+          '${widget.sporcu.isim} · Karneler',
+          style: const TextStyle(color: Colors.lightGreenAccent, fontSize: 16),
+        ),
+      ),
+
+      body: RefreshIndicator(
+        onRefresh: () async {
+          _yenile();
+        },
+        color: Colors.lightGreenAccent,
+        backgroundColor: Colors.black,
+
+        child: FutureBuilder<List<dynamic>>(
+          future: _karnelerFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.lightGreenAccent,
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  const SizedBox(height: 100),
+                  Text(
+                    'Karneler yüklenemedi:\n${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                ],
+              );
+            }
+
+            final karneler = snapshot.data ?? [];
+
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // ---------------- SPORCU BİLGİSİ ----------------
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF171717),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.lightGreenAccent.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.lightGreenAccent,
+                        child: Text(
+                          widget.sporcu.isim.isNotEmpty
+                              ? widget.sporcu.isim[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 14),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.sporcu.isim,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(height: 4),
+
+                            Text(
+                              '${widget.sporcu.dogumYili} · ${widget.sporcu.grup}',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Geçmiş Karneler',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E2A1E),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${karneler.length} karne',
+                        style: const TextStyle(
+                          color: Colors.lightGreenAccent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 14),
+
+                if (karneler.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 40,
+                      horizontal: 20,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF171717),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(
+                          Icons.description_outlined,
+                          color: Colors.grey,
+                          size: 42,
+                        ),
+
+                        SizedBox(height: 12),
+
+                        Text(
+                          'Henüz karne oluşturulmamış',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        SizedBox(height: 5),
+
+                        Text(
+                          'İlk ölçüm karnesini oluşturmak için aşağıdaki + butonunu kullan.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...karneler.map<Widget>((karne) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF171717),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF2A2A2A)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E2A1E),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Icon(
+                              Icons.assignment_turned_in_outlined,
+                              color: Colors.lightGreenAccent,
+                            ),
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Ölçüm Karnesi',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 3),
+
+                                Text(
+                                  _tarihGoster(karne['test_date']),
+                                  style: const TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const Icon(Icons.chevron_right, color: Colors.grey),
+                        ],
+                      ),
+                    );
+                  }),
+              ],
+            );
+          },
+        ),
+      ),
+
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: Colors.lightGreenAccent,
+        foregroundColor: Colors.black,
+        onPressed: () async {
+          final kaydedildi = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => KarneOlusturEkrani(sporcu: widget.sporcu),
+            ),
+          );
+          if (kaydedildi == true && mounted) {
+            _yenile();
+          }
+        },
+        icon: const Icon(Icons.add),
+        label: const Text(
+          'Yeni Karne',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+}
+// ========================================================
+// KARNE OLUŞTURMA EKRANI
+// ========================================================
+
+class KarneOlusturEkrani extends StatefulWidget {
+  final Sporcu sporcu;
+
+  const KarneOlusturEkrani({super.key, required this.sporcu});
+
+  @override
+  State<KarneOlusturEkrani> createState() => _KarneOlusturEkraniState();
+}
+
+class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
+  DateTime _testTarihi = DateTime.now();
+
+  bool _kaydediliyor = false;
+
+  // =====================================================
+  // ANTROPOMETRİK
+  // =====================================================
+
+  final _ayakUzunluguController = TextEditingController();
+
+  final _ayakGenisligiController = TextEditingController();
+
+  final _boyController = TextEditingController();
+
+  final _elGenisligiController = TextEditingController();
+
+  final _elUzunluguController = TextEditingController();
+
+  final _gogusCevresiController = TextEditingController();
+
+  final _kulacUzunluguController = TextEditingController();
+
+  final _oturmaYuksekligiController = TextEditingController();
+
+  final _vucutAgirligiController = TextEditingController();
+
+  // =====================================================
+  // MOTORİK TESTLER
+  // =====================================================
+
+  final _oturErisController = TextEditingController();
+
+  final _sirtKasimaSagController = TextEditingController();
+
+  final _sirtKasimaSolController = TextEditingController();
+
+  final _flamingoController = TextEditingController();
+
+  // =====================================================
+  // ANTRENÖR NOTU
+  // =====================================================
+
+  final _notController = TextEditingController();
+
+  // =====================================================
+  // TEKNİK DEĞERLENDİRMELER
+  // =====================================================
+
+  final Map<String, String> _temelYuzme = {};
+  final Map<String, String> _serbest = {};
+  final Map<String, String> _sirtustu = {};
+  final Map<String, String> _kurbagalama = {};
+  final Map<String, String> _kelebek = {};
+
+  // =====================================================
+  // SAYI DÖNÜŞÜMÜ
+  // =====================================================
+
+  double? _sayi(TextEditingController controller) {
+    final metin = controller.text.trim().replaceAll(',', '.');
+
+    if (metin.isEmpty) {
+      return null;
+    }
+
+    return double.tryParse(metin);
+  }
+
+  // =====================================================
+  // VKİ
+  // =====================================================
+
+  double? _vkiHesapla() {
+    final boyCm = _sayi(_boyController);
+    final kilo = _sayi(_vucutAgirligiController);
+
+    if (boyCm == null || kilo == null || boyCm <= 0 || kilo <= 0) {
+      return null;
+    }
+
+    final boyMetre = boyCm / 100;
+
+    return kilo / (boyMetre * boyMetre);
+  }
+
+  // =====================================================
+  // TARİH
+  // =====================================================
+
+  Future<void> _tarihSec() async {
+    final secilen = await showDatePicker(
+      context: context,
+      initialDate: _testTarihi,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.lightGreenAccent,
+              onPrimary: Colors.black,
+              surface: Color(0xFF171717),
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (secilen != null) {
+      setState(() {
+        _testTarihi = secilen;
+      });
+    }
+  }
+
+  String _veritabaniTarihi(DateTime tarih) {
+    return '${tarih.year}-'
+        '${tarih.month.toString().padLeft(2, '0')}-'
+        '${tarih.day.toString().padLeft(2, '0')}';
+  }
+
+  String _gosterimTarihi(DateTime tarih) {
+    return '${tarih.day.toString().padLeft(2, '0')}.'
+        '${tarih.month.toString().padLeft(2, '0')}.'
+        '${tarih.year}';
+  }
+
+  // =====================================================
+  // BOŞ OLMAYAN SAYILARI JSON'A EKLE
+  // =====================================================
+
+  void _sayisalAlanEkle(
+    Map<String, dynamic> harita,
+    String anahtar,
+    TextEditingController controller,
+  ) {
+    final deger = _sayi(controller);
+
+    if (deger != null) {
+      harita[anahtar] = deger;
+    }
+  }
+
+  // =====================================================
+  // KAYDET
+  // =====================================================
+
+  Future<void> _kaydet() async {
+    final antropometrik = <String, dynamic>{};
+
+    _sayisalAlanEkle(antropometrik, 'ayak_uzunlugu', _ayakUzunluguController);
+
+    _sayisalAlanEkle(antropometrik, 'ayak_genisligi', _ayakGenisligiController);
+
+    _sayisalAlanEkle(antropometrik, 'boy', _boyController);
+
+    _sayisalAlanEkle(antropometrik, 'el_genisligi', _elGenisligiController);
+
+    _sayisalAlanEkle(antropometrik, 'el_uzunlugu', _elUzunluguController);
+
+    _sayisalAlanEkle(antropometrik, 'gogus_cevresi', _gogusCevresiController);
+
+    _sayisalAlanEkle(antropometrik, 'kulac_uzunlugu', _kulacUzunluguController);
+
+    _sayisalAlanEkle(
+      antropometrik,
+      'oturma_yuksekligi',
+      _oturmaYuksekligiController,
+    );
+
+    _sayisalAlanEkle(antropometrik, 'vucut_agirligi', _vucutAgirligiController);
+
+    final motorTestleri = <String, dynamic>{};
+
+    _sayisalAlanEkle(motorTestleri, 'otur_eris', _oturErisController);
+
+    _sayisalAlanEkle(
+      motorTestleri,
+      'sirt_kasima_sag',
+      _sirtKasimaSagController,
+    );
+
+    _sayisalAlanEkle(
+      motorTestleri,
+      'sirt_kasima_sol',
+      _sirtKasimaSolController,
+    );
+
+    _sayisalAlanEkle(motorTestleri, 'flamingo', _flamingoController);
+
+    final vki = _vkiHesapla();
+
+    if (vki != null) {
+      motorTestleri['vki'] = double.parse(vki.toStringAsFixed(2));
+    }
+
+    if (antropometrik.isEmpty &&
+        motorTestleri.isEmpty &&
+        _temelYuzme.isEmpty &&
+        _serbest.isEmpty &&
+        _sirtustu.isEmpty &&
+        _kurbagalama.isEmpty &&
+        _kelebek.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Karne için en az bir ölçüm veya değerlendirme gir.'),
+        ),
+      );
+
+      return;
+    }
+
+    setState(() {
+      _kaydediliyor = true;
+    });
+
+    try {
+      await dbService.karneEkle({
+        'athlete_id': widget.sporcu.id,
+
+        'test_date': _veritabaniTarihi(_testTarihi),
+
+        'anthropometric': antropometrik,
+
+        'motor_tests': motorTestleri,
+
+        'basic_swim': _temelYuzme,
+
+        'freestyle': _serbest,
+
+        'backstroke': _sirtustu,
+
+        'breaststroke': _kurbagalama,
+
+        'butterfly': _kelebek,
+
+        'coach_note': _notController.text.trim(),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Karne başarıyla kaydedildi ✓'),
+          backgroundColor: Color(0xFF17351B),
+        ),
+      );
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Karne kaydedilemedi: $e'),
+          backgroundColor: const Color(0xFF351515),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _kaydediliyor = false;
+        });
+      }
+    }
+  }
+
+  // =====================================================
+  // DISPOSE
+  // =====================================================
+
+  @override
+  void dispose() {
+    _ayakUzunluguController.dispose();
+    _ayakGenisligiController.dispose();
+    _boyController.dispose();
+    _elGenisligiController.dispose();
+    _elUzunluguController.dispose();
+    _gogusCevresiController.dispose();
+    _kulacUzunluguController.dispose();
+    _oturmaYuksekligiController.dispose();
+    _vucutAgirligiController.dispose();
+
+    _oturErisController.dispose();
+    _sirtKasimaSagController.dispose();
+    _sirtKasimaSolController.dispose();
+    _flamingoController.dispose();
+
+    _notController.dispose();
+
+    super.dispose();
+  }
+
+  // =====================================================
+  // BUILD
+  // =====================================================
+
+  @override
+  Widget build(BuildContext context) {
+    final vki = _vkiHesapla();
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+
+        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+
+        title: Text(
+          '${widget.sporcu.isim} · Yeni Karne',
+          style: const TextStyle(color: Colors.lightGreenAccent, fontSize: 16),
+        ),
+      ),
+
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // =================================================
+          // TARİH
+          // =================================================
+          _KarneBolumBasligi(icon: Icons.calendar_month, baslik: 'Test Tarihi'),
+
+          const SizedBox(height: 10),
+
+          InkWell(
+            onTap: _tarihSec,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: const Color(0xFF171717),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF2A2A2A)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.event, color: Colors.lightGreenAccent),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: Text(
+                      _gosterimTarihi(_testTarihi),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+
+                  const Icon(Icons.chevron_right, color: Colors.grey),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 28),
+
+          // =================================================
+          // ANTROPOMETRİK
+          // =================================================
+          _KarneBolumBasligi(
+            icon: Icons.straighten,
+            baslik: 'Antropometrik Ölçümler',
+          ),
+
+          const SizedBox(height: 12),
+
+          _KarneSayisalAlan(
+            controller: _ayakUzunluguController,
+            etiket: 'Ayak Uzunluğu',
+            birim: 'cm',
+          ),
+
+          _KarneSayisalAlan(
+            controller: _ayakGenisligiController,
+            etiket: 'Ayak Genişliği',
+            birim: 'cm',
+          ),
+
+          _KarneSayisalAlan(
+            controller: _boyController,
+            etiket: 'Boy',
+            birim: 'cm',
+            onChanged: (_) {
+              setState(() {});
+            },
+          ),
+
+          _KarneSayisalAlan(
+            controller: _elGenisligiController,
+            etiket: 'El Genişliği',
+            birim: 'cm',
+          ),
+
+          _KarneSayisalAlan(
+            controller: _elUzunluguController,
+            etiket: 'El Uzunluğu',
+            birim: 'cm',
+          ),
+
+          _KarneSayisalAlan(
+            controller: _gogusCevresiController,
+            etiket: 'Göğüs Çevresi',
+            birim: 'cm',
+          ),
+
+          _KarneSayisalAlan(
+            controller: _kulacUzunluguController,
+            etiket: 'Kulaç Uzunluğu',
+            birim: 'cm',
+          ),
+
+          _KarneSayisalAlan(
+            controller: _oturmaYuksekligiController,
+            etiket: 'Oturma Yüksekliği',
+            birim: 'cm',
+          ),
+
+          _KarneSayisalAlan(
+            controller: _vucutAgirligiController,
+            etiket: 'Vücut Ağırlığı',
+            birim: 'kg',
+            onChanged: (_) {
+              setState(() {});
+            },
+          ),
+
+          const SizedBox(height: 12),
+
+          // =================================================
+          // VKİ
+          // =================================================
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF101510),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.lightGreenAccent.withOpacity(0.25),
+              ),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.monitor_weight_outlined,
+                  color: Colors.lightGreenAccent,
+                ),
+
+                const SizedBox(width: 10),
+
+                const Expanded(
+                  child: Text(
+                    'Vücut Kütle İndeksi',
+                    style: TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                ),
+
+                Text(
+                  vki == null ? 'Boy ve kilo gir' : vki.toStringAsFixed(2),
+                  style: TextStyle(
+                    color: vki == null ? Colors.grey : Colors.lightGreenAccent,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 28),
+
+          // =================================================
+          // MOTORİK
+          // =================================================
+          _KarneBolumBasligi(
+            icon: Icons.accessibility_new,
+            baslik: 'Fiziksel / Motorik Testler',
+          ),
+
+          const SizedBox(height: 12),
+
+          _KarneSayisalAlan(
+            controller: _oturErisController,
+            etiket: 'Otur-Eriş Testi',
+            birim: 'cm',
+          ),
+
+          _KarneSayisalAlan(
+            controller: _sirtKasimaSagController,
+            etiket: 'Sırt Kaşıma Testi - Sağ',
+            birim: 'cm',
+          ),
+
+          _KarneSayisalAlan(
+            controller: _sirtKasimaSolController,
+            etiket: 'Sırt Kaşıma Testi - Sol',
+            birim: 'cm',
+          ),
+
+          _KarneSayisalAlan(
+            controller: _flamingoController,
+            etiket: 'Flamingo Denge Testi',
+            birim: 'adet',
+          ),
+
+          const SizedBox(height: 28),
+
+          // =================================================
+          // TEMEL YÜZME
+          // =================================================
+          _KarneTeknikBolumu(
+            baslik: 'Temel Yüzme',
+            icon: Icons.pool,
+            degerler: _temelYuzme,
+            maddeler: const {
+              'tahtali_serbest_ayak_nefes': 'Tahtalı Serbest Ayak + Nefes',
+
+              'tahtali_sirt_ayak': 'Tahtalı Sırt Ayak',
+
+              'yuzustu_sirtustu_kayma': 'Yüzüstü / Sırtüstü Kayma',
+
+              'suda_kalma_10sn': 'Suda Kalma - 10 sn',
+
+              'suda_ilerleme_12_5m': 'Suda İlerleme - 12,5 m',
+            },
+            onChanged: () {
+              setState(() {});
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // =================================================
+          // SERBEST
+          // =================================================
+          _KarneTeknikBolumu(
+            baslik: 'Serbest Teknik',
+            icon: Icons.pool,
+            degerler: _serbest,
+            maddeler: const {
+              'kol_mekanigi': 'Kol Mekaniği - Çekiş / İtiş / Toparlanma',
+
+              'ileri_uzanma': 'İleri Uzanma',
+
+              'ayak_mekanigi': 'Ayak Mekaniği',
+
+              'nefes_bas_vucut': 'Nefeste Baş / Vücut Pozisyonu',
+
+              '25m_serbest': '25 m Serbest',
+            },
+            onChanged: () {
+              setState(() {});
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // =================================================
+          // SIRTÜSTÜ
+          // =================================================
+          _KarneTeknikBolumu(
+            baslik: 'Sırtüstü Teknik',
+            icon: Icons.pool,
+            degerler: _sirtustu,
+            maddeler: const {
+              'kol_mekanigi': 'Kol Mekaniği',
+
+              'omuz_rotasyonu': 'Omuz Rotasyonu',
+
+              'ayak_mekanigi': 'Ayak Mekaniği',
+
+              'bas_vucut_pozisyonu': 'Baş / Vücut Pozisyonu',
+
+              '25m_sirtustu': '25 m Sırtüstü',
+            },
+            onChanged: () {
+              setState(() {});
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // =================================================
+          // KURBAĞALAMA
+          // =================================================
+          _KarneTeknikBolumu(
+            baslik: 'Kurbağalama Teknik',
+            icon: Icons.pool,
+            degerler: _kurbagalama,
+            maddeler: const {
+              'kol_mekanigi_simetri': 'Kol Mekaniği / Simetri',
+
+              'ayak_mekanigi': 'Ayak Mekaniği',
+
+              'nefes_zamanlamasi': 'Nefes Zamanlaması',
+
+              'streamline': 'Streamline Pozisyonu',
+
+              '25m_kurbagalama': '25 m Kurbağalama',
+            },
+            onChanged: () {
+              setState(() {});
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // =================================================
+          // KELEBEK
+          // =================================================
+          _KarneTeknikBolumu(
+            baslik: 'Kelebek Teknik',
+            icon: Icons.pool,
+            degerler: _kelebek,
+            maddeler: const {
+              'kol_mekanigi': 'Kol Mekaniği',
+
+              'ayak_mekanigi_dolphin': 'Ayak Mekaniği / İki Dolphin',
+
+              'nefes_zamanlamasi': 'Nefes Zamanlaması',
+
+              'bas_vucut_pozisyonu': 'Baş / Vücut Pozisyonu',
+
+              '25m_kelebek': '25 m Kelebek',
+            },
+            onChanged: () {
+              setState(() {});
+            },
+          ),
+
+          const SizedBox(height: 28),
+
+          // =================================================
+          // NOT
+          // =================================================
+          _KarneBolumBasligi(icon: Icons.edit_note, baslik: 'Antrenör Yorumu'),
+
+          const SizedBox(height: 12),
+
+          TextField(
+            controller: _notController,
+            maxLines: 5,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: 'Sporcunun gelişimi hakkında not...',
+              hintStyle: const TextStyle(color: Colors.grey),
+              filled: true,
+              fillColor: const Color(0xFF171717),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFF2A2A2A)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.lightGreenAccent),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 30),
+
+          // =================================================
+          // KAYDET
+          // =================================================
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton.icon(
+              onPressed: _kaydediliyor ? null : _kaydet,
+
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.lightGreenAccent,
+                foregroundColor: Colors.black,
+
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+
+              icon: _kaydediliyor
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.black,
+                      ),
+                    )
+                  : const Icon(Icons.save),
+
+              label: Text(
+                _kaydediliyor ? 'Kaydediliyor...' : 'Karneyi Kaydet',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+}
+
+// ========================================================
+// KARNE FORM YARDIMCILARI
+// ========================================================
+
+class _KarneBolumBasligi extends StatelessWidget {
+  final IconData icon;
+  final String baslik;
+
+  const _KarneBolumBasligi({required this.icon, required this.baslik});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.lightGreenAccent, size: 20),
+
+        const SizedBox(width: 8),
+
+        Text(
+          baslik,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 17,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _KarneSayisalAlan extends StatelessWidget {
+  final TextEditingController controller;
+  final String etiket;
+  final String birim;
+
+  final ValueChanged<String>? onChanged;
+
+  const _KarneSayisalAlan({
+    required this.controller,
+    required this.etiket,
+    required this.birim,
+    this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+
+      child: TextField(
+        controller: controller,
+
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+
+        onChanged: onChanged,
+
+        style: const TextStyle(color: Colors.white),
+
+        decoration: InputDecoration(
+          labelText: etiket,
+
+          labelStyle: const TextStyle(color: Colors.grey),
+
+          suffixText: birim,
+
+          suffixStyle: const TextStyle(color: Colors.lightGreenAccent),
+
+          filled: true,
+
+          fillColor: const Color(0xFF171717),
+
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+
+            borderSide: const BorderSide(color: Color(0xFF2A2A2A)),
+          ),
+
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+
+            borderSide: const BorderSide(color: Colors.lightGreenAccent),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KarneTeknikBolumu extends StatelessWidget {
+  final String baslik;
+  final IconData icon;
+
+  final Map<String, String> degerler;
+
+  final Map<String, String> maddeler;
+
+  final VoidCallback onChanged;
+
+  const _KarneTeknikBolumu({
+    required this.baslik,
+    required this.icon,
+    required this.degerler,
+    required this.maddeler,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+
+      children: [
+        _KarneBolumBasligi(icon: icon, baslik: baslik),
+
+        const SizedBox(height: 12),
+
+        ...maddeler.entries.map((madde) {
+          final secili = degerler[madde.key];
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 10),
+
+            padding: const EdgeInsets.all(13),
+
+            decoration: BoxDecoration(
+              color: const Color(0xFF171717),
+
+              borderRadius: BorderRadius.circular(12),
+
+              border: Border.all(color: const Color(0xFF292929)),
+            ),
+
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+
+              children: [
+                Text(
+                  madde.value,
+
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _KarneDegerlendirmeButonu(
+                        metin: 'İYİ',
+
+                        secili: secili == 'iyi',
+
+                        iyiMi: true,
+
+                        onTap: () {
+                          degerler[madde.key] = 'iyi';
+
+                          onChanged();
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    Expanded(
+                      child: _KarneDegerlendirmeButonu(
+                        metin: 'GELİŞTİRİLMELİ',
+
+                        secili: secili == 'gelistirilmeli',
+
+                        iyiMi: false,
+
+                        onTap: () {
+                          degerler[madde.key] = 'gelistirilmeli';
+
+                          onChanged();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+class _KarneDegerlendirmeButonu extends StatelessWidget {
+  final String metin;
+  final bool secili;
+  final bool iyiMi;
+  final VoidCallback onTap;
+
+  const _KarneDegerlendirmeButonu({
+    required this.metin,
+    required this.secili,
+    required this.iyiMi,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final renk = iyiMi ? Colors.lightGreenAccent : Colors.orangeAccent;
+
+    return InkWell(
+      onTap: onTap,
+
+      borderRadius: BorderRadius.circular(8),
+
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+
+        decoration: BoxDecoration(
+          color: secili ? renk : const Color(0xFF222222),
+
+          borderRadius: BorderRadius.circular(8),
+
+          border: Border.all(
+            color: secili ? renk : Colors.grey.withOpacity(0.3),
+          ),
+        ),
+
+        alignment: Alignment.center,
+
+        child: Text(
+          metin,
+
+          style: TextStyle(
+            color: secili ? Colors.black : Colors.grey,
+
+            fontSize: 10,
+
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------- KULLANICI YÖNETİMİ (VELİ / SPORCU HESAPLARI) ----------------
 class KullaniciYonetimEkrani extends StatefulWidget {
   const KullaniciYonetimEkrani({super.key});
-
   @override
   State<KullaniciYonetimEkrani> createState() => _KullaniciYonetimEkraniState();
 }
