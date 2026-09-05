@@ -5,6 +5,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'services/database_service.dart';
 import 'package:video_player/video_player.dart';
+import 'screens/sporcu_kayit_ekrani.dart';
 
 // ---------------- VERİ MODELLERİ ----------------
 final DatabaseService dbService = DatabaseService();
@@ -6841,7 +6842,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SporcuEkleEkrani(),
+                    builder: (context) => SporcuKayitEkrani(db: dbService),
                   ),
                 );
 

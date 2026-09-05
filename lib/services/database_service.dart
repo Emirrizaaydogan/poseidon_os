@@ -12,6 +12,18 @@ class DatabaseService {
   /// Giriş yaptıktan sonra sunucudan aldığımız token burada tutulur.
   /// Uygulama kapanınca kaybolur (kalıcı hafızaya kaydetmiyoruz, bu yüzden
   /// her açılışta tekrar giriş yapman gerekir — ileride bunu da geliştirebiliriz).
+  Future<void> sporcuTopluKaydet(Map<String, dynamic> veri) async {
+    final response = await http.post(
+      Uri.parse('$apiBaseUrl/athletes/onboard'),
+      headers: _headers,
+      body: jsonEncode(veri),
+    );
+
+    if (response.statusCode != 201) {
+      _hataFirlat(response, 'Sporcu ve hesaplar kaydedilemedi');
+    }
+  }
+
   String? _token;
 
   void setToken(String? token) {
