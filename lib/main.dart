@@ -194,12 +194,198 @@ class PoseidonApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Poseidon OS',
-      theme: ThemeData(
-        primaryColor: Colors.black,
-        scaffoldBackgroundColor: Colors.black,
+    const vurgu = Colors.lightGreenAccent;
+    const kartRengi = Color(0xFF141414);
+    const alanRengi = Color(0xFF1A1A1A);
+    const kenarRengi = Color(0xFF303030);
+
+    final temelTema = ThemeData.dark();
+
+    final yuvarlakSekil = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(14),
+    );
+
+    final tema = temelTema.copyWith(
+      primaryColor: vurgu,
+      scaffoldBackgroundColor: Colors.black,
+      canvasColor: kartRengi,
+      dividerColor: kenarRengi,
+
+      colorScheme: const ColorScheme.dark(
+        primary: vurgu,
+        onPrimary: Colors.black,
+        secondary: vurgu,
+        onSecondary: Colors.black,
+        surface: kartRengi,
+        onSurface: Colors.white,
+        error: Colors.redAccent,
+        onError: Colors.black,
       ),
+
+      appBarTheme: temelTema.appBarTheme.copyWith(
+        backgroundColor: Colors.black,
+        foregroundColor: vurgu,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        iconTheme: const IconThemeData(color: vurgu),
+        titleTextStyle: const TextStyle(
+          color: vurgu,
+          fontSize: 17,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+
+      cardTheme: temelTema.cardTheme.copyWith(
+        color: kartRengi,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: kenarRengi),
+        ),
+      ),
+
+      bottomSheetTheme: temelTema.bottomSheetTheme.copyWith(
+        backgroundColor: kartRengi,
+        modalBackgroundColor: kartRengi,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        clipBehavior: Clip.antiAlias,
+      ),
+
+      dialogTheme: temelTema.dialogTheme.copyWith(
+        backgroundColor: kartRengi,
+        surfaceTintColor: Colors.transparent,
+        shape: yuvarlakSekil,
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+        contentTextStyle: const TextStyle(color: Colors.white70, fontSize: 14),
+      ),
+
+      inputDecorationTheme: const InputDecorationTheme(
+        filled: true,
+        fillColor: alanRengi,
+        labelStyle: TextStyle(color: Colors.white70),
+        hintStyle: TextStyle(color: Colors.grey),
+        prefixIconColor: vurgu,
+        suffixIconColor: vurgu,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: kenarRengi),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: kenarRengi),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: vurgu, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Colors.redAccent),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Colors.redAccent, width: 1.5),
+        ),
+      ),
+
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: vurgu,
+          foregroundColor: Colors.black,
+          disabledBackgroundColor: kenarRengi,
+          disabledForegroundColor: Colors.grey,
+          elevation: 0,
+          minimumSize: const Size(48, 46),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          shape: yuvarlakSekil,
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+      ),
+
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: vurgu,
+          disabledForegroundColor: Colors.grey,
+          side: const BorderSide(color: kenarRengi),
+          minimumSize: const Size(48, 44),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          shape: yuvarlakSekil,
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
+      ),
+
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: vurgu,
+          minimumSize: const Size(48, 44),
+        ),
+      ),
+
+      chipTheme: temelTema.chipTheme.copyWith(
+        backgroundColor: alanRengi,
+        selectedColor: const Color(0xFF243B16),
+        disabledColor: alanRengi,
+        checkmarkColor: vurgu,
+        labelStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+        ),
+        side: const BorderSide(color: kenarRengi),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      ),
+
+      listTileTheme: temelTema.listTileTheme.copyWith(
+        textColor: Colors.white,
+        iconColor: Colors.grey,
+        selectedColor: vurgu,
+        selectedTileColor: const Color(0xFF1C2B14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      ),
+
+      floatingActionButtonTheme: temelTema.floatingActionButtonTheme.copyWith(
+        backgroundColor: vurgu,
+        foregroundColor: Colors.black,
+        elevation: 2,
+        shape: yuvarlakSekil,
+      ),
+
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: vurgu,
+        linearTrackColor: alanRengi,
+      ),
+
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: vurgu,
+        selectionColor: Color(0x553EFF00),
+        selectionHandleColor: vurgu,
+      ),
+
+      snackBarTheme: temelTema.snackBarTheme.copyWith(
+        backgroundColor: const Color(0xFF252525),
+        contentTextStyle: const TextStyle(color: Colors.white),
+        actionTextColor: vurgu,
+        behavior: SnackBarBehavior.floating,
+        shape: yuvarlakSekil,
+      ),
+    );
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Poseidon OS',
+      theme: tema,
       home: const LoginScreen(),
     );
   }
