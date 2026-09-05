@@ -17,6 +17,8 @@ class Sporcu {
   final String enIyiDerece;
   final String enIyiDereceStil;
   final String enIyiDereceMesafe;
+  final String? dogumTarihi;
+  final String? cinsiyet;
 
   const Sporcu({
     required this.id,
@@ -26,6 +28,8 @@ class Sporcu {
     required this.enIyiDerece,
     required this.enIyiDereceStil,
     required this.enIyiDereceMesafe,
+    this.dogumTarihi,
+    this.cinsiyet,
   });
 
   factory Sporcu.fromJson(Map<String, dynamic> veri) {
@@ -37,6 +41,8 @@ class Sporcu {
       enIyiDerece: veri['en_iyi_derece']?.toString() ?? '',
       enIyiDereceStil: veri['en_iyi_derece_stil']?.toString() ?? '',
       enIyiDereceMesafe: veri['en_iyi_derece_mesafe']?.toString() ?? '',
+      dogumTarihi: veri['dogum_tarihi']?.toString(),
+      cinsiyet: veri['cinsiyet']?.toString(),
     );
   }
 }
@@ -838,6 +844,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ],
           ),
+          if (_seciliRol == 'sporcu')
+            const Padding(
+              padding: EdgeInsets.only(top: 16),
+              child: Text(
+                'Kayıttan sonra antrenörün hesabını sporcu kaydınla eşleştirecek. Ardından yeniden giriş yapabilirsin.',
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+            ),
           if (_seciliRol == 'veli') ...[
             const SizedBox(height: 20),
             const Text(
@@ -1542,7 +1556,7 @@ class ProfilSekmesi extends StatelessWidget {
         color: Colors.black,
         child: const Center(
           child: Text(
-            'Bu hesaba bağlı sporcu bulunamadı',
+            'Bu hesap henüz bir sporcuya bağlanmamış. Antrenöründen Veli / Sporcu Hesapları ekranında eşleştirme yapmasını iste.',
             style: TextStyle(color: Colors.grey, fontSize: 14),
           ),
         ),
@@ -4028,7 +4042,11 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
     final boyCm = _sayi(_boyController);
     final kilo = _sayi(_vucutAgirligiController);
 
-    if (boyCm == null || kilo == null || boyCm <= 0 || kilo <= 0) {
+    if (boyCm == null ||
+        kilo == null ||
+        boyCm < 30 ||
+        boyCm > 300 ||
+        kilo <= 0) {
       return null;
     }
 
@@ -4101,7 +4119,52 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
   // KAYDET
   // =====================================================
 
+  String? _olcumHatasi() {
+    final alanlar = <TextEditingController, String>{
+      _ayakUzunluguController: 'Ayak uzunluğu',
+      _ayakGenisligiController: 'Ayak genişliği',
+      _boyController: 'Boy',
+      _elGenisligiController: 'El genişliği',
+      _elUzunluguController: 'El uzunluğu',
+      _gogusCevresiController: 'Göğüs çevresi',
+      _kulacUzunluguController: 'Kulaç uzunluğu',
+      _oturmaYuksekligiController: 'Oturma yüksekliği',
+      _vucutAgirligiController: 'Vücut ağırlığı',
+      _oturErisController: 'Otur-eriş',
+      _sirtKasimaSagController: 'Sırt kaşıma sağ',
+      _sirtKasimaSolController: 'Sırt kaşıma sol',
+      _flamingoController: 'Flamingo',
+    };
+    for (final alan in alanlar.entries) {
+      if (alan.key.text.trim().isEmpty) continue;
+      final v = _sayi(alan.key);
+      if (v == null || !v.isFinite)
+        return '${alan.value}: geçerli bir sayı gir.';
+      final esneklik = [
+        _oturErisController,
+        _sirtKasimaSagController,
+        _sirtKasimaSolController,
+      ].contains(alan.key);
+      if (!esneklik && alan.key != _flamingoController && v <= 0) {
+        return '${alan.value}: sıfırdan büyük olmalı.';
+      }
+      if (alan.key == _boyController && (v < 30 || v > 300)) {
+        return 'Boyu santimetre olarak gir: örneğin 1,57 yerine 157.';
+      }
+      if (alan.key == _flamingoController &&
+          (v < 0 || v != v.roundToDouble())) {
+        return 'Flamingo hata sayısı sıfır veya pozitif tam sayı olmalı.';
+      }
+    }
+    return null;
+  }
+
   Future<void> _kaydet() async {
+    final hata = _olcumHatasi();
+    if (hata != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(hata)));
+      return;
+    }
     final antropometrik = <String, dynamic>{};
 
     _sayisalAlanEkle(antropometrik, 'ayak_uzunlugu', _ayakUzunluguController);
@@ -4337,7 +4400,7 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
 
           _KarneSayisalAlan(
             controller: _boyController,
-            etiket: 'Boy',
+            etiket: 'Boy (ör. 157)',
             birim: 'cm',
             onChanged: (_) {
               setState(() {});
@@ -4712,7 +4775,10 @@ class _KarneSayisalAlan extends StatelessWidget {
       child: TextField(
         controller: controller,
 
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        keyboardType: const TextInputType.numberWithOptions(
+          decimal: true,
+          signed: true,
+        ),
 
         onChanged: onChanged,
 
@@ -4915,8 +4981,9 @@ class KullaniciYonetimEkrani extends StatefulWidget {
 }
 
 class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
-  late Future<List<dynamic>> _kullanicilarFuture;
-  late Future<List<dynamic>> _sporcularFuture;
+  late Future<List<List<dynamic>>> _verilerFuture;
+  String _rolFiltresi = 'veli';
+  bool _islemSuruyor = false;
 
   @override
   void initState() {
@@ -4925,10 +4992,237 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
   }
 
   void _reload() {
+    if (!mounted) return;
     setState(() {
-      _kullanicilarFuture = dbService.getKullanicilar();
-      _sporcularFuture = dbService.getSporcular();
+      _verilerFuture = Future.wait<List<dynamic>>([
+        dbService.getKullanicilar(),
+        dbService.getSporcular(),
+      ]);
     });
+  }
+
+  Future<void> _yenile() async {
+    _reload();
+    try {
+      await _verilerFuture;
+    } catch (_) {
+      // Hata FutureBuilder içinde gösterilir.
+    }
+  }
+
+  String _sporcuAciklamasi(dynamic s) {
+    final yil = s['dogum_yili']?.toString() ?? '-';
+    final grup = s['grup']?.toString() ?? '-';
+    return 'Doğum yılı: $yil · Grup: $grup · Sporcu No: ${s['id']}';
+  }
+
+  Future<void> _eslestirmeyiDuzenle(Map<String, dynamic> kullanici) async {
+    if (_islemSuruyor) return;
+    setState(() => _islemSuruyor = true);
+    try {
+      // Her açılışta sunucudan al: önceki ekranın listesi kullanılmaz.
+      final veriler = await Future.wait<List<dynamic>>([
+        dbService.getSporcular(),
+        dbService.getKullanicilar(),
+      ]);
+      if (!mounted) return;
+      final sporcular = veriler[0];
+      final hesaplar = veriler[1];
+      final guncel = hesaplar.firstWhere(
+        (k) => k['id'].toString() == kullanici['id'].toString(),
+        orElse: () => null,
+      );
+      if (guncel == null)
+        throw Exception('Bu hesap artık listede yok. Listeyi yenile.');
+      final veliMi = guncel['role'] == 'veli';
+      int? seciliId = int.tryParse(guncel['athlete_id']?.toString() ?? '');
+      String arama = '';
+      final sonuc = await showModalBottomSheet<Map<String, int?>>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: const Color(0xFF141414),
+        builder: (sheetContext) => StatefulBuilder(
+          builder: (sheetContext, setModalState) {
+            final liste = sporcular
+                .where(
+                  (s) => '${s['isim']} ${s['id']} ${s['grup']}'
+                      .toLowerCase()
+                      .contains(arama.toLowerCase()),
+                )
+                .toList();
+            final seciliMevcut =
+                seciliId == null ||
+                sporcular.any((s) => s['id'].toString() == seciliId.toString());
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  20,
+                  20,
+                  MediaQuery.of(sheetContext).viewInsets.bottom + 12,
+                ),
+                child: SizedBox(
+                  height: MediaQuery.of(sheetContext).size.height * 0.65,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        veliMi
+                            ? 'Velinin Çocuğunu Seç'
+                            : 'Sporcu Hesabını Eşleştir',
+                        style: const TextStyle(
+                          color: Colors.lightGreenAccent,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${veliMi ? 'Veli hesabı' : 'Sporcu hesabı'}: ${guncel['email']}',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Kulüpteki sporcu kayıtları listelenir. Çocuğun ayrıca giriş hesabı olması gerekmez.',
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Çocuk adı, grup veya sporcu numarası ara',
+                          prefixIcon: Icon(Icons.search),
+                        ),
+                        onChanged: (v) => setModalState(() => arama = v),
+                      ),
+                      if (!seciliMevcut)
+                        const Text(
+                          'Önceki sporcu kaydı bulunamadı. Yeni bir sporcu seç veya bağlantıyı kaldır.',
+                          style: TextStyle(color: Colors.orangeAccent),
+                        ),
+                      Expanded(
+                        child: ListView(
+                          children: [
+                            ListTile(
+                              leading: Icon(
+                                seciliId == null
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off,
+                              ),
+                              title: const Text(
+                                'Bağlantı yok / bağlantıyı kaldır',
+                              ),
+                              onTap: () => setModalState(() => seciliId = null),
+                            ),
+                            if (liste.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Text(
+                                  sporcular.isEmpty
+                                      ? 'Kayıtlı sporcu yok. Önce Sporcular bölümünden ekle.'
+                                      : 'Aramaya uygun sporcu bulunamadı.',
+                                ),
+                              ),
+                            ...liste.map<Widget>((s) {
+                              final id = int.parse(s['id'].toString());
+                              final girisHesabiVar = hesaplar.any(
+                                (k) =>
+                                    k['role'] == 'sporcu' &&
+                                    k['athlete_id']?.toString() ==
+                                        id.toString(),
+                              );
+                              return ListTile(
+                                selected: seciliId == id,
+                                selectedColor: Colors.lightGreenAccent,
+                                leading: Icon(
+                                  seciliId == id
+                                      ? Icons.radio_button_checked
+                                      : Icons.radio_button_off,
+                                ),
+                                title: Text(
+                                  s['isim']?.toString() ?? 'İsimsiz sporcu',
+                                ),
+                                subtitle: Text(
+                                  '${_sporcuAciklamasi(s)}\n${girisHesabiVar ? 'Sporcu giriş hesabı bağlı' : 'Sporcu giriş hesabı bağlı değil'}',
+                                ),
+                                isThreeLine: true,
+                                onTap: () => setModalState(() => seciliId = id),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(sheetContext),
+                            child: const Text('Vazgeç'),
+                          ),
+                          const Spacer(),
+                          ElevatedButton(
+                            onPressed: !seciliMevcut
+                                ? null
+                                : () => Navigator.pop(
+                                    sheetContext,
+                                    <String, int?>{'athlete_id': seciliId},
+                                  ),
+                            child: const Text('Eşleştirmeyi Kaydet'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+      if (sonuc == null || !mounted) return;
+      await dbService.kullaniciSporcuEslestir(
+        int.parse(guncel['id'].toString()),
+        sonuc['athlete_id'],
+      );
+      if (!mounted) return;
+      await _yenile();
+      if (!mounted) return;
+      final secilen = sporcular.firstWhere(
+        (s) => s['id'].toString() == sonuc['athlete_id']?.toString(),
+        orElse: () => null,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            secilen == null
+                ? '${guncel['email']}: bağlantı kaldırıldı.'
+                : '${guncel['email']} → ${secilen['isim']} eşleştirildi. İlgili hesap yeniden giriş yapmalı.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _islemSuruyor = false);
+    }
+  }
+
+  Future<void> _yeniHesapAc() async {
+    if (_islemSuruyor) return;
+    setState(() => _islemSuruyor = true);
+    try {
+      final sporcular = await dbService.getSporcular();
+      if (!mounted) return;
+      await _kullaniciEkleFormuAc(sporcular);
+    } catch (e) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$e')));
+    } finally {
+      if (mounted) setState(() => _islemSuruyor = false);
+    }
   }
 
   Future<void> _kullaniciSil(int id, String email) async {
@@ -4960,106 +5254,6 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
 
     try {
       await dbService.kullaniciSil(id);
-      _reload();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
-      }
-    }
-  }
-
-  Future<void> _eslestirmeyiDuzenle(
-    Map<String, dynamic> kullanici,
-    List<dynamic> sporcular,
-  ) async {
-    int? seciliId = kullanici['athlete_id'] != null
-        ? int.parse(kullanici['athlete_id'].toString())
-        : null;
-
-    final sonuc = await showModalBottomSheet<int?>(
-      context: context,
-      backgroundColor: const Color(0xFF141414),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${kullanici['email']} — Sporcu Eşleştir',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ChoiceChip(
-                        label: const Text('Eşleşme Yok'),
-                        selected: seciliId == null,
-                        onSelected: (_) => setModalState(() => seciliId = null),
-                        selectedColor: Colors.grey,
-                        labelStyle: TextStyle(
-                          color: seciliId == null ? Colors.black : Colors.white,
-                        ),
-                        backgroundColor: const Color(0xFF1A1A1A),
-                      ),
-                      ...sporcular.map((s) {
-                        final id = int.parse(s['id'].toString());
-                        final seciliMi = seciliId == id;
-                        return ChoiceChip(
-                          label: Text(s['isim'] ?? ''),
-                          selected: seciliMi,
-                          onSelected: (_) => setModalState(() => seciliId = id),
-                          selectedColor: Colors.lightGreenAccent,
-                          labelStyle: TextStyle(
-                            color: seciliMi ? Colors.black : Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          backgroundColor: const Color(0xFF1A1A1A),
-                        );
-                      }),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OkluButon(
-                      metin: 'Kaydet',
-                      onTap: () => Navigator.pop(context, seciliId),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    // Bottom sheet kapatılırken (dışarı tıklayarak) hiçbir seçim
-    // yapılmadıysa güncelleme göndermiyoruz.
-    if (sonuc == seciliId && sonuc == null && kullanici['athlete_id'] == null) {
-      return;
-    }
-
-    try {
-      await dbService.kullaniciSporcuEslestir(
-        int.parse(kullanici['id'].toString()),
-        sonuc,
-      );
       _reload();
     } catch (e) {
       if (mounted) {
@@ -5249,148 +5443,170 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text(
-          'Veli / Sporcu Hesapları',
-          style: TextStyle(color: Colors.lightGreenAccent, fontSize: 16),
-        ),
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        title: const Text('Veli / Sporcu Hesapları'),
+        actions: [
+          IconButton(
+            tooltip: 'Listeyi Yenile',
+            onPressed: _islemSuruyor ? null : _reload,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async => _reload(),
-        color: Colors.lightGreenAccent,
-        backgroundColor: Colors.black,
-        child: FutureBuilder<List<dynamic>>(
-          future: _sporcularFuture,
-          builder: (context, sporcuSnapshot) {
-            final sporcular = sporcuSnapshot.data ?? [];
-            return FutureBuilder<List<dynamic>>(
-              future: _kullanicilarFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.lightGreenAccent,
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Wrap(
+              spacing: 8,
+              children: [
+                for (final rol in ['veli', 'sporcu', 'tumu'])
+                  ChoiceChip(
+                    label: Text(
+                      rol == 'veli'
+                          ? 'Veliler'
+                          : rol == 'sporcu'
+                          ? 'Sporcu Hesapları'
+                          : 'Tümü',
+                    ),
+                    selected: _rolFiltresi == rol,
+                    onSelected: (_) => setState(() => _rolFiltresi = rol),
+                  ),
+              ],
+            ),
+          ),
+          if (_islemSuruyor) const LinearProgressIndicator(),
+          Expanded(
+            child: RefreshIndicator(
+              onRefresh: _yenile,
+              child: FutureBuilder<List<List<dynamic>>>(
+                future: _verilerFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text('${snapshot.error}'),
+                        ),
+                        TextButton(
+                          onPressed: _reload,
+                          child: const Text('Tekrar Dene'),
+                        ),
+                      ],
+                    );
+                  }
+                  final veriler = snapshot.data!;
+                  final kullanicilar = veriler[0]
+                      .where(
+                        (k) =>
+                            _rolFiltresi == 'tumu' || k['role'] == _rolFiltresi,
+                      )
+                      .toList();
+                  kullanicilar.sort(
+                    (a, b) => (a['athlete_id'] == null ? 0 : 1).compareTo(
+                      b['athlete_id'] == null ? 0 : 1,
                     ),
                   );
-                }
-                final kullanicilar = snapshot.data ?? [];
-                if (kullanicilar.isEmpty) {
+                  final sporcular = {
+                    for (final s in veriler[1]) s['id'].toString(): s,
+                  };
                   return ListView(
-                    children: const [
-                      SizedBox(height: 80),
-                      Center(
-                        child: Text(
-                          'Henüz kayıtlı veli/sporcu hesabı yok',
-                          style: TextStyle(color: Colors.grey),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
+                    children: [
+                      if (kullanicilar.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text('Bu bölümde kayıtlı hesap yok.'),
                         ),
-                      ),
-                    ],
-                  );
-                }
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: kullanicilar.length,
-                  itemBuilder: (context, index) {
-                    final k = kullanicilar[index];
-                    final rol = k['role'] as String;
-                    final sporcuIsmi = k['athlete_isim'];
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF141414),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: const Color(0xFF2A2A2A)),
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: rol == 'veli'
-                                ? Colors.blueGrey
-                                : Colors.teal,
-                            child: Icon(
-                              rol == 'veli'
-                                  ? Icons.family_restroom
-                                  : Icons.pool,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
+                      ...kullanicilar.map<Widget>((ham) {
+                        final k = Map<String, dynamic>.from(ham);
+                        final veliMi = k['role'] == 'veli';
+                        final cocuk = sporcular[k['athlete_id']?.toString()];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  k['email'] ?? '',
+                                  '${veliMi ? 'Veli hesabı' : 'Sporcu hesabı'}: ${k['email']}',
                                   style: const TextStyle(
-                                    color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 13,
                                   ),
                                 ),
-                                const SizedBox(height: 2),
+                                const SizedBox(height: 10),
                                 Text(
-                                  '${rol == 'veli' ? 'Veli' : 'Sporcu'} · '
-                                  '${sporcuIsmi ?? 'Eşleşme yok'}',
+                                  cocuk != null
+                                      ? '${veliMi ? 'Çocuğu' : 'Bağlı sporcu'}: ${cocuk['isim']}'
+                                      : k['athlete_id'] == null
+                                      ? 'Henüz eşleştirilmedi'
+                                      : 'Bağlı sporcu kaydı bulunamadı',
                                   style: TextStyle(
-                                    color: sporcuIsmi != null
-                                        ? Colors.lightGreenAccent
-                                        : Colors.grey,
-                                    fontSize: 12,
+                                    color: cocuk == null
+                                        ? Colors.orangeAccent
+                                        : Colors.lightGreenAccent,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
                                   ),
+                                ),
+                                if (cocuk != null)
+                                  Text(
+                                    _sporcuAciklamasi(cocuk),
+                                    style: const TextStyle(color: Colors.grey),
+                                  ),
+                                const SizedBox(height: 10),
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    OutlinedButton.icon(
+                                      onPressed: _islemSuruyor
+                                          ? null
+                                          : () => _eslestirmeyiDuzenle(k),
+                                      icon: const Icon(Icons.link),
+                                      label: Text(
+                                        veliMi
+                                            ? 'Çocuğunu Seç / Değiştir'
+                                            : 'Sporcu Kaydını Seç',
+                                      ),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Giriş Hesabını Kaldır',
+                                      onPressed: _islemSuruyor
+                                          ? null
+                                          : () => _kullaniciSil(
+                                              int.parse(k['id'].toString()),
+                                              k['email']?.toString() ?? '',
+                                            ),
+                                      icon: const Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.redAccent,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.link,
-                              color: Colors.grey,
-                              size: 20,
-                            ),
-                            tooltip: 'Sporcu Eşleştir',
-                            onPressed: () => _eslestirmeyiDuzenle(k, sporcular),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              color: Colors.redAccent,
-                              size: 20,
-                            ),
-                            tooltip: 'Hesabı Kaldır',
-                            onPressed: () => _kullaniciSil(
-                              int.parse(k['id'].toString()),
-                              k['email'] ?? '',
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
-            );
-          },
-        ),
-      ),
-      floatingActionButton: FutureBuilder<List<dynamic>>(
-        future: _sporcularFuture,
-        builder: (context, snapshot) {
-          final sporcular = snapshot.data ?? [];
-          return FloatingActionButton.extended(
-            backgroundColor: Colors.lightGreenAccent,
-            foregroundColor: Colors.black,
-            icon: const Icon(Icons.person_add),
-            label: const Text(
-              'Hesap Ekle',
-              style: TextStyle(fontWeight: FontWeight.bold),
+                        );
+                      }),
+                    ],
+                  );
+                },
+              ),
             ),
-            onPressed: () => _kullaniciEkleFormuAc(sporcular),
-          );
-        },
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _islemSuruyor ? null : _yeniHesapAc,
+        icon: const Icon(Icons.person_add),
+        label: const Text('Hesap Ekle'),
       ),
     );
   }
@@ -6093,6 +6309,15 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
           ),
 
           if (widget.antrenorMu)
+            IconButton(
+              tooltip: 'Sporcu Bilgilerini Düzenle',
+              icon: const Icon(Icons.edit, color: Colors.lightGreenAccent),
+              onPressed: () async {
+                await sporcuBilgileriniDuzenle(context, sporcu.id);
+                if (mounted) _tumVerileriYenile();
+              },
+            ),
+          if (widget.antrenorMu)
             ElevatedButton.icon(
               onPressed: () async {
                 await Navigator.push(
@@ -6446,8 +6671,31 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
 }
 // ---------------- SPORCU EKLEME FORMU ----------------
 
+Future<void> sporcuBilgileriniDuzenle(BuildContext context, int id) async {
+  try {
+    final sporcular = await dbService.getSporcular();
+    final veri = sporcular.firstWhere(
+      (s) => s['id'].toString() == id.toString(),
+    );
+    if (!context.mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SporcuEkleEkrani(
+          sporcu: Sporcu.fromJson(Map<String, dynamic>.from(veri)),
+        ),
+      ),
+    );
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
+}
+
 class SporcuEkleEkrani extends StatefulWidget {
-  const SporcuEkleEkrani({super.key});
+  final Sporcu? sporcu;
+  const SporcuEkleEkrani({super.key, this.sporcu});
 
   @override
   State<SporcuEkleEkrani> createState() => _SporcuEkleEkraniState();
@@ -6460,6 +6708,49 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
   final _enIyiDereceController = TextEditingController();
   String? _seciliStil;
   bool _kaydediliyor = false;
+  DateTime? _dogumTarihi;
+  String? _cinsiyet;
+
+  @override
+  void initState() {
+    super.initState();
+    final s = widget.sporcu;
+    if (s == null) return;
+    _isimController.text = s.isim;
+    _dogumYiliController.text = s.dogumYili > 0 ? '${s.dogumYili}' : '';
+    _grupController.text = s.grup;
+    _enIyiDereceController.text = s.enIyiDerece;
+    _seciliStil = yuzmeStilleri.contains(s.enIyiDereceStil)
+        ? s.enIyiDereceStil
+        : null;
+    _dogumTarihi = DateTime.tryParse(s.dogumTarihi ?? '');
+    final c = s.cinsiyet?.toLowerCase();
+    _cinsiyet = ['erkek', 'male', 'e'].contains(c)
+        ? 'erkek'
+        : ['kız', 'kiz', 'kadın', 'kadin', 'female', 'k'].contains(c)
+        ? 'kiz'
+        : null;
+  }
+
+  Future<void> _dogumTarihiSec() async {
+    final simdi = DateTime.now();
+    final secilen = await showDatePicker(
+      context: context,
+      initialDate:
+          _dogumTarihi != null &&
+              !_dogumTarihi!.isAfter(simdi) &&
+              _dogumTarihi!.year >= 1900
+          ? _dogumTarihi!
+          : simdi,
+      firstDate: DateTime(1900),
+      lastDate: simdi,
+    );
+    if (secilen == null || !mounted) return;
+    setState(() {
+      _dogumTarihi = secilen;
+      _dogumYiliController.text = '${secilen.year}';
+    });
+  }
 
   Future<void> _sporcuKaydet() async {
     if (_isimController.text.trim().isEmpty) {
@@ -6468,15 +6759,29 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
       ).showSnackBar(const SnackBar(content: Text('İsim boş olamaz')));
       return;
     }
+    if (_dogumTarihi == null || _cinsiyet == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Doğum tarihi ve cinsiyet seçmelisin.')),
+      );
+      return;
+    }
     setState(() => _kaydediliyor = true);
     try {
-      await dbService.sporcuEkle({
+      final veri = <String, dynamic>{
         'isim': _isimController.text.trim(),
-        'dogum_yili': int.tryParse(_dogumYiliController.text.trim()) ?? 0,
+        'dogum_yili': _dogumTarihi!.year,
+        'dogum_tarihi':
+            '${_dogumTarihi!.year}-${_dogumTarihi!.month.toString().padLeft(2, '0')}-${_dogumTarihi!.day.toString().padLeft(2, '0')}',
+        'cinsiyet': _cinsiyet,
         'grup': _grupController.text.trim(),
         'en_iyi_derece': _enIyiDereceController.text.trim(),
         'en_iyi_derece_stil': _seciliStil,
-      });
+      };
+      if (widget.sporcu == null) {
+        await dbService.sporcuEkle(veri);
+      } else {
+        await dbService.sporcuGuncelle(widget.sporcu!.id, veri);
+      }
       if (context.mounted) Navigator.pop(context);
     } catch (e) {
       if (context.mounted) {
@@ -6504,22 +6809,38 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text(
-          'Yeni Sporcu',
+        title: Text(
+          widget.sporcu == null ? 'Yeni Sporcu' : 'Sporcu Bilgilerini Düzenle',
           style: TextStyle(color: Colors.lightGreenAccent),
         ),
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             _FormAlani(controller: _isimController, etiket: 'İsim'),
             const SizedBox(height: 12),
-            _FormAlani(
-              controller: _dogumYiliController,
-              etiket: 'Doğum Yılı',
-              sayisalMi: true,
+            OutlinedButton.icon(
+              onPressed: _kaydediliyor ? null : _dogumTarihiSec,
+              icon: const Icon(Icons.calendar_month),
+              label: Text(
+                _dogumTarihi == null
+                    ? 'Doğum Tarihi Seç'
+                    : 'Doğum Tarihi: ${_dogumTarihi!.day}.${_dogumTarihi!.month}.${_dogumTarihi!.year}',
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _cinsiyet,
+              decoration: const InputDecoration(labelText: 'Cinsiyet'),
+              items: const [
+                DropdownMenuItem(value: 'erkek', child: Text('Erkek')),
+                DropdownMenuItem(value: 'kiz', child: Text('Kız')),
+              ],
+              onChanged: _kaydediliyor
+                  ? null
+                  : (v) => setState(() => _cinsiyet = v),
             ),
             const SizedBox(height: 12),
             _FormAlani(
@@ -6656,16 +6977,18 @@ class SporcuDetayEkrani extends StatefulWidget {
 
 class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
   late Future<List<dynamic>> _future;
+  late Sporcu _sporcu;
 
   @override
   void initState() {
     super.initState();
+    _sporcu = widget.sporcu;
     _reload();
   }
 
   void _reload() {
     setState(() {
-      _future = dbService.getPerformans(widget.sporcu.id);
+      _future = dbService.getPerformans(_sporcu.id);
     });
   }
 
@@ -6676,8 +6999,36 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        actions: [
+          if (widget.antrenorMu)
+            IconButton(
+              tooltip: 'Sporcu Bilgilerini Düzenle',
+              icon: const Icon(Icons.edit),
+              onPressed: () async {
+                await sporcuBilgileriniDuzenle(context, _sporcu.id);
+                if (!mounted) return;
+                try {
+                  final liste = await dbService.getSporcular();
+                  final veri = liste.firstWhere(
+                    (s) => s['id'].toString() == _sporcu.id.toString(),
+                  );
+                  if (!mounted) return;
+                  setState(
+                    () => _sporcu = Sporcu.fromJson(
+                      Map<String, dynamic>.from(veri),
+                    ),
+                  );
+                } catch (e) {
+                  if (mounted)
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text('$e')));
+                }
+              },
+            ),
+        ],
         title: Text(
-          widget.sporcu.isim,
+          _sporcu.isim,
           style: const TextStyle(color: Colors.lightGreenAccent),
         ),
       ),
@@ -6708,9 +7059,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                       radius: 26,
                       backgroundColor: Colors.lightGreenAccent,
                       child: Text(
-                        widget.sporcu.isim.isNotEmpty
-                            ? widget.sporcu.isim[0]
-                            : '?',
+                        _sporcu.isim.isNotEmpty ? _sporcu.isim[0] : '?',
                         style: const TextStyle(
                           color: Colors.black,
                           fontWeight: FontWeight.bold,
@@ -6723,7 +7072,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.sporcu.isim,
+                          _sporcu.isim,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -6731,7 +7080,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                           ),
                         ),
                         Text(
-                          '${widget.sporcu.dogumYili} · ${widget.sporcu.grup}',
+                          '${_sporcu.dogumYili} · ${_sporcu.grup}',
                           style: const TextStyle(color: Colors.grey),
                         ),
                       ],
@@ -6974,7 +7323,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                   context,
                   MaterialPageRoute(
                     builder: (context) =>
-                        PerformansEkleEkrani(sporcuId: widget.sporcu.id),
+                        PerformansEkleEkrani(sporcuId: _sporcu.id),
                   ),
                 );
                 _reload();

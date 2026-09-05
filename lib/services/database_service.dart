@@ -78,12 +78,16 @@ class DatabaseService {
   /// 401 (giriş gerekli) ya da 403 (yetki yok) gibi durumlarda,
   /// sunucunun gönderdiği gerçek mesajı kullanıcıya gösterelim.
   Never _hataFirlat(http.Response response, String varsayilanMesaj) {
+    String mesaj = varsayilanMesaj;
     try {
       final govde = jsonDecode(response.body);
-      throw Exception(govde['mesaj'] ?? varsayilanMesaj);
-    } catch (e) {
-      throw Exception(varsayilanMesaj);
+      if (govde is Map && govde['mesaj'] is String) {
+        mesaj = govde['mesaj'] as String;
+      }
+    } on FormatException {
+      // HTML veya boş hata yanıtında varsayılan mesaj kullanılır.
     }
+    throw Exception(mesaj);
   }
 
   // ---------------- SPORCULAR ----------------
@@ -125,6 +129,17 @@ class DatabaseService {
 
     if (response.statusCode != 201) {
       _hataFirlat(response, 'Sporcu eklenemedi');
+    }
+  }
+
+  Future<void> sporcuGuncelle(int id, Map<String, dynamic> veri) async {
+    final response = await http.put(
+      Uri.parse('$apiBaseUrl/athletes/$id'),
+      headers: _headers,
+      body: jsonEncode(veri),
+    );
+    if (response.statusCode != 200) {
+      _hataFirlat(response, 'Sporcu güncellenemedi');
     }
   }
 
@@ -424,6 +439,27 @@ class DatabaseService {
     );
     if (response.statusCode != 200) {
       _hataFirlat(response, 'Eşleştirme güncellenemedi');
+    }
+    final sonuc = jsonDecode(response.body);
+    if (sonuc is! Map ||
+        sonuc['id']?.toString() != kullaniciId.toString() ||
+        !sonuc.containsKey('athlete_id') ||
+        sonuc['athlete_id']?.toString() != sporcuId?.toString()) {
+      throw Exception(
+        'Sunucu beklenen eşleştirmeyi doğrulamadı. Listeyi yenileyip kontrol et.',
+      );
+    }
+    // Okuma yolunda da aynı bağlantının döndüğünü kontrol et.
+    final hesaplar = await getKullanicilar();
+    final hesap = hesaplar.firstWhere(
+      (k) => k['id'].toString() == kullaniciId.toString(),
+      orElse: () => null,
+    );
+    if (hesap == null ||
+        hesap['athlete_id']?.toString() != sporcuId?.toString()) {
+      throw Exception(
+        'Kaydetme yanıtı alındı ancak hesap listesinde eşleştirme doğrulanamadı. Listeyi yenile.',
+      );
     }
   }
 
