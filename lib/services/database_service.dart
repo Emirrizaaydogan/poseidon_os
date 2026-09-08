@@ -9,10 +9,64 @@ const String apiBaseUrl = 'http://localhost:3000';
 /// Tüm veritabanı okuma/yazma işlemleri burada toplanır.
 /// Ekranlar artık Firestore'u değil, kendi backend'imizi çağırıyor.
 class DatabaseService {
+  String? _token;
+  int? _aktifVeliSporcuId;
+
+  void setToken(String? token) {
+    _token = token;
+    _aktifVeliSporcuId = null;
+  }
+
+  bool get girisYapilmisMi => _token != null;
+
+  void veliSporcuSec(int? sporcuId) {
+    _aktifVeliSporcuId = sporcuId;
+  }
+
+  Map<String, String> get _headers => {
+    'Content-Type': 'application/json',
+    if (_token != null) 'Authorization': 'Bearer $_token',
+    if (_aktifVeliSporcuId != null)
+      'X-Athlete-Id': _aktifVeliSporcuId.toString(),
+  };
+
+  Future<void> veliKayitOl({
+    required String email,
+    required String sifre,
+    required List<int> sporcuIds,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$apiBaseUrl/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email.trim().toLowerCase(),
+        'password': sifre,
+        'role': 'veli',
+        'athlete_ids': sporcuIds,
+      }),
+    );
+    if (response.statusCode != 201) {
+      _hataFirlat(response, 'Veli kaydı oluşturulamadı');
+    }
+  }
+
+  Future<List<dynamic>> getCocuklar() async {
+    final response = await http.get(
+      Uri.parse('$apiBaseUrl/auth/children'),
+      headers: _headers,
+    );
+    if (response.statusCode != 200) {
+      _hataFirlat(response, 'Çocukların getirilemedi');
+    }
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
   /// Giriş yaptıktan sonra sunucudan aldığımız token burada tutulur.
   /// Uygulama kapanınca kaybolur (kalıcı hafızaya kaydetmiyoruz, bu yüzden
   /// her açılışta tekrar giriş yapman gerekir — ileride bunu da geliştirebiliriz).
-  Future<void> sporcuTopluKaydet(Map<String, dynamic> veri) async {
+  Future<Map<String, dynamic>> sporcuTopluKaydet(
+    Map<String, dynamic> veri,
+  ) async {
     final response = await http.post(
       Uri.parse('$apiBaseUrl/athletes/onboard'),
       headers: _headers,
@@ -20,27 +74,10 @@ class DatabaseService {
     );
 
     if (response.statusCode != 201) {
-      _hataFirlat(response, 'Sporcu ve hesaplar kaydedilemedi');
+      _hataFirlat(response, 'Sporcu ve hesabı kaydedilemedi');
     }
-  }
 
-  String? _token;
-
-  void setToken(String? token) {
-    _token = token;
-  }
-
-  bool get girisYapilmisMi => _token != null;
-
-  /// Her isteğe otomatik olarak "Authorization: Bearer <token>" başlığını
-  /// ekleyen ortak bir yardımcı fonksiyon. Böylece her fonksiyonda bunu
-  /// tekrar tekrar yazmamıza gerek kalmıyor.
-  Map<String, String> get _headers {
-    final baslik = {'Content-Type': 'application/json'};
-    if (_token != null) {
-      baslik['Authorization'] = 'Bearer $_token';
-    }
-    return baslik;
+    return Map<String, dynamic>.from(jsonDecode(response.body));
   }
 
   // ---------------- KİMLİK DOĞRULAMA ----------------
@@ -65,20 +102,10 @@ class DatabaseService {
     required String rol,
     int? sporcuId,
   }) async {
-    final response = await http.post(
-      Uri.parse('$apiBaseUrl/auth/register'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': sifre,
-        'role': rol,
-        'athlete_id': sporcuId,
-      }),
-    );
-    if (response.statusCode != 201) {
-      final govde = jsonDecode(response.body);
-      throw Exception(govde['mesaj'] ?? 'Kayıt oluşturulamadı');
+    if (rol != 'veli' || sporcuId == null) {
+      throw Exception('Veli kayıt ekranından çocuğunu seçerek kaydolmalısın');
     }
+    await veliKayitOl(email: email, sifre: sifre, sporcuIds: [sporcuId]);
   }
 
   void cikisYap() {

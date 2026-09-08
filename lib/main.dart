@@ -458,7 +458,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final kullanici = await dbService.girisYap(
         _emailController.text.trim(),
-        _sifreController.text.trim(),
+        _sifreController.text,
       );
 
       if (!mounted) return;
@@ -466,12 +466,14 @@ class _LoginScreenState extends State<LoginScreen> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => HomeScreen(
-            rol: kullanici['role'],
-            veliSporcuId: kullanici['athlete_id'] != null
-                ? int.parse(kullanici['athlete_id'].toString())
-                : null,
-          ),
+          builder: (context) => kullanici['role'] == 'veli'
+              ? const VeliPaneli()
+              : HomeScreen(
+                  rol: kullanici['role'],
+                  veliSporcuId: kullanici['athlete_id'] != null
+                      ? int.parse(kullanici['athlete_id'].toString())
+                      : null,
+                ),
         ),
       );
     } catch (e) {
@@ -902,222 +904,224 @@ class _PoseidonLoginInput extends StatelessWidget {
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
-
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  Future<List<dynamic>>? _kayitSporcularFuture;
-  final _emailController = TextEditingController();
-  final _sifreController = TextEditingController();
-  String _seciliRol = 'antrenor';
-  int? _seciliSporcuId;
-  bool _kayitOluyor = false;
+  final _form = GlobalKey<FormState>();
+  final _email = TextEditingController();
+  final _sifre = TextEditingController();
+  final Set<int> _secimler = {};
+  late Future<List<dynamic>> _liste;
+  bool _kaydediliyor = false;
+
   @override
   void initState() {
     super.initState();
-    _kayitSporcularFuture = dbService.getKayitSporcular();
-  }
-
-  Future<void> _kayitOl() async {
-    if (_emailController.text.trim().isEmpty ||
-        _sifreController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('E-posta ve şifre gerekli')));
-      return;
-    }
-    if (_seciliRol == 'veli' && _seciliSporcuId == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Lütfen çocuğunu seç')));
-      return;
-    }
-
-    setState(() => _kayitOluyor = true);
-    try {
-      await dbService.kayitOl(
-        email: _emailController.text.trim(),
-        sifre: _sifreController.text.trim(),
-        rol: _seciliRol,
-        sporcuId: _seciliRol == 'veli' ? _seciliSporcuId : null,
-      );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kayıt başarılı, şimdi giriş yapabilirsin'),
-          ),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
-      }
-    } finally {
-      if (mounted) setState(() => _kayitOluyor = false);
-    }
+    _liste = dbService.getKayitSporcular();
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _sifreController.dispose();
+    _email.dispose();
+    _sifre.dispose();
     super.dispose();
+  }
+
+  void _yenile() {
+    setState(() {
+      _secimler.clear();
+      _liste = dbService.getKayitSporcular();
+    });
+  }
+
+  void _mesaj(String mesaj) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mesaj)));
+  }
+
+  Future<void> _kayitOl() async {
+    if (!_form.currentState!.validate()) return;
+    if (_secimler.isEmpty) {
+      _mesaj('En az bir çocuğunu seçmelisin');
+      return;
+    }
+    setState(() => _kaydediliyor = true);
+    try {
+      await dbService.veliKayitOl(
+        email: _email.text,
+        sifre: _sifre.text,
+        sporcuIds: _secimler.toList(),
+      );
+      if (!mounted) return;
+      setState(() => _kaydediliyor = false);
+      _mesaj('Hesabın oluşturuldu. E-posta ve şifrenle giriş yapabilirsin.');
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      _mesaj(e.toString().replaceFirst('Exception: ', ''));
+      _yenile();
+    } finally {
+      if (mounted) setState(() => _kaydediliyor = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
+    return PopScope(
+      canPop: !_kaydediliyor,
+      child: Scaffold(
         backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
-        title: const Text(
-          'Kayıt Ol',
-          style: TextStyle(color: Colors.lightGreenAccent),
+        appBar: AppBar(
+          title: const Text('Veli Kaydı'),
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.lightGreenAccent,
         ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          _FormAlani(controller: _emailController, etiket: 'E-posta'),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _sifreController,
-            obscureText: true,
-            style: const TextStyle(color: Colors.white),
-            decoration: InputDecoration(
-              labelText: 'Şifre',
-              labelStyle: const TextStyle(color: Colors.grey),
-              filled: true,
-              fillColor: const Color(0xFF1A1A1A),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.grey),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: Colors.lightGreenAccent),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text('Rol', style: TextStyle(color: Colors.grey, fontSize: 13)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              _RolSecimChip(
-                etiket: 'Antrenör',
-                deger: 'antrenor',
-                seciliRol: _seciliRol,
-                onSec: (r) => setState(() => _seciliRol = r),
-              ),
-              _RolSecimChip(
-                etiket: 'Sporcu',
-                deger: 'sporcu',
-                seciliRol: _seciliRol,
-                onSec: (r) => setState(() => _seciliRol = r),
-              ),
-              _RolSecimChip(
-                etiket: 'Veli',
-                deger: 'veli',
-                seciliRol: _seciliRol,
-                onSec: (r) => setState(() => _seciliRol = r),
-              ),
-            ],
-          ),
-          if (_seciliRol == 'sporcu')
-            const Padding(
-              padding: EdgeInsets.only(top: 16),
-              child: Text(
-                'Kayıttan sonra antrenörün hesabını sporcu kaydınla eşleştirecek. Ardından yeniden giriş yapabilirsin.',
-                style: TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-            ),
-          if (_seciliRol == 'veli') ...[
-            const SizedBox(height: 20),
-            const Text(
-              'Çocuğun',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
-            ),
-            const SizedBox(height: 8),
-            FutureBuilder<List<dynamic>>(
-              future: _kayitSporcularFuture,
-              builder: (context, snapshot) {
-                final sporcular = snapshot.data ?? [];
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.lightGreenAccent,
+        body: AbsorbPointer(
+          absorbing: _kaydediliyor,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 680),
+              child: Form(
+                key: _form,
+                child: ListView(
+                  padding: const EdgeInsets.all(20),
+                  children: [
+                    TextFormField(
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      autocorrect: false,
+                      decoration: const InputDecoration(
+                        labelText: 'E-posta',
+                        prefixIcon: Icon(Icons.mail_outline),
+                      ),
+                      validator: (value) {
+                        if (!RegExp(
+                          r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                        ).hasMatch((value ?? '').trim())) {
+                          return 'Geçerli e-posta gir';
+                        }
+                        return null;
+                      },
                     ),
-                  );
-                }
-                return Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: sporcular.map((s) {
-                    final id = int.parse(s['id'].toString());
-                    final seciliMi = _seciliSporcuId == id;
-                    return GestureDetector(
-                      onTap: () => setState(() => _seciliSporcuId = id),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: seciliMi
-                              ? Colors.lightGreenAccent
-                              : const Color(0xFF1A1A1A),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.lightGreenAccent),
-                        ),
-                        child: Text(
-                          s['isim'] ?? '',
-                          style: TextStyle(
-                            color: seciliMi ? Colors.black : Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _sifre,
+                      obscureText: true,
+                      autocorrect: false,
+                      enableSuggestions: false,
+                      decoration: const InputDecoration(
+                        labelText: 'Şifre',
+                        prefixIcon: Icon(Icons.lock_outline),
+                        helperText: 'En az 8 karakter',
+                      ),
+                      validator: (value) => (value ?? '').length < 8
+                          ? 'En az 8 karakter kullan'
+                          : null,
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Çocuklarını seç',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Colors.lightGreenAccent,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
-          ],
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _kayitOluyor ? null : _kayitOl,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.lightGreenAccent,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-              child: _kayitOluyor
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.black,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text(
-                      'Kayıt Ol',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                        IconButton(
+                          tooltip: 'Listeyi yenile',
+                          onPressed: _yenile,
+                          icon: const Icon(Icons.refresh),
+                        ),
+                      ],
                     ),
+                    const Text(
+                      'Yalnızca henüz bir veliye bağlanmamış sporcular listelenir.',
+                      style: TextStyle(color: Colors.white60),
+                    ),
+                    const SizedBox(height: 12),
+                    FutureBuilder<List<dynamic>>(
+                      future: _liste,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState != ConnectionState.done) {
+                          return const Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Center(child: CircularProgressIndicator()),
+                          );
+                        }
+                        if (snapshot.hasError) {
+                          return Column(
+                            children: [
+                              const Text('Sporcu listesi yüklenemedi.'),
+                              TextButton(
+                                onPressed: _yenile,
+                                child: const Text('Tekrar Dene'),
+                              ),
+                            ],
+                          );
+                        }
+                        final sporcular = snapshot.data ?? [];
+                        if (sporcular.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 24),
+                            child: Text(
+                              'Şu anda seçilebilecek sporcu yok. '
+                              'Çocuğunun kaydı için antrenörünle görüş.',
+                            ),
+                          );
+                        }
+                        return Column(
+                          children: sporcular.map<Widget>((s) {
+                            final id = int.parse(s['id'].toString());
+                            return Card(
+                              color: const Color(0xFF12181C),
+                              margin: const EdgeInsets.only(bottom: 10),
+                              child: CheckboxListTile(
+                                value: _secimler.contains(id),
+                                activeColor: Colors.lightGreenAccent,
+                                checkColor: Colors.black,
+                                title: Text('${s['isim']}'),
+                                subtitle: Text(
+                                  [
+                                    s['dogum_yili'],
+                                    s['grup'],
+                                  ].where((v) => v != null).join(' · '),
+                                ),
+                                onChanged: (secili) => setState(() {
+                                  if (secili == true) {
+                                    _secimler.add(id);
+                                  } else {
+                                    _secimler.remove(id);
+                                  }
+                                }),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    FilledButton(
+                      onPressed: _kayitOl,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.lightGreenAccent,
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size.fromHeight(54),
+                      ),
+                      child: Text(
+                        _kaydediliyor ? 'Kaydediliyor...' : 'Hesabımı Oluştur',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1590,6 +1594,134 @@ class _SifreSifirlaEkraniState extends State<SifreSifirlaEkrani> {
 }
 
 // ---------------- ANA EKRAN (SEKMELİ) ----------------
+class VeliPaneli extends StatefulWidget {
+  const VeliPaneli({super.key});
+  @override
+  State<VeliPaneli> createState() => _VeliPaneliState();
+}
+
+class _VeliPaneliState extends State<VeliPaneli> {
+  List<dynamic> _cocuklar = [];
+  int? _seciliId;
+  bool _yukleniyor = true;
+  String? _hata;
+
+  @override
+  void initState() {
+    super.initState();
+    _yukle();
+  }
+
+  Future<void> _yukle() async {
+    setState(() {
+      _yukleniyor = true;
+      _hata = null;
+    });
+    try {
+      final liste = await dbService.getCocuklar();
+      if (!mounted) return;
+      final id = liste.isEmpty ? null : int.parse(liste.first['id'].toString());
+      dbService.veliSporcuSec(id);
+      setState(() {
+        _cocuklar = liste;
+        _seciliId = id;
+      });
+    } catch (e) {
+      if (mounted)
+        setState(() => _hata = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _yukleniyor = false);
+    }
+  }
+
+  void _cikis() {
+    dbService.cikisYap();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_yukleniyor) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_hata != null || _seciliId == null) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(title: const Text('Veli Paneli')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _hata ??
+                      'Hesabına bağlı çocuk bulunamadı. Antrenörünle iletişime geç.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                FilledButton(onPressed: _yukle, child: const Text('Yenile')),
+                TextButton(onPressed: _cikis, child: const Text('Çıkış Yap')),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Column(
+          children: [
+            if (_cocuklar.length > 1)
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF12181C),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    value: _seciliId,
+                    isExpanded: true,
+                    dropdownColor: const Color(0xFF12181C),
+                    items: _cocuklar
+                        .map(
+                          (cocuk) => DropdownMenuItem<int>(
+                            value: int.parse(cocuk['id'].toString()),
+                            child: Text('${cocuk['isim']}'),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (id) {
+                      if (id == null || id == _seciliId) return;
+                      dbService.veliSporcuSec(id);
+                      setState(() => _seciliId = id);
+                    },
+                  ),
+                ),
+              ),
+            Expanded(
+              child: HomeScreen(
+                key: ValueKey(_seciliId),
+                rol: 'veli',
+                veliSporcuId: _seciliId,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class HomeScreen extends StatefulWidget {
   final String rol;
@@ -5396,20 +5528,12 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
   }
 
   Future<void> _yeniHesapAc() async {
-    if (_islemSuruyor) return;
-    setState(() => _islemSuruyor = true);
-    try {
-      final sporcular = await dbService.getSporcular();
-      if (!mounted) return;
-      await _kullaniciEkleFormuAc(sporcular);
-    } catch (e) {
-      if (mounted)
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('$e')));
-    } finally {
-      if (mounted) setState(() => _islemSuruyor = false);
-    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => SporcuKayitEkrani(db: dbService)),
+    );
+
+    if (mounted) _reload();
   }
 
   Future<void> _kullaniciSil(int id, String email) async {
