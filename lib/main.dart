@@ -6,6 +6,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'services/database_service.dart';
 import 'package:video_player/video_player.dart';
 import 'screens/sporcu_kayit_ekrani.dart';
+import 'screens/sporcu_ozel_profil.dart';
 
 // ---------------- VERİ MODELLERİ ----------------
 final DatabaseService dbService = DatabaseService();
@@ -7358,47 +7359,55 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.circular(12),
+              if (widget.antrenorMu)
+                SporcuOzelProfilKarti(
+                  db: dbService,
+                  sporcuId: _sporcu.id,
+                  isim: _sporcu.isim,
+                  grup: '${_sporcu.dogumYili} · ${_sporcu.grup}',
                 ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 26,
-                      backgroundColor: Colors.lightGreenAccent,
-                      child: Text(
-                        _sporcu.isim.isNotEmpty ? _sporcu.isim[0] : '?',
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _sporcu.isim,
+              if (!widget.antrenorMu)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 26,
+                        backgroundColor: Colors.lightGreenAccent,
+                        child: Text(
+                          _sporcu.isim.isNotEmpty ? _sporcu.isim[0] : '?',
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
+                            color: Colors.black,
                             fontWeight: FontWeight.bold,
+                            fontSize: 20,
                           ),
                         ),
-                        Text(
-                          '${_sporcu.dogumYili} · ${_sporcu.grup}',
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ],
+                      ),
+                      const SizedBox(width: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _sporcu.isim,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            '${_sporcu.dogumYili} · ${_sporcu.grup}',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               const SizedBox(height: 20),
               const Text(
                 'Performans Gelişimi',

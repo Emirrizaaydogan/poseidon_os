@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
+import '../widgets/sporcu_ozel_alanlar.dart';
 
 class SporcuKayitEkrani extends StatefulWidget {
   final DatabaseService db;
@@ -10,6 +11,7 @@ class SporcuKayitEkrani extends StatefulWidget {
 
 class _SporcuKayitEkraniState extends State<SporcuKayitEkrani> {
   final _form = GlobalKey<FormState>();
+  final _ozel = SporcuOzelBilgiController();
   final _isim = TextEditingController();
   final _grup = TextEditingController();
   final _email = TextEditingController();
@@ -20,6 +22,7 @@ class _SporcuKayitEkraniState extends State<SporcuKayitEkrani> {
 
   @override
   void dispose() {
+    _ozel.dispose();
     _isim.dispose();
     _grup.dispose();
     _email.dispose();
@@ -52,6 +55,7 @@ class _SporcuKayitEkraniState extends State<SporcuKayitEkrani> {
     setState(() => _kaydediliyor = true);
     try {
       await widget.db.sporcuTopluKaydet({
+        'private_profile': _ozel.toJson(),
         'athlete': {
           'isim': _isim.text.trim(),
           'grup': _grup.text.trim(),
@@ -186,6 +190,9 @@ class _SporcuKayitEkraniState extends State<SporcuKayitEkrani> {
                           ),
                         ],
                       ),
+                    ]),
+                    _bolum('Kimlik, Lisans ve Profil Fotoğrafı', [
+                      SporcuOzelAlanlar(controller: _ozel),
                     ]),
                     _bolum('Sporcu Giriş Hesabı', [
                       _alan(_email, 'Sporcu e-postası', email: true),

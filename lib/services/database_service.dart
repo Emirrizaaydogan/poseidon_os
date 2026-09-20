@@ -9,6 +9,38 @@ const String apiBaseUrl = 'http://localhost:3000';
 /// Tüm veritabanı okuma/yazma işlemleri burada toplanır.
 /// Ekranlar artık Firestore'u değil, kendi backend'imizi çağırıyor.
 class DatabaseService {
+  Future<Map<String, dynamic>> sporcuOzelProfilGetir(int sporcuId) async {
+    final response = await http
+        .get(
+          Uri.parse('$apiBaseUrl/athletes/$sporcuId/private-profile'),
+          headers: _headers,
+        )
+        .timeout(const Duration(seconds: 45));
+
+    if (response.statusCode != 200) {
+      _hataFirlat(response, 'Sporcu özel bilgileri getirilemedi');
+    }
+
+    return Map<String, dynamic>.from(jsonDecode(response.body));
+  }
+
+  Future<void> sporcuOzelProfilKaydet(
+    int sporcuId,
+    Map<String, dynamic> veri,
+  ) async {
+    final response = await http
+        .put(
+          Uri.parse('$apiBaseUrl/athletes/$sporcuId/private-profile'),
+          headers: _headers,
+          body: jsonEncode(veri),
+        )
+        .timeout(const Duration(seconds: 90));
+
+    if (response.statusCode != 200) {
+      _hataFirlat(response, 'Sporcu özel bilgileri kaydedilemedi');
+    }
+  }
+
   String? _token;
   int? _aktifVeliSporcuId;
 
