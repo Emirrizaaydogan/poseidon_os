@@ -356,10 +356,9 @@ class DatabaseService {
     if (sporcuId != null) parametreler.add('athleteId=$sporcuId');
     final sorgu = parametreler.isNotEmpty ? '?${parametreler.join('&')}' : '';
 
-    final response = await http.get(
-      Uri.parse('$apiBaseUrl/attendance$sorgu'),
-      headers: _headers,
-    );
+    final response = await http
+        .get(Uri.parse('$apiBaseUrl/attendance$sorgu'), headers: _headers)
+        .timeout(const Duration(seconds: 20));
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     }
@@ -371,15 +370,17 @@ class DatabaseService {
     required int antrenmanId,
     required int sporcuId,
   }) async {
-    final response = await http.post(
-      Uri.parse('$apiBaseUrl/attendance'),
-      headers: _headers,
-      body: jsonEncode({
-        'training_id': antrenmanId,
-        'athlete_id': sporcuId,
-        'tip': 'giris',
-      }),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$apiBaseUrl/attendance'),
+          headers: _headers,
+          body: jsonEncode({
+            'training_id': antrenmanId,
+            'athlete_id': sporcuId,
+            'tip': 'giris',
+          }),
+        )
+        .timeout(const Duration(seconds: 20));
     if (response.statusCode != 200 && response.statusCode != 201) {
       _hataFirlat(response, 'Giriş kaydedilemedi');
     }
@@ -390,15 +391,17 @@ class DatabaseService {
     required int antrenmanId,
     required int sporcuId,
   }) async {
-    final response = await http.post(
-      Uri.parse('$apiBaseUrl/attendance'),
-      headers: _headers,
-      body: jsonEncode({
-        'training_id': antrenmanId,
-        'athlete_id': sporcuId,
-        'tip': 'cikis',
-      }),
-    );
+    final response = await http
+        .post(
+          Uri.parse('$apiBaseUrl/attendance'),
+          headers: _headers,
+          body: jsonEncode({
+            'training_id': antrenmanId,
+            'athlete_id': sporcuId,
+            'tip': 'cikis',
+          }),
+        )
+        .timeout(const Duration(seconds: 20));
     if (response.statusCode != 200 && response.statusCode != 201) {
       _hataFirlat(response, 'Çıkış kaydedilemedi');
     }

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'services/database_service.dart';
 import 'package:video_player/video_player.dart';
 import 'screens/sporcu_kayit_ekrani.dart';
 import 'screens/sporcu_ozel_profil.dart';
+import 'widgets/yoklama_paneli.dart';
 
 // ---------------- VERİ MODELLERİ ----------------
 final DatabaseService dbService = DatabaseService();
@@ -2645,6 +2644,20 @@ class AntrenorKarneYonetimi extends StatefulWidget {
 
 class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
   late Future<List<dynamic>> _sporcularFuture;
+  String _arama = '';
+
+  String _aramaMetni(String metin) {
+    return metin
+        .trim()
+        .toLowerCase()
+        .replaceAll('ı', 'i')
+        .replaceAll('i\u0307', 'i')
+        .replaceAll('ş', 's')
+        .replaceAll('ğ', 'g')
+        .replaceAll('ü', 'u')
+        .replaceAll('ö', 'o')
+        .replaceAll('ç', 'c');
+  }
 
   @override
   void initState() {
@@ -2693,7 +2706,13 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
               );
             }
 
-            final sporcular = snapshot.data ?? [];
+            final tumSporcular = snapshot.data ?? [];
+            final sorgu = _aramaMetni(_arama);
+
+            final sporcular = tumSporcular.where((veri) {
+              final metin = '${veri['isim'] ?? ''} ${veri['grup'] ?? ''}';
+              return _aramaMetni(metin).contains(sorgu);
+            }).toList();
 
             return ListView(
               padding: const EdgeInsets.all(16),
@@ -2710,12 +2729,48 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
                 const SizedBox(height: 6),
 
                 const Text(
-                  'Karne oluşturmak veya geçmiş ölçümleri görmek için bir sporcu seç.',
+                  'Bilgilerini incelemek ve karnelerini yönetmek için bir sporcu seç',
                   style: TextStyle(color: Colors.grey, fontSize: 13),
                 ),
 
                 const SizedBox(height: 20),
-
+                TextField(
+                  onChanged: (deger) {
+                    setState(() => _arama = deger);
+                  },
+                  style: const TextStyle(color: Colors.white),
+                  cursorColor: Colors.lightGreenAccent,
+                  decoration: InputDecoration(
+                    hintText: 'Sporcu adı veya grup ara',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: Colors.lightGreenAccent,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFF171717),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 15,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFF343434)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: Colors.lightGreenAccent,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${sporcular.length} / ${tumSporcular.length} sporcu',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                const SizedBox(height: 16),
                 if (sporcular.isEmpty)
                   Container(
                     padding: const EdgeInsets.all(30),
@@ -2725,7 +2780,7 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
                     ),
                     child: const Center(
                       child: Text(
-                        'Henüz sporcu bulunmuyor',
+                        'Gösterilicek sporcu bulunamadı',
                         style: TextStyle(color: Colors.grey),
                       ),
                     ),
@@ -4007,64 +4062,13 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // ---------------- SPORCU BİLGİSİ ----------------
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: Colors.lightGreenAccent.withOpacity(0.2),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Colors.lightGreenAccent,
-                        child: Text(
-                          widget.sporcu.isim.isNotEmpty
-                              ? widget.sporcu.isim[0].toUpperCase()
-                              : '?',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 14),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.sporcu.isim,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-
-                            const SizedBox(height: 4),
-
-                            Text(
-                              '${widget.sporcu.dogumYili} · ${widget.sporcu.grup}',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                SporcuOzelProfilKarti(
+                  key: ValueKey('karne-profil-${widget.sporcu.id}'),
+                  db: dbService,
+                  sporcuId: widget.sporcu.id,
+                  isim: widget.sporcu.isim,
+                  grup: '${widget.sporcu.dogumYili} · ${widget.sporcu.grup}',
                 ),
-
                 const SizedBox(height: 24),
 
                 _gelisimOzetiKarti(karneler),
@@ -6032,6 +6036,13 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
               );
             },
           ),
+          if (!widget.antrenorMu && widget.filtreSporcuId != null)
+            YoklamaPaneli(
+              key: ValueKey('veli-yoklama-${widget.filtreSporcuId}'),
+              db: dbService,
+              antrenorMu: false,
+              sporcuId: widget.filtreSporcuId,
+            ),
           FutureBuilder<List<dynamic>>(
             future: _antrenmanlarFuture,
             builder: (context, snapshot) {
@@ -6201,7 +6212,7 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
                         etiket: 'Aktif Program',
                       ),
                       const IstatistikKarti(
-                        icon: Icons.qr_code_scanner,
+                        icon: Icons.fact_check_outlined,
                         deger: '0',
                         etiket: 'Bugünkü Yoklama',
                       ),
@@ -8330,40 +8341,10 @@ class AntrenmanDetayEkrani extends StatefulWidget {
 }
 
 class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
-  late Future<List<dynamic>> _yoklamaFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _reloadYoklama();
-  }
-
-  void _reloadYoklama() {
-    setState(() {
-      _yoklamaFuture = dbService.getYoklama(
-        antrenmanId: widget.antrenman.id,
-        sporcuId: widget.sporcuId,
-      );
-    });
-  }
-
-  /// Saat:dakika biçiminde gösterir (örn. "18:32"). Sunucudan gelen
-  /// zaman damgası null ise null döner.
-  String? _saatMetni(dynamic zamanDamgasi) {
-    if (zamanDamgasi == null) return null;
-    try {
-      final d = DateTime.parse(zamanDamgasi.toString()).toLocal();
-      final saat = d.hour.toString().padLeft(2, '0');
-      final dakika = d.minute.toString().padLeft(2, '0');
-      return '$saat:$dakika';
-    } catch (_) {
-      return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final Map<String, List<AntrenmanSeti>> gruplanmis = {};
+
     for (final set in widget.antrenman.setler) {
       gruplanmis.putIfAbsent(set.kategori, () => []).add(set);
     }
@@ -8426,247 +8407,19 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
               ),
             ),
             const SizedBox(height: 16),
-            FutureBuilder<List<dynamic>>(
-              future: _yoklamaFuture,
-              builder: (context, snapshot) {
-                final kayitlar = snapshot.data ?? [];
 
-                Map<String, dynamic>? kendiKaydi;
-                if (!widget.antrenorMu &&
-                    widget.sporcuId != null &&
-                    kayitlar.isNotEmpty) {
-                  kendiKaydi = kayitlar.first as Map<String, dynamic>;
-                }
-                final girisSaati = kendiKaydi != null
-                    ? _saatMetni(kendiKaydi['giris_zamani'])
-                    : null;
-                final cikisSaati = kendiKaydi != null
-                    ? _saatMetni(kendiKaydi['cikis_zamani'])
-                    : null;
-
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.lightGreenAccent.withOpacity(0.4),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.qr_code_scanner,
-                            color: Colors.lightGreenAccent,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            widget.antrenorMu
-                                ? 'Yoklama: ${kayitlar.length} kişi'
-                                : 'Yoklama',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const Spacer(),
-                          if (widget.antrenorMu)
-                            TextButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => YoklamaQREkrani(
-                                      antrenman: widget.antrenman,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'QR Göster',
-                                style: TextStyle(
-                                  color: Colors.lightGreenAccent,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      if (widget.antrenorMu) ...[
-                        const SizedBox(height: 12),
-                        if (kayitlar.isEmpty)
-                          const Text(
-                            'Henüz kimse QR okutmadı',
-                            style: TextStyle(color: Colors.grey, fontSize: 13),
-                          )
-                        else
-                          ...kayitlar.map((k) {
-                            final giris = _saatMetni(k['giris_zamani']);
-                            final cikis = _saatMetni(k['cikis_zamani']);
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      k['athlete_isim'] ?? '',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                  Text(
-                                    'Giriş: ${giris ?? '—'}',
-                                    style: const TextStyle(
-                                      color: Colors.lightGreenAccent,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'Çıkış: ${cikis ?? '—'}',
-                                    style: TextStyle(
-                                      color: cikis != null
-                                          ? Colors.orangeAccent
-                                          : Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                      ] else ...[
-                        const SizedBox(height: 12),
-                        if (widget.sporcuId == null)
-                          const Text(
-                            'Hesabınız bir sporcu kaydıyla eşleştirilmemiş. '
-                            'Antrenörünüzle iletişime geçin.',
-                            style: TextStyle(color: Colors.grey, fontSize: 13),
-                          )
-                        else ...[
-                          Row(
-                            children: [
-                              Icon(
-                                girisSaati != null
-                                    ? Icons.check_circle
-                                    : Icons.radio_button_unchecked,
-                                color: girisSaati != null
-                                    ? Colors.lightGreenAccent
-                                    : Colors.grey,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  girisSaati != null
-                                      ? 'Derse girdi: $girisSaati'
-                                      : 'Henüz derse girmedi',
-                                  style: TextStyle(
-                                    color: girisSaati != null
-                                        ? Colors.white
-                                        : Colors.grey,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Icon(
-                                cikisSaati != null
-                                    ? Icons.check_circle
-                                    : Icons.radio_button_unchecked,
-                                color: cikisSaati != null
-                                    ? Colors.orangeAccent
-                                    : Colors.grey,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  cikisSaati != null
-                                      ? 'Dersten çıktı: $cikisSaati'
-                                      : 'Henüz dersten çıkmadı',
-                                  style: TextStyle(
-                                    color: cikisSaati != null
-                                        ? Colors.white
-                                        : Colors.grey,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              if (girisSaati == null)
-                                Expanded(
-                                  child: OkluButon(
-                                    metin: 'Giriş Yap (QR)',
-                                    onTap: () async {
-                                      await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => QrTaramaEkrani(
-                                            antrenmanId: widget.antrenman.id,
-                                            sporcuId: widget.sporcuId!,
-                                            tip: 'giris',
-                                          ),
-                                        ),
-                                      );
-                                      _reloadYoklama();
-                                    },
-                                  ),
-                                )
-                              else if (cikisSaati == null)
-                                Expanded(
-                                  child: OkluButon(
-                                    metin: 'Çıkış Yap (QR)',
-                                    onTap: () async {
-                                      await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => QrTaramaEkrani(
-                                            antrenmanId: widget.antrenman.id,
-                                            sporcuId: widget.sporcuId!,
-                                            tip: 'cikis',
-                                          ),
-                                        ),
-                                      );
-                                      _reloadYoklama();
-                                    },
-                                  ),
-                                )
-                              else
-                                const Expanded(
-                                  child: Text(
-                                    'Bugünkü antrenman tamamlandı ✓',
-                                    style: TextStyle(
-                                      color: Colors.lightGreenAccent,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ],
-                    ],
-                  ),
-                );
-              },
+            YoklamaPaneli(
+              key: ValueKey(
+                'yoklama-${widget.antrenman.id}-${widget.sporcuId}',
+              ),
+              db: dbService,
+              antrenorMu: widget.antrenorMu,
+              antrenmanId: widget.antrenman.id,
+              sporcuId: widget.sporcuId,
             ),
+
             const SizedBox(height: 20),
+
             if (gruplanmis.isEmpty)
               const Padding(
                 padding: EdgeInsets.only(top: 40),
@@ -9051,217 +8804,6 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ---------------- QR GÖSTERME EKRANI ----------------
-
-class YoklamaQREkrani extends StatelessWidget {
-  final Antrenman antrenman;
-
-  const YoklamaQREkrani({super.key, required this.antrenman});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
-        title: const Text(
-          'Yoklama - QR Giriş',
-          style: TextStyle(color: Colors.lightGreenAccent),
-        ),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                antrenman.baslik,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: QrImageView(
-                  data: antrenman.id.toString(),
-                  size: 220,
-                  backgroundColor: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                'Sporcular bu kodu okutarak yoklamaya katılabilir',
-                style: TextStyle(color: Colors.grey),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              FutureBuilder<List<dynamic>>(
-                future: dbService.getYoklama(antrenmanId: antrenman.id),
-                builder: (context, snapshot) {
-                  final kayitlar = snapshot.data ?? [];
-                  return Column(
-                    children: [
-                      Text(
-                        'Şu ana kadar ${kayitlar.length} kişi okuttu',
-                        style: const TextStyle(
-                          color: Colors.lightGreenAccent,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (kayitlar.isNotEmpty) ...[
-                        const SizedBox(height: 16),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 220),
-                          child: ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: kayitlar.length,
-                            itemBuilder: (context, index) {
-                              final k = kayitlar[index];
-                              final cikisVar = k['cikis_zamani'] != null;
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 4,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      cikisVar
-                                          ? Icons.check_circle
-                                          : Icons.login,
-                                      color: cikisVar
-                                          ? Colors.orangeAccent
-                                          : Colors.lightGreenAccent,
-                                      size: 16,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      k['athlete_isim'] ?? '',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------- QR OKUMA EKRANI ----------------
-
-class QrTaramaEkrani extends StatefulWidget {
-  final int antrenmanId;
-  final int sporcuId;
-  final String tip; // 'giris' ya da 'cikis'
-
-  const QrTaramaEkrani({
-    super.key,
-    required this.antrenmanId,
-    required this.sporcuId,
-    required this.tip,
-  });
-
-  @override
-  State<QrTaramaEkrani> createState() => _QrTaramaEkraniState();
-}
-
-class _QrTaramaEkraniState extends State<QrTaramaEkrani> {
-  bool _islemTamamlandi = false;
-
-  Future<void> _yoklamaKaydet(String okunanId) async {
-    if (_islemTamamlandi) return;
-    setState(() => _islemTamamlandi = true);
-
-    final okunanIdInt = int.tryParse(okunanId);
-    if (okunanIdInt != widget.antrenmanId) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Bu kod bu antrenmana ait değil')),
-        );
-        Navigator.pop(context);
-      }
-      return;
-    }
-
-    try {
-      if (widget.tip == 'giris') {
-        await dbService.yoklamaGirisYap(
-          antrenmanId: widget.antrenmanId,
-          sporcuId: widget.sporcuId,
-        );
-      } else {
-        await dbService.yoklamaCikisYap(
-          antrenmanId: widget.antrenmanId,
-          sporcuId: widget.sporcuId,
-        );
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.tip == 'giris' ? 'Giriş alındı ✓' : 'Çıkış alındı ✓',
-            ),
-          ),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
-        Navigator.pop(context);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
-        title: Text(
-          widget.tip == 'giris' ? 'Giriş İçin QR Okut' : 'Çıkış İçin QR Okut',
-          style: const TextStyle(color: Colors.lightGreenAccent),
-        ),
-      ),
-      body: MobileScanner(
-        onDetect: (capture) {
-          final barkodlar = capture.barcodes;
-          if (barkodlar.isNotEmpty) {
-            final deger = barkodlar.first.rawValue;
-            if (deger != null) _yoklamaKaydet(deger);
-          }
-        },
       ),
     );
   }
