@@ -6251,6 +6251,133 @@ class SporcularSekmesi extends StatefulWidget {
 
 class _SporcularSekmesiState extends State<SporcularSekmesi> {
   String _seciliStil = 'Serbest';
+  String _sporcuArama = '';
+
+  String _aramaMetni(String metin) {
+    return metin
+        .trim()
+        .toLowerCase()
+        .replaceAll('ı', 'i')
+        .replaceAll('i\u0307', 'i')
+        .replaceAll('ş', 's')
+        .replaceAll('ğ', 'g')
+        .replaceAll('ü', 'u')
+        .replaceAll('ö', 'o')
+        .replaceAll('ç', 'c');
+  }
+
+  Widget _sporcuAramaSonuclari() {
+    if (_sporcuArama.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return FutureBuilder<List<dynamic>>(
+      future: _tumSporcularFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: LinearProgressIndicator(color: Colors.lightGreenAccent),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Sporcu listesi yüklenemedi.',
+                  style: TextStyle(color: Colors.orangeAccent),
+                ),
+                TextButton(
+                  onPressed: _tumVerileriYenile,
+                  child: const Text('Tekrar Dene'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final sorgu = _aramaMetni(_sporcuArama);
+
+        final bulunanlar = (snapshot.data ?? []).where((veri) {
+          final metin = '${veri['isim'] ?? ''} ${veri['grup'] ?? ''}';
+
+          return _aramaMetni(metin).contains(sorgu);
+        }).toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+            Text(
+              bulunanlar.isEmpty
+                  ? 'Aramana uygun sporcu bulunamadı.'
+                  : '${bulunanlar.length} sporcu bulundu',
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            ...bulunanlar.map<Widget>((veri) {
+              final sporcu = Sporcu.fromJson(Map<String, dynamic>.from(veri));
+
+              return Card(
+                margin: const EdgeInsets.only(bottom: 10),
+                color: const Color(0xFF171717),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: const BorderSide(color: Color(0xFF343434)),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  leading: const CircleAvatar(
+                    backgroundColor: Colors.lightGreenAccent,
+                    child: Icon(Icons.person_outline, color: Colors.black),
+                  ),
+                  title: Text(
+                    sporcu.isim,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  subtitle: Text(
+                    '${sporcu.dogumYili} · ${sporcu.grup}',
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right,
+                    color: Colors.lightGreenAccent,
+                  ),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SporcuDetayEkrani(
+                          sporcu: sporcu,
+                          antrenorMu: widget.antrenorMu,
+                        ),
+                      ),
+                    );
+
+                    if (mounted) {
+                      _tumVerileriYenile();
+                    }
+                  },
+                ),
+              );
+            }),
+            const SizedBox(height: 12),
+          ],
+        );
+      },
+    );
+  }
+
   String _seciliMesafe = '50m';
 
   late Future<List<dynamic>> _siralamaFuture;
@@ -6817,6 +6944,41 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                TextField(
+                  onChanged: (deger) {
+                    setState(() => _sporcuArama = deger);
+                  },
+                  style: const TextStyle(color: Colors.white),
+                  cursorColor: Colors.lightGreenAccent,
+                  decoration: InputDecoration(
+                    hintText: 'Sporcu adı veya grup ara',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: Colors.lightGreenAccent,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFF171717),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 15,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: Color(0xFF343434)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(
+                        color: Colors.lightGreenAccent,
+                      ),
+                    ),
+                  ),
+                ),
+
+                _sporcuAramaSonuclari(),
+
+                const SizedBox(height: 20),
                 const Text(
                   'Kulüp Sıralaması',
                   style: TextStyle(
