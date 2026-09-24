@@ -9,6 +9,47 @@ const String apiBaseUrl = 'http://localhost:3000';
 /// Tüm veritabanı okuma/yazma işlemleri burada toplanır.
 /// Ekranlar artık Firestore'u değil, kendi backend'imizi çağırıyor.
 class DatabaseService {
+  Future<List<dynamic>> takvimEtkinlikleriGetir() async {
+    final r = await http
+        .get(Uri.parse('$apiBaseUrl/calendar-events'), headers: _headers)
+        .timeout(const Duration(seconds: 20));
+
+    if (r.statusCode != 200) {
+      _hataFirlat(r, 'Takvim getirilemedi');
+    }
+
+    return List<dynamic>.from(jsonDecode(r.body));
+  }
+
+  Future<void> takvimEtkinligiKaydet(
+    Map<String, dynamic> veri, {
+    int? id,
+  }) async {
+    final uri = Uri.parse(
+      '$apiBaseUrl/calendar-events${id == null ? '' : '/$id'}',
+    );
+
+    final r =
+        await (id == null
+                ? http.post(uri, headers: _headers, body: jsonEncode(veri))
+                : http.put(uri, headers: _headers, body: jsonEncode(veri)))
+            .timeout(const Duration(seconds: 20));
+
+    if (r.statusCode != 200 && r.statusCode != 201) {
+      _hataFirlat(r, 'Etkinlik kaydedilemedi');
+    }
+  }
+
+  Future<void> takvimEtkinligiSil(int id) async {
+    final r = await http
+        .delete(Uri.parse('$apiBaseUrl/calendar-events/$id'), headers: _headers)
+        .timeout(const Duration(seconds: 20));
+
+    if (r.statusCode != 204) {
+      _hataFirlat(r, 'Etkinlik silinemedi');
+    }
+  }
+
   Future<Map<String, dynamic>> sporcuOzelProfilGetir(int sporcuId) async {
     final response = await http
         .get(

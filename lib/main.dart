@@ -6,6 +6,7 @@ import 'package:video_player/video_player.dart';
 import 'screens/sporcu_kayit_ekrani.dart';
 import 'screens/sporcu_ozel_profil.dart';
 import 'widgets/yoklama_paneli.dart';
+import 'screens/kulup_takvimi.dart';
 
 // ---------------- VERİ MODELLERİ ----------------
 final DatabaseService dbService = DatabaseService();
@@ -1741,10 +1742,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> pages = [
-      AnaSayfaSekmesi(
-        antrenorMu: _antrenorMu,
-        filtreSporcuId: widget.veliSporcuId,
-      ),
+      if (widget.rol != 'veli')
+        AnaSayfaSekmesi(
+          antrenorMu: _antrenorMu,
+          veliMi: widget.rol == 'veli',
+          filtreSporcuId: widget.veliSporcuId,
+        ),
 
       SporcularSekmesi(
         antrenorMu: _antrenorMu,
@@ -1822,19 +1825,32 @@ class _HomeScreenState extends State<HomeScreen> {
         unselectedItemColor: Colors.grey,
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Ana Sayfa'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Sporcular'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.fitness_center),
-            label: 'Antrenman',
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Ana Sayfa',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Sporcular',
+          ),
+          if (widget.rol != 'veli')
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.fitness_center),
+              label: 'Antrenman',
+            ),
+          const BottomNavigationBarItem(
             icon: Icon(Icons.calendar_month),
             label: 'Takvim',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.payments), label: 'Aidat'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.payments),
+            label: 'Aidat',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profil',
+          ),
         ],
       ),
     );
@@ -5932,11 +5948,13 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
 
 class AnaSayfaSekmesi extends StatefulWidget {
   final bool antrenorMu;
+  final bool veliMi;
   final int? filtreSporcuId;
 
   const AnaSayfaSekmesi({
     super.key,
     required this.antrenorMu,
+    this.veliMi = false,
     this.filtreSporcuId,
   });
 
@@ -5953,7 +5971,9 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
   void initState() {
     super.initState();
     _sporcularFuture = dbService.getSporcular();
-    _antrenmanlarFuture = dbService.getAntrenmanlar();
+    _antrenmanlarFuture = widget.veliMi
+        ? Future<List<dynamic>>.value([])
+        : dbService.getAntrenmanlar();
     _aidatlarFuture = dbService.getAidatlar(sporcuId: widget.filtreSporcuId);
   }
 
@@ -6043,32 +6063,60 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
               antrenorMu: false,
               sporcuId: widget.filtreSporcuId,
             ),
-          FutureBuilder<List<dynamic>>(
-            future: _antrenmanlarFuture,
-            builder: (context, snapshot) {
-              final tumAntrenmanlar = (snapshot.data ?? [])
-                  .map((v) => Antrenman.fromJson(v))
-                  .toList();
+          if (!widget.veliMi)
+            FutureBuilder<List<dynamic>>(
+              future: _antrenmanlarFuture,
+              builder: (context, snapshot) {
+                final tumAntrenmanlar = (snapshot.data ?? [])
+                    .map((v) => Antrenman.fromJson(v))
+                    .toList();
 
-              final simdi = DateTime.now();
-              final bugun = DateTime(simdi.year, simdi.month, simdi.day);
+                final simdi = DateTime.now();
+                final bugun = DateTime(simdi.year, simdi.month, simdi.day);
 
-              Antrenman? bugununAntrenmani;
-              for (final a in tumAntrenmanlar) {
-                final tarih = antrenmanTarihiAyristir(a.tarih);
-                if (tarih == null) continue;
-                final tarihGunBasi = DateTime(
-                  tarih.year,
-                  tarih.month,
-                  tarih.day,
-                );
-                if (tarihGunBasi == bugun) {
-                  bugununAntrenmani = a;
-                  break;
+                Antrenman? bugununAntrenmani;
+                for (final a in tumAntrenmanlar) {
+                  final tarih = antrenmanTarihiAyristir(a.tarih);
+                  if (tarih == null) continue;
+                  final tarihGunBasi = DateTime(
+                    tarih.year,
+                    tarih.month,
+                    tarih.day,
+                  );
+                  if (tarihGunBasi == bugun) {
+                    bugununAntrenmani = a;
+                    break;
+                  }
                 }
-              }
 
-              if (bugununAntrenmani == null) {
+                if (bugununAntrenmani == null) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF141414),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF2A2A2A)),
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(
+                          Icons.calendar_month,
+                          color: Colors.grey,
+                          size: 18,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Bugün için planlanmış antrenman yok',
+                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                final antrenman = bugununAntrenmani;
+
                 return Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(18),
@@ -6077,104 +6125,81 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: const Color(0xFF2A2A2A)),
                   ),
-                  child: Row(
-                    children: const [
-                      Icon(Icons.calendar_month, color: Colors.grey, size: 18),
-                      SizedBox(width: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: const [
+                          Icon(
+                            Icons.calendar_month,
+                            color: Colors.lightGreenAccent,
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            'Bugünkü Antrenman',
+                            style: TextStyle(
+                              color: Colors.lightGreenAccent,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
                       Text(
-                        'Bugün için planlanmış antrenman yok',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                        antrenman.baslik,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.pool, color: Colors.grey, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            antrenman.havuz,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Icon(Icons.timer, color: Colors.grey, size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            antrenman.sure,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 18),
+                      OkluButon(
+                        metin: 'Antrenmanı Gör',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AntrenmanDetayEkrani(
+                                antrenman: antrenman,
+                                antrenorMu: widget.antrenorMu,
+                                sporcuId: widget.filtreSporcuId,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
                 );
-              }
-
-              final antrenman = bugununAntrenmani;
-
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF141414),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF2A2A2A)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(
-                          Icons.calendar_month,
-                          color: Colors.lightGreenAccent,
-                          size: 16,
-                        ),
-                        SizedBox(width: 6),
-                        Text(
-                          'Bugünkü Antrenman',
-                          style: TextStyle(
-                            color: Colors.lightGreenAccent,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      antrenman.baslik,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(Icons.pool, color: Colors.grey, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          antrenman.havuz,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.timer, color: Colors.grey, size: 14),
-                        const SizedBox(width: 4),
-                        Text(
-                          antrenman.sure,
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-                    OkluButon(
-                      metin: 'Antrenmanı Gör',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AntrenmanDetayEkrani(
-                              antrenman: antrenman,
-                              antrenorMu: widget.antrenorMu,
-                              sporcuId: widget.filtreSporcuId,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+              },
+            ),
           const SizedBox(height: 20),
           const Text(
             'Genel Bakış',
@@ -6206,11 +6231,14 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
                         deger: '$sporcuSayisi',
                         etiket: 'Toplam Sporcu',
                       ),
-                      IstatistikKarti(
-                        icon: Icons.fact_check,
-                        deger: '$antrenmanSayisi',
-                        etiket: 'Aktif Program',
-                      ),
+                      if (!widget.veliMi)
+                        IstatistikKarti(
+                          icon: Icons.fact_check,
+                          deger: '$antrenmanSayisi',
+                          etiket: widget.antrenorMu
+                              ? 'Aktif Program'
+                              : 'Dün / Bugün',
+                        ),
                       const IstatistikKarti(
                         icon: Icons.fact_check_outlined,
                         deger: '0',
@@ -8047,49 +8075,50 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        GecmisAntrenmanlarEkrani(sporcuId: widget.sporcuId),
+          if (widget.antrenorMu)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          GecmisAntrenmanlarEkrani(sporcuId: widget.sporcuId),
+                    ),
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
                   ),
-                );
-              },
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF2A2A2A)),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(
-                      Icons.history,
-                      color: Colors.lightGreenAccent,
-                      size: 18,
-                    ),
-                    SizedBox(width: 10),
-                    Text(
-                      'Geçmiş Antrenmanlar',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
-                    ),
-                    Spacer(),
-                    Icon(Icons.chevron_right, color: Colors.grey, size: 18),
-                  ],
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF2A2A2A)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.history,
+                        color: Colors.lightGreenAccent,
+                        size: 18,
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'Geçmiş Antrenmanlar',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
+                      Spacer(),
+                      Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async => _reload(),
@@ -8971,11 +9000,8 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
   }
 }
 
-// ---------------- TAKVİM SEKMESİ ----------------
-
-// ---------------- TAKVİM SEKMESİ ----------------
-
-class TakvimSekmesi extends StatefulWidget {
+// ---------------- TAKVİM SEKMESİ ----------------//
+class TakvimSekmesi extends StatelessWidget {
   final bool antrenorMu;
   final int? filtreSporcuId;
 
@@ -8986,346 +9012,69 @@ class TakvimSekmesi extends StatefulWidget {
   });
 
   @override
-  State<TakvimSekmesi> createState() => _TakvimSekmesiState();
-}
-
-class _TakvimSekmesiState extends State<TakvimSekmesi> {
-  late Future<List<dynamic>> _aidatlarFuture;
-
-  DateTime _odakGun = DateTime.now();
-  DateTime? _secilenGun;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _secilenGun = DateTime.now();
-
-    _aidatlarFuture = _aidatlariGetir();
-  }
-
-  Future<List<dynamic>> _aidatlariGetir() {
-    return dbService.getAidatlar(sporcuId: widget.filtreSporcuId);
-  }
-
-  void _yenile() {
-    setState(() {
-      _aidatlarFuture = _aidatlariGetir();
-    });
-  }
-
-  DateTime? _tarihParse(dynamic deger) {
-    if (deger == null) return null;
-
-    return DateTime.tryParse(deger.toString());
-  }
-
-  bool _ayniGun(DateTime? a, DateTime b) {
-    if (a == null) return false;
-
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
-
-  List<dynamic> _tarihtekiAidatlar(List<dynamic> aidatlar, DateTime gun) {
-    return aidatlar.where((aidat) {
-      final tarih = _tarihParse(aidat['son_odeme_tarihi']);
-
-      return _ayniGun(tarih, gun);
-    }).toList();
-  }
-
-  String _tarihFormatla(DateTime tarih) {
-    return '${tarih.day.toString().padLeft(2, '0')}.'
-        '${tarih.month.toString().padLeft(2, '0')}.'
-        '${tarih.year}';
-  }
-
-  Future<void> _sonOdemeTarihiBelirle(DateTime tarih) async {
-    final tarihMetni =
-        '${tarih.year}-'
-        '${tarih.month.toString().padLeft(2, '0')}-'
-        '${tarih.day.toString().padLeft(2, '0')}';
-
-    try {
-      await dbService.aidatSonOdemeTarihiGuncelle(tarihMetni);
-
-      if (!mounted) return;
-
-      _yenile();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Son ödeme tarihi ${_tarihFormatla(tarih)} olarak belirlendi.',
-          ),
-          backgroundColor: const Color(0xFF17351B),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Hata: $e'),
-          backgroundColor: const Color(0xFF351515),
-        ),
-      );
-    }
-  }
-
-  Future<void> _tarihSec() async {
-    final bugun = DateTime.now();
-
-    final secilen = await showDatePicker(
-      context: context,
-      initialDate: _secilenGun ?? bugun,
-      firstDate: DateTime(bugun.year, bugun.month, bugun.day),
-      lastDate: DateTime(bugun.year + 2, 12, 31),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Colors.lightGreenAccent,
-              onPrimary: Colors.black,
-              surface: Color(0xFF151515),
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (secilen == null) return;
-
-    setState(() {
-      _secilenGun = secilen;
-      _odakGun = secilen;
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
-      child: FutureBuilder<List<dynamic>>(
-        future: _aidatlarFuture,
-        builder: (context, snapshot) {
-          final aidatlar = snapshot.data ?? [];
+    return KulupTakvimi(
+      key: ValueKey('takvim-$antrenorMu-$filtreSporcuId'),
+      db: dbService,
+      antrenorMu: antrenorMu,
+      sporcuId: filtreSporcuId,
+      aidatKarti: (aidat, yenile) {
+        final odendi = aidat['odendi'] == true;
 
-          final secilenAidatlar = _secilenGun == null
-              ? <dynamic>[]
-              : _tarihtekiAidatlar(aidatlar, _secilenGun!);
+        final tutar = num.tryParse(aidat['tutar']?.toString() ?? '');
 
-          return Column(
-            children: [
-              TableCalendar(
-                firstDay: DateTime(2024, 1, 1),
-                lastDay: DateTime(2028, 12, 31),
-                focusedDay: _odakGun,
-                selectedDayPredicate: (gun) {
-                  return isSameDay(_secilenGun, gun);
-                },
-                eventLoader: (gun) {
-                  final bulunanlar = _tarihtekiAidatlar(aidatlar, gun);
+        final sporcuId = int.tryParse(aidat['athlete_id']?.toString() ?? '');
 
-                  return bulunanlar.map((e) => 'aidat').toList();
-                },
-                onDaySelected: (secilen, odaklanan) {
-                  setState(() {
-                    _secilenGun = secilen;
-                    _odakGun = odaklanan;
-                  });
-                },
-                calendarStyle: const CalendarStyle(
-                  defaultTextStyle: TextStyle(color: Colors.white),
-                  weekendTextStyle: TextStyle(color: Colors.white),
-                  outsideTextStyle: TextStyle(color: Colors.grey),
-                  todayDecoration: BoxDecoration(
-                    color: Colors.grey,
-                    shape: BoxShape.circle,
-                  ),
-                  selectedDecoration: BoxDecoration(
-                    color: Colors.lightGreenAccent,
-                    shape: BoxShape.circle,
-                  ),
-                  selectedTextStyle: TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  markerDecoration: BoxDecoration(
-                    color: Colors.orangeAccent,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                headerStyle: const HeaderStyle(
-                  formatButtonVisible: false,
-                  titleTextStyle: TextStyle(
-                    color: Colors.lightGreenAccent,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  leftChevronIcon: Icon(
-                    Icons.chevron_left,
-                    color: Colors.lightGreenAccent,
-                  ),
-                  rightChevronIcon: Icon(
-                    Icons.chevron_right,
-                    color: Colors.lightGreenAccent,
-                  ),
-                ),
-                daysOfWeekStyle: const DaysOfWeekStyle(
-                  weekdayStyle: TextStyle(color: Colors.grey),
-                  weekendStyle: TextStyle(color: Colors.grey),
-                ),
+        return Card(
+          margin: const EdgeInsets.only(bottom: 12),
+          color: const Color(0xFF171717),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: Colors.redAccent),
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: Icon(
+              odendi ? Icons.check_circle : Icons.payments_outlined,
+              color: odendi ? Colors.lightGreenAccent : Colors.redAccent,
+            ),
+            title: Text(
+              aidat['athlete_isim']?.toString() ??
+                  'Sporcu #${aidat['athlete_id']}',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
               ),
-
-              const SizedBox(height: 10),
-
-              if (widget.antrenorMu)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _tarihSec,
-                      icon: const Icon(
-                        Icons.calendar_month,
-                        color: Colors.black,
-                      ),
-                      label: const Text(
-                        'Son Ödeme Tarihi Belirle',
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.lightGreenAccent,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                      ),
+            ),
+            subtitle: Text(
+              '${aidat['ay'] ?? ''} · '
+              '${tutar?.toStringAsFixed(2) ?? '—'} TL\n'
+              '${odendi ? 'Ödendi' : 'Ödeme bekleniyor'}\n'
+              'Aidat detayları için dokun',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: Colors.redAccent),
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => Scaffold(
+                    appBar: AppBar(title: const Text('Aidat Detayları')),
+                    body: AidatSekmesi(
+                      antrenorMu: antrenorMu,
+                      filtreSporcuId: sporcuId ?? filtreSporcuId,
                     ),
                   ),
                 ),
+              );
 
-              const SizedBox(height: 12),
-
-              Expanded(
-                child: _secilenGun == null
-                    ? const Center(
-                        child: Text(
-                          'Bir gün seçin',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      )
-                    : secilenAidatlar.isEmpty
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.event_available,
-                                color: Colors.grey,
-                                size: 42,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                _tarihFormatla(_secilenGun!),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              const Text(
-                                'Bu tarihte son ödeme tarihi bulunmuyor.',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: secilenAidatlar.length,
-                        itemBuilder: (context, index) {
-                          final aidat = secilenAidatlar[index];
-
-                          final odendi = aidat['odendi'] == true;
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(15),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1A1A1A),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: odendi
-                                    ? Colors.lightGreenAccent
-                                    : Colors.orangeAccent.withOpacity(0.5),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  odendi
-                                      ? Icons.check_circle
-                                      : Icons.payments_outlined,
-                                  color: odendi
-                                      ? Colors.lightGreenAccent
-                                      : Colors.orangeAccent,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const Text(
-                                        'Aidat Son Ödeme Tarihi',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        _tarihFormatla(_secilenGun!),
-                                        style: const TextStyle(
-                                          color: Colors.lightGreenAccent,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  odendi ? 'Ödendi' : 'Ödenmedi',
-                                  style: TextStyle(
-                                    color: odendi
-                                        ? Colors.lightGreenAccent
-                                        : Colors.orangeAccent,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
-      ),
+              if (context.mounted) {
+                yenile();
+              }
+            },
+          ),
+        );
+      },
     );
   }
 }

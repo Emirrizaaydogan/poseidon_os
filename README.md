@@ -32,7 +32,6 @@ ceylinaykın@gmail.com-------123Sporcusu=umutaykın@gmail.com 123
 ---------------GÜvenlik----------
 *Şifremi unuttum işlemi için domain alınmalı
                                  DEĞİŞİKLİKLER
--Antremanları veli görmesin,sadece çocukların yoklamalarını görücek
 -yarış derecelerinde mesafeleri 400-800-1500 şeklinde eklemeleri yap
 -1,2,3,4,5 şeklinde derecelendirme sistemi getirilicek karneye.
 -Altyapı ve performans grubunun antremanları ayrı olucak.Her grup kendi antremanını görsün.
