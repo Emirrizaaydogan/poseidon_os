@@ -65,12 +65,19 @@ class AntrenmanSeti {
   }
 }
 
+const List<String> kulupGruplari = [
+  'Performans Grubu',
+  'Alt Yapı Grubu',
+  'Gelişim Grubu',
+];
+
 class Antrenman {
   final int id;
   final String baslik;
   final String tarih;
   final String havuz;
   final String sure;
+  final String grup;
   final List<AntrenmanSeti> setler;
 
   const Antrenman({
@@ -80,16 +87,19 @@ class Antrenman {
     required this.havuz,
     required this.sure,
     required this.setler,
+    this.grup = '',
   });
 
   factory Antrenman.fromJson(Map<String, dynamic> veri) {
     final hamSetler = veri['setler'] as List<dynamic>? ?? [];
+
     return Antrenman(
       id: int.parse(veri['id'].toString()),
-      baslik: veri['baslik'] ?? '',
-      tarih: veri['tarih'] ?? '',
-      havuz: veri['havuz'] ?? '',
-      sure: veri['sure'] ?? '',
+      baslik: veri['baslik']?.toString() ?? '',
+      tarih: veri['tarih']?.toString() ?? '',
+      havuz: veri['havuz']?.toString() ?? '',
+      sure: veri['sure']?.toString() ?? '',
+      grup: veri['grup']?.toString() ?? '',
       setler: hamSetler
           .map((s) => AntrenmanSeti.fromMap(Map<String, dynamic>.from(s)))
           .toList(),
@@ -8122,7 +8132,7 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${antrenman.havuz} · ${antrenman.sure}',
+                                '${antrenman.grup.isEmpty ? 'Grup atanmamış' : antrenman.grup} · ${antrenman.havuz} · ${antrenman.sure}',
                                 style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 13,
@@ -8590,6 +8600,7 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
   final _sureController = TextEditingController();
   final _setAciklamaController = TextEditingController();
   DateTime? _seciliTarih;
+  String? _seciliGrup;
   String _seciliKategori = 'Isınma';
   final List<String> _kategoriler = ['Isınma', 'Ana Set', 'Soğuma'];
   final List<AntrenmanSeti> _eklenenSetler = [];
@@ -8641,6 +8652,12 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
   void _setSil(int index) => setState(() => _eklenenSetler.removeAt(index));
 
   Future<void> _antrenmanKaydet() async {
+    if (_seciliGrup == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen antrenmanın grubunu seç')),
+      );
+      return;
+    }
     if (_baslikController.text.trim().isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -8656,6 +8673,7 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
     setState(() => _kaydediliyor = true);
     try {
       await dbService.antrenmanEkle({
+        'grup': _seciliGrup,
         'baslik': _baslikController.text.trim(),
         'tarih': antrenmanTarihiKaydet(_seciliTarih!),
         'havuz': _havuzController.text.trim(),
@@ -8698,9 +8716,44 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _FormAlani(
-            controller: _baslikController,
-            etiket: 'Başlık (örn. Dayanıklılık + Teknik)',
+          DropdownButtonFormField<String>(
+            value: _seciliGrup,
+            isExpanded: true,
+            dropdownColor: const Color(0xFF171717),
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              labelText: 'Antrenman grubu',
+              filled: true,
+              fillColor: Color(0xFF171717),
+              border: OutlineInputBorder(),
+            ),
+            items: kulupGruplari.map((grup) {
+              return DropdownMenuItem(value: grup, child: Text(grup));
+            }).toList(),
+            onChanged: _kaydediliyor
+                ? null
+                : (grup) => setState(() => _seciliGrup = grup),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            value: _seciliGrup,
+            isExpanded: true,
+            dropdownColor: const Color(0xFF171717),
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(
+              labelText: 'Antrenman grubu',
+              filled: true,
+              fillColor: Color(0xFF171717),
+              border: OutlineInputBorder(),
+            ),
+            items: kulupGruplari.map((grup) {
+              return DropdownMenuItem<String>(value: grup, child: Text(grup));
+            }).toList(),
+            onChanged: _kaydediliyor
+                ? null
+                : (grup) {
+                    setState(() => _seciliGrup = grup);
+                  },
           ),
           const SizedBox(height: 12),
           InkWell(
