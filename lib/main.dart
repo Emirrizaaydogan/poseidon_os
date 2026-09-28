@@ -126,7 +126,15 @@ const List<String> yuzmeStilleri = [
   'Kurbağalama',
   'Kelebek',
 ];
-const List<String> yuzmeMesafeleri = ['25m', '50m', '100m', '200m'];
+const List<String> yuzmeMesafeleri = [
+  '25m',
+  '50m',
+  '100m',
+  '200m',
+  '400m',
+  '800m',
+  '1500m',
+];
 
 // ---------------- TARİH YARDIMCILARI ----------------
 
@@ -2306,43 +2314,23 @@ class KarneDetayEkrani extends StatelessWidget {
     );
   }
 
-  String _stilGenelDurumu(Map<String, dynamic> veriler) {
-    if (veriler.isEmpty) {
-      return 'degerlendirilmedi';
-    }
-
-    final iyiSayisi = veriler.values
-        .where((deger) => deger.toString() == 'iyi')
-        .length;
-
-    final gelistirilmeliSayisi = veriler.values
-        .where((deger) => deger.toString() == 'gelistirilmeli')
-        .length;
-
-    // Her yüzme stilinde 5 değerlendirme maddesi var.
-    // Beşi de tamamlanmadan genel stil sonucu üretmiyoruz.
-    if (iyiSayisi + gelistirilmeliSayisi < 5) {
-      return 'degerlendirilmedi';
-    }
-
-    // Çoğunluk kuralı: 3 veya daha fazla "İyi" => stil genel olarak İYİ.
-    return iyiSayisi >= 3 ? 'iyi' : 'gelistirilmeli';
-  }
-
   Widget _teknikBolum({
     required String baslik,
     required Map<String, dynamic> veriler,
     bool genelSonucGoster = false,
   }) {
-    if (veriler.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (veriler.isEmpty) return const SizedBox.shrink();
 
-    final genelDurum = genelSonucGoster
-        ? _stilGenelDurumu(veriler)
-        : 'degerlendirilmedi';
-    final stilIyiMi = genelDurum == 'iyi';
-    final genelDegerlendirildiMi = genelDurum != 'degerlendirilmedi';
+    final puanlar = veriler.values.map(_karnePuani).whereType<int>().toList();
+
+    // Mevcut yapıda her yüzme stilinde 5 değerlendirme maddesi var.
+    final tamamlandi = veriler.length == 5 && puanlar.length == 5;
+
+    final double? ortalama = tamamlandi
+        ? puanlar.reduce((a, b) => a + b) / puanlar.length
+        : null;
+
+    final genelRenk = _karnePuanRengi(ortalama?.round());
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2361,41 +2349,33 @@ class KarneDetayEkrani extends StatelessWidget {
                 ),
               ),
             ),
-            if (genelSonucGoster)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: !genelDegerlendirildiMi
-                      ? Colors.grey
-                      : stilIyiMi
-                      ? Colors.lightGreenAccent
-                      : Colors.orangeAccent,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  !genelDegerlendirildiMi
-                      ? 'DEĞERLENDİRİLMEDİ'
-                      : stilIyiMi
-                      ? 'İYİ'
-                      : 'GELİŞTİRİLMELİ',
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
           ],
         ),
-
+        if (genelSonucGoster) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: genelRenk.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: genelRenk),
+            ),
+            child: Text(
+              ortalama == null
+                  ? '5 seviyeli değerlendirme tamamlanmadı'
+                  : 'Ortalama: ${ortalama.toStringAsFixed(1)} / 5',
+              style: TextStyle(
+                color: genelRenk,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 10),
-
         ...veriler.entries.map((entry) {
-          final durum = entry.value.toString();
-          final iyiMi = durum == 'iyi';
+          final puan = _karnePuani(entry.value);
+          final renk = _karnePuanRengi(puan);
 
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
@@ -2403,11 +2383,7 @@ class KarneDetayEkrani extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFF171717),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: iyiMi
-                    ? Colors.lightGreenAccent.withOpacity(0.25)
-                    : Colors.orangeAccent.withOpacity(0.25),
-              ),
+              border: Border.all(color: renk.withOpacity(0.4)),
             ),
             child: Row(
               children: [
@@ -2417,23 +2393,24 @@ class KarneDetayEkrani extends StatelessWidget {
                     style: const TextStyle(color: Colors.white, fontSize: 13),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: iyiMi
-                        ? Colors.lightGreenAccent
-                        : Colors.orangeAccent,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    iyiMi ? 'İYİ' : 'GELİŞTİRİLMELİ',
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: renk,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _karnePuanMetni(entry.value),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -2441,7 +2418,6 @@ class KarneDetayEkrani extends StatelessWidget {
             ),
           );
         }),
-
         const SizedBox(height: 18),
       ],
     );
@@ -3275,11 +3251,6 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
       );
     }
 
-    final eskiIyi = _teknikDurumSayisi(onceki, 'iyi');
-    final yeniIyi = _teknikDurumSayisi(son, 'iyi');
-    final eskiGelistirilmeli = _teknikDurumSayisi(onceki, 'gelistirilmeli');
-    final yeniGelistirilmeli = _teknikDurumSayisi(son, 'gelistirilmeli');
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -3326,70 +3297,47 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
             ),
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(11),
-                  decoration: BoxDecoration(
-                    color: Colors.lightGreenAccent.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'İYİ',
-                        style: TextStyle(
-                          color: Colors.lightGreenAccent,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        '$eskiIyi → $yeniIyi  (${yeniIyi - eskiIyi >= 0 ? '+' : ''}${yeniIyi - eskiIyi})',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: List.generate(5, (index) {
+              final puan = index + 1;
+              final renk = _karnePuanRengi(puan);
+              final eski = _teknikDurumSayisi(onceki, '$puan');
+              final yeni = _teknikDurumSayisi(son, '$puan');
+
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: renk.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: renk.withOpacity(0.5)),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(11),
-                  decoration: BoxDecoration(
-                    color: Colors.orangeAccent.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'GELİŞTİRİLMELİ',
-                        style: TextStyle(
-                          color: Colors.orangeAccent,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Seviye $puan',
+                      style: TextStyle(
+                        color: renk,
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 5),
-                      Text(
-                        '$eskiGelistirilmeli → $yeniGelistirilmeli  (${yeniGelistirilmeli - eskiGelistirilmeli >= 0 ? '+' : ''}${yeniGelistirilmeli - eskiGelistirilmeli})',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      '$eski → $yeni beceri',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
                 ),
-              ),
-            ],
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Sayılar her seviyedeki beceri adedidir. '
+            'Eski iyi/geliştirilmeli kayıtları bu sayılara dahil değildir.',
+            style: TextStyle(color: Colors.grey, fontSize: 11),
           ),
         ],
       ),
@@ -3758,27 +3706,25 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
   Widget _teknikGelisimGrafigi(List<Map<String, dynamic>> karneler) {
     if (karneler.length < 2) return const SizedBox.shrink();
 
-    final iyiDegerleri = <int>[];
-    final gelistirilmeliDegerleri = <int>[];
+    final sayilar = karneler.map((karne) {
+      return List.generate(
+        5,
+        (index) => _teknikDurumSayisi(karne, '${index + 1}'),
+      );
+    }).toList();
 
-    for (final karne in karneler) {
-      iyiDegerleri.add(_teknikDurumSayisi(karne, 'iyi'));
-      gelistirilmeliDegerleri.add(_teknikDurumSayisi(karne, 'gelistirilmeli'));
+    var enBuyuk = 0;
+    for (final satir in sayilar) {
+      for (final sayi in satir) {
+        if (sayi > enBuyuk) enBuyuk = sayi;
+      }
     }
 
-    final enBuyukIyi = iyiDegerleri.reduce((a, b) => a > b ? a : b);
-    final enBuyukGel = gelistirilmeliDegerleri.reduce((a, b) => a > b ? a : b);
-    final enBuyuk = enBuyukIyi > enBuyukGel ? enBuyukIyi : enBuyukGel;
-    final maxY = (enBuyuk + 3).toDouble();
-
-    const iyiRengi = Color(0xFF42C5C7);
-    const gelistirilmeliRengi = Color(0xFFF56A86);
-    const grafikArkaPlan = Color(0xFFF7F0E6);
-    const eksenRengi = Color(0xFF334155);
+    final grafikGenisligi = karneler.length * 100.0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(14),
@@ -3795,50 +3741,42 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 9),
-          const Row(
-            children: [
-              Icon(Icons.square, color: iyiRengi, size: 12),
-              SizedBox(width: 5),
-              Text('İyi', style: TextStyle(color: Colors.grey, fontSize: 10)),
-              SizedBox(width: 16),
-              Icon(Icons.square, color: gelistirilmeliRengi, size: 12),
-              SizedBox(width: 5),
-              Text(
-                'Geliştirilmeli',
-                style: TextStyle(color: Colors.grey, fontSize: 10),
-              ),
-            ],
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: List.generate(5, (index) {
+              final puan = index + 1;
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.square, color: _karnePuanRengi(puan), size: 12),
+                  const SizedBox(width: 4),
+                  Text('$puan', style: const TextStyle(color: Colors.white)),
+                ],
+              );
+            }),
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.fromLTRB(8, 10, 10, 8),
-            decoration: BoxDecoration(
-              color: grafikArkaPlan,
-              borderRadius: BorderRadius.circular(10),
-            ),
+          const SizedBox(height: 8),
+          const Text(
+            'Her sütun ilgili seviyedeki beceri sayısını gösterir. '
+            'Eski değerlendirmeler grafiğe dahil edilmez.',
+            style: TextStyle(color: Colors.grey, fontSize: 11),
+          ),
+          const SizedBox(height: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             child: SizedBox(
-              height: 220,
+              width: grafikGenisligi < 320 ? 320 : grafikGenisligi,
+              height: 230,
               child: BarChart(
                 BarChartData(
                   minY: 0,
-                  maxY: maxY,
+                  maxY: (enBuyuk + 1).toDouble(),
                   alignment: BarChartAlignment.spaceAround,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: const Color(0xFF6B7280).withOpacity(0.20),
-                      strokeWidth: 1,
-                    ),
-                  ),
-                  borderData: FlBorderData(
-                    show: true,
-                    border: const Border(
-                      left: BorderSide(color: Color(0xFF64748B)),
-                      bottom: BorderSide(color: Color(0xFF64748B)),
-                    ),
-                  ),
+                  barTouchData: BarTouchData(enabled: false),
+                  gridData: FlGridData(show: true, drawVerticalLine: false),
+                  borderData: FlBorderData(show: false),
                   titlesData: FlTitlesData(
                     topTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: false),
@@ -3849,34 +3787,38 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                     leftTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 30,
-                        getTitlesWidget: (value, meta) => Text(
-                          value.toInt().toString(),
-                          style: const TextStyle(
-                            color: eksenRengi,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        reservedSize: 28,
+                        getTitlesWidget: (value, meta) {
+                          if (value != value.roundToDouble()) {
+                            return const SizedBox.shrink();
+                          }
+                          return Text(
+                            '${value.toInt()}',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 10,
+                            ),
+                          );
+                        },
                       ),
                     ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 31,
+                        reservedSize: 32,
                         getTitlesWidget: (value, meta) {
                           final index = value.toInt();
                           if (index < 0 || index >= karneler.length) {
                             return const SizedBox.shrink();
                           }
+
                           return Padding(
-                            padding: const EdgeInsets.only(top: 5),
+                            padding: const EdgeInsets.only(top: 8),
                             child: Text(
                               _tarihGoster(karneler[index]['test_date']),
                               style: const TextStyle(
-                                color: eksenRengi,
-                                fontSize: 8,
-                                fontWeight: FontWeight.w600,
+                                color: Colors.grey,
+                                fontSize: 9,
                               ),
                             ),
                           );
@@ -3887,25 +3829,15 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                   barGroups: List.generate(karneler.length, (index) {
                     return BarChartGroupData(
                       x: index,
-                      barsSpace: 4,
-                      barRods: [
-                        BarChartRodData(
-                          toY: iyiDegerleri[index].toDouble(),
-                          width: 12,
-                          color: iyiRengi,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(2),
-                          ),
-                        ),
-                        BarChartRodData(
-                          toY: gelistirilmeliDegerleri[index].toDouble(),
-                          width: 12,
-                          color: gelistirilmeliRengi,
-                          borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(2),
-                          ),
-                        ),
-                      ],
+                      barsSpace: 3,
+                      barRods: List.generate(5, (seviyeIndex) {
+                        return BarChartRodData(
+                          toY: sayilar[index][seviyeIndex].toDouble(),
+                          width: 10,
+                          color: _karnePuanRengi(seviyeIndex + 1),
+                          borderRadius: BorderRadius.circular(3),
+                        );
+                      }),
                     );
                   }),
                 ),
@@ -5154,14 +5086,48 @@ class _KarneSayisalAlan extends StatelessWidget {
   }
 }
 
+int? _karnePuani(dynamic deger) {
+  final puan = int.tryParse(deger?.toString() ?? '');
+  if (puan == null || puan < 1 || puan > 5) return null;
+  return puan;
+}
+
+Color _karnePuanRengi(int? puan) {
+  switch (puan) {
+    case 1:
+      return const Color(0xFFFF5252);
+    case 2:
+      return const Color(0xFFFF9800);
+    case 3:
+      return const Color(0xFFFFEB3B);
+    case 4:
+      return const Color(0xFFA5D6A7);
+    case 5:
+      return Colors.lightGreenAccent;
+    default:
+      return Colors.grey;
+  }
+}
+
+String _karnePuanMetni(dynamic deger) {
+  final puan = _karnePuani(deger);
+  if (puan != null) return '$puan / 5';
+
+  switch (deger?.toString()) {
+    case 'iyi':
+      return 'Eski: İyi';
+    case 'gelistirilmeli':
+      return 'Eski: Geliştirilmeli';
+    default:
+      return 'Değerlendirilmedi';
+  }
+}
+
 class _KarneTeknikBolumu extends StatelessWidget {
   final String baslik;
   final IconData icon;
-
   final Map<String, String> degerler;
-
   final Map<String, String> maddeler;
-
   final VoidCallback onChanged;
 
   const _KarneTeknikBolumu({
@@ -5176,139 +5142,74 @@ class _KarneTeknikBolumu extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-
       children: [
         _KarneBolumBasligi(icon: icon, baslik: baslik),
-
+        const SizedBox(height: 6),
+        const Text(
+          'Her beceriyi 1–5 arasında değerlendir.',
+          style: TextStyle(color: Colors.grey, fontSize: 12),
+        ),
         const SizedBox(height: 12),
-
         ...maddeler.entries.map((madde) {
-          final secili = degerler[madde.key];
+          final secili = _karnePuani(degerler[madde.key]);
 
           return Container(
             margin: const EdgeInsets.only(bottom: 10),
-
             padding: const EdgeInsets.all(13),
-
             decoration: BoxDecoration(
               color: const Color(0xFF171717),
-
               borderRadius: BorderRadius.circular(12),
-
               border: Border.all(color: const Color(0xFF292929)),
             ),
-
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-
               children: [
                 Text(
                   madde.value,
-
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-
                 const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: List.generate(5, (index) {
+                    final puan = index + 1;
+                    final renk = _karnePuanRengi(puan);
+                    final secildi = secili == puan;
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: _KarneDegerlendirmeButonu(
-                        metin: 'İYİ',
-
-                        secili: secili == 'iyi',
-
-                        iyiMi: true,
-
-                        onTap: () {
-                          degerler[madde.key] = 'iyi';
-
+                    return Semantics(
+                      label: '${madde.value}: $puan / 5',
+                      selected: secildi,
+                      child: ChoiceChip(
+                        label: Text('$puan'),
+                        selected: secildi,
+                        showCheckmark: true,
+                        checkmarkColor: Colors.black,
+                        selectedColor: renk,
+                        backgroundColor: renk.withOpacity(0.12),
+                        side: BorderSide(color: renk),
+                        labelStyle: TextStyle(
+                          color: secildi ? Colors.black : renk,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                        onSelected: (_) {
+                          degerler[madde.key] = puan.toString();
                           onChanged();
                         },
                       ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    Expanded(
-                      child: _KarneDegerlendirmeButonu(
-                        metin: 'GELİŞTİRİLMELİ',
-
-                        secili: secili == 'gelistirilmeli',
-
-                        iyiMi: false,
-
-                        onTap: () {
-                          degerler[madde.key] = 'gelistirilmeli';
-
-                          onChanged();
-                        },
-                      ),
-                    ),
-                  ],
+                    );
+                  }),
                 ),
               ],
             ),
           );
         }),
       ],
-    );
-  }
-}
-
-class _KarneDegerlendirmeButonu extends StatelessWidget {
-  final String metin;
-  final bool secili;
-  final bool iyiMi;
-  final VoidCallback onTap;
-
-  const _KarneDegerlendirmeButonu({
-    required this.metin,
-    required this.secili,
-    required this.iyiMi,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final renk = iyiMi ? Colors.lightGreenAccent : Colors.orangeAccent;
-
-    return InkWell(
-      onTap: onTap,
-
-      borderRadius: BorderRadius.circular(8),
-
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-
-        decoration: BoxDecoration(
-          color: secili ? renk : const Color(0xFF222222),
-
-          borderRadius: BorderRadius.circular(8),
-
-          border: Border.all(
-            color: secili ? renk : Colors.grey.withOpacity(0.3),
-          ),
-        ),
-
-        alignment: Alignment.center,
-
-        child: Text(
-          metin,
-
-          style: TextStyle(
-            color: secili ? Colors.black : Colors.grey,
-
-            fontSize: 10,
-
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
     );
   }
 }
