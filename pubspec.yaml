@@ -31,7 +31,8 @@ flutter:
   assets:
     - assets/images/poseidon_mizrak.png
     - assets/videos/trident_rising.mp4
-    flutter_launcher_icons:
+
+flutter_launcher_icons:
   android: false
   ios: false
   image_path: "assets/images/poseidon_mizrak.png"
