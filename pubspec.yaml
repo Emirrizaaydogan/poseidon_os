@@ -23,6 +23,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: 0.14.4
 
 flutter:
   uses-material-design: true
@@ -30,3 +31,13 @@ flutter:
   assets:
     - assets/images/poseidon_mizrak.png
     - assets/videos/trident_rising.mp4
+    flutter_launcher_icons:
+  android: false
+  ios: false
+  image_path: "assets/images/poseidon_mizrak.png"
+
+  web:
+    generate: true
+    image_path: "assets/images/poseidon_mizrak.png"
+    background_color: "#02090D"
+    theme_color: "#02090D"

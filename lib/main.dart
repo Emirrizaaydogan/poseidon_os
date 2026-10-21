@@ -10,6 +10,7 @@ import 'screens/kulup_takvimi.dart';
 import 'screens/veli_onay_ekrani.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:async';
 
 // ---------------- VERİ MODELLERİ ----------------
 final DatabaseService dbService = DatabaseService();
@@ -456,37 +457,92 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
   late final VideoPlayerController _videoController;
+
   bool _videoDurduruldu = false;
+  bool _videoGoster = false;
 
   @override
   void initState() {
     super.initState();
-    _videoController =
-        VideoPlayerController.asset('assets/videos/trident_rising.mp4')
-          ..setLooping(false)
-          ..setVolume(0)
-          ..addListener(_videoBitisiniKontrolEt)
-          ..initialize().then((_) {
-            if (mounted) {
-              setState(() {});
-              _videoController.play();
-            }
-          });
+
+    WidgetsBinding.instance.addObserver(this);
+
+    _videoController = VideoPlayerController.asset(
+      'assets/videos/trident_rising.mp4',
+    );
+
+    _videoController.addListener(_videoBitisiniKontrolEt);
+
+    unawaited(_videoyuHazirla());
+  }
+
+  Future<void> _videoyuHazirla() async {
+    try {
+      await _videoController.initialize().timeout(const Duration(seconds: 12));
+
+      if (!mounted || _videoDurduruldu) return;
+
+      await _videoController.setVolume(0);
+      await _videoController.setLooping(false);
+
+      if (!mounted || _videoDurduruldu) return;
+
+      await _videoController.play().timeout(const Duration(seconds: 5));
+    } catch (_) {
+      _sabitGorseleGec();
+    }
   }
 
   void _videoBitisiniKontrolEt() {
-    if (_videoDurduruldu) return;
-    final deger = _videoController.value;
-    if (!deger.isInitialized || deger.duration == Duration.zero) return;
+    if (!mounted || _videoDurduruldu) return;
 
-    // Son kareye 100ms'den az kaldıysa VİDEOYU ZORLA DURDUR.
-    // Platformun kendi "bitince ne yapacağı" davranışına güvenmiyoruz.
-    final kalanSure = deger.duration - deger.position;
-    if (kalanSure <= const Duration(milliseconds: 100)) {
-      _videoDurduruldu = true;
-      _videoController.pause();
+    final deger = _videoController.value;
+
+    if (deger.hasError) {
+      _sabitGorseleGec();
+      return;
+    }
+
+    if (!deger.isInitialized) return;
+
+    if (deger.duration > Duration.zero) {
+      final kalan = deger.duration - deger.position;
+
+      if (kalan <= const Duration(milliseconds: 100)) {
+        _sabitGorseleGec();
+        return;
+      }
+    }
+
+    final goster =
+        deger.isPlaying && !deger.isBuffering && deger.position > Duration.zero;
+
+    // Her video karesinde ekranı yeniden oluşturmuyoruz.
+    if (_videoGoster != goster) {
+      setState(() => _videoGoster = goster);
+    }
+  }
+
+  void _sabitGorseleGec() {
+    if (!mounted || _videoDurduruldu) return;
+
+    _videoDurduruldu = true;
+
+    if (_videoGoster) {
+      setState(() => _videoGoster = false);
+    }
+
+    unawaited(_videoController.pause().catchError((Object _) {}));
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden) {
+      _sabitGorseleGec();
     }
   }
 
@@ -546,10 +602,17 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _videoDurduruldu = true;
+
+    WidgetsBinding.instance.removeObserver(this);
+
+    _videoController.removeListener(_videoBitisiniKontrolEt);
+
+    _videoController.dispose();
+
     _emailController.dispose();
     _sifreController.dispose();
-    _videoController.removeListener(_videoBitisiniKontrolEt);
-    _videoController.dispose();
+
     super.dispose();
   }
 
@@ -566,18 +629,31 @@ class _LoginScreenState extends State<LoginScreen> {
           // TAM EKRAN POSEIDON ARKA PLANI
           // =========================================================
           Positioned.fill(
-            child: _videoController.value.isInitialized
-                ? FittedBox(
-                    fit: BoxFit.cover,
-                    clipBehavior: Clip.hardEdge,
-                    alignment: Alignment.topCenter,
-                    child: SizedBox(
-                      width: _videoController.value.size.width,
-                      height: _videoController.value.size.height,
-                      child: VideoPlayer(_videoController),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // Video başlamasa bile marka görseli görünür.
+                Image.asset(
+                  'assets/images/poseidon_mizrak.png',
+                  fit: BoxFit.cover,
+                  alignment: Alignment.topCenter,
+                ),
+
+                if (_videoGoster)
+                  RepaintBoundary(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      clipBehavior: Clip.hardEdge,
+                      alignment: Alignment.topCenter,
+                      child: SizedBox(
+                        width: _videoController.value.size.width,
+                        height: _videoController.value.size.height,
+                        child: VideoPlayer(_videoController),
+                      ),
                     ),
-                  )
-                : Container(color: const Color(0xFF02090D)),
+                  ),
+              ],
+            ),
           ),
 
           // =========================================================
