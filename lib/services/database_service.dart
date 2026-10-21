@@ -4,11 +4,63 @@ import 'package:http/http.dart' as http;
 /// Backend sunucumuzun adresi. Bilgisayarında çalışırken bu adres geçerli.
 /// İleride backend'i internete koyduğumuzda burayı gerçek bir URL ile
 /// değiştireceğiz (örn. https://poseidon-backend.up.railway.app).
-const String apiBaseUrl = 'http://localhost:3000';
+final String apiBaseUrl = const bool.fromEnvironment('USE_SAME_ORIGIN')
+    ? Uri.base.origin
+    : const String.fromEnvironment(
+        'API_BASE_URL',
+        defaultValue: 'http://localhost:3000',
+      );
 
 /// Tüm veritabanı okuma/yazma işlemleri burada toplanır.
 /// Ekranlar artık Firestore'u değil, kendi backend'imizi çağırıyor.
 class DatabaseService {
+  Future<List<dynamic>> veliBasvurulariniGetir() async {
+    final r = await http
+        .get(Uri.parse('$apiBaseUrl/parent-link-requests'), headers: _headers)
+        .timeout(const Duration(seconds: 20));
+
+    if (r.statusCode != 200) {
+      _hataFirlat(r, 'Başvurular getirilemedi');
+    }
+
+    return List<dynamic>.from(jsonDecode(r.body));
+  }
+
+  Future<void> veliBasvurusuOlustur(List<int> sporcuIds) async {
+    final r = await http
+        .post(
+          Uri.parse('$apiBaseUrl/parent-link-requests'),
+          headers: _headers,
+          body: jsonEncode({'athlete_ids': sporcuIds}),
+        )
+        .timeout(const Duration(seconds: 20));
+
+    if (r.statusCode != 201) {
+      _hataFirlat(r, 'Başvuru oluşturulamadı');
+    }
+  }
+
+  Future<void> veliBasvurusuKararVer(
+    int id, {
+    required bool onay,
+    String not = '',
+  }) async {
+    final r = await http
+        .patch(
+          Uri.parse('$apiBaseUrl/parent-link-requests/$id'),
+          headers: _headers,
+          body: jsonEncode({
+            'decision': onay ? 'onaylandi' : 'reddedildi',
+            'note': not,
+          }),
+        )
+        .timeout(const Duration(seconds: 20));
+
+    if (r.statusCode != 200) {
+      _hataFirlat(r, 'Başvuru sonuçlandırılamadı');
+    }
+  }
+
   Future<List<dynamic>> takvimEtkinlikleriGetir() async {
     final r = await http
         .get(Uri.parse('$apiBaseUrl/calendar-events'), headers: _headers)
@@ -484,6 +536,53 @@ class DatabaseService {
 
     if (response.statusCode != 200) {
       _hataFirlat(response, 'Ödeme işaretlenemedi');
+    }
+  }
+
+  Future<void> aidatDekontGonder(int id, String ad, List<int> bytes) async {
+    final response = await http
+        .post(
+          Uri.parse('$apiBaseUrl/dues/$id/receipt'),
+          headers: _headers,
+          body: jsonEncode({'dosya_adi': ad, 'base64': base64Encode(bytes)}),
+        )
+        .timeout(const Duration(seconds: 90));
+
+    if (response.statusCode != 201) {
+      _hataFirlat(response, 'Dekont gönderilemedi');
+    }
+  }
+
+  Future<Map<String, dynamic>> aidatDekontBaglantisi(int id) async {
+    final response = await http
+        .get(Uri.parse('$apiBaseUrl/dues/$id/receipt'), headers: _headers)
+        .timeout(const Duration(seconds: 40));
+
+    if (response.statusCode != 200) {
+      _hataFirlat(response, 'Dekont açılamadı');
+    }
+
+    return Map<String, dynamic>.from(jsonDecode(response.body));
+  }
+
+  Future<void> aidatDekontKarar(
+    int id, {
+    required bool onayla,
+    String? neden,
+  }) async {
+    final response = await http
+        .patch(
+          Uri.parse('$apiBaseUrl/dues/$id/review'),
+          headers: _headers,
+          body: jsonEncode({
+            'karar': onayla ? 'onayla' : 'reddet',
+            'neden': neden,
+          }),
+        )
+        .timeout(const Duration(seconds: 30));
+
+    if (response.statusCode != 200) {
+      _hataFirlat(response, 'Dekont kararı kaydedilemedi');
     }
   }
 

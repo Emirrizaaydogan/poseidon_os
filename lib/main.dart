@@ -7,6 +7,9 @@ import 'screens/sporcu_kayit_ekrani.dart';
 import 'screens/sporcu_ozel_profil.dart';
 import 'widgets/yoklama_paneli.dart';
 import 'screens/kulup_takvimi.dart';
+import 'screens/veli_onay_ekrani.dart';
+import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
 
 // ---------------- VERİ MODELLERİ ----------------
 final DatabaseService dbService = DatabaseService();
@@ -406,6 +409,39 @@ class PoseidonApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Poseidon OS',
       theme: tema,
+
+      builder: (context, child) {
+        final ekran = MediaQuery.of(context);
+
+        // Telefonlarda gerçek ekran genişliğini kullan.
+        if (ekran.size.width <= 600) {
+          return child ?? const SizedBox.shrink();
+        }
+
+        // Bilgisayarda mobil tasarımın oranını koru.
+        final mobilGenislik = (ekran.size.height * 9 / 16)
+            .clamp(320.0, 480.0)
+            .toDouble();
+
+        return ColoredBox(
+          color: const Color(0xFF02090D),
+          child: Center(
+            child: SizedBox(
+              width: mobilGenislik,
+              height: ekran.size.height,
+              child: ClipRect(
+                child: MediaQuery(
+                  data: ekran.copyWith(
+                    size: Size(mobilGenislik, ekran.size.height),
+                  ),
+                  child: child ?? const SizedBox.shrink(),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+
       home: const LoginScreen(),
     );
   }
@@ -533,6 +569,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: _videoController.value.isInitialized
                 ? FittedBox(
                     fit: BoxFit.cover,
+                    clipBehavior: Clip.hardEdge,
                     alignment: Alignment.topCenter,
                     child: SizedBox(
                       width: _videoController.value.size.width,
@@ -974,7 +1011,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (!mounted) return;
       setState(() => _kaydediliyor = false);
-      _mesaj('Hesabın oluşturuldu. E-posta ve şifrenle giriş yapabilirsin.');
+      _mesaj(
+        'Hesabın oluşturuldu. Çocuğunla eşleşmen antrenör onayı bekliyor. '
+        'Giriş yapabilirsin.Lütfen antrenör onayını bekleyiniz',
+      );
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
@@ -1670,6 +1710,14 @@ class _VeliPaneliState extends State<VeliPaneli> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
+    if (_hata == null && _seciliId == null) {
+      return VeliOnayEkrani(
+        db: dbService,
+        antrenorMu: false,
+        onKontrol: _yukle,
+        onCikis: _cikis,
+      );
+    }
     if (_hata != null || _seciliId == null) {
       return Scaffold(
         backgroundColor: Colors.black,
@@ -1699,6 +1747,24 @@ class _VeliPaneliState extends State<VeliPaneli> {
       body: SafeArea(
         child: Column(
           children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                icon: const Icon(Icons.verified_user_outlined),
+                label: const Text('Çocuk bağlantılarım'),
+                onPressed: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          VeliOnayEkrani(db: dbService, antrenorMu: false),
+                    ),
+                  );
+
+                  if (mounted) await _yukle();
+                },
+              ),
+            ),
             if (_cocuklar.length > 1)
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -2016,7 +2082,60 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
                 ),
 
                 const SizedBox(height: 22),
+                if (karneler.isNotEmpty) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.lightGreenAccent,
+                        side: const BorderSide(color: Colors.lightGreenAccent),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.insights),
+                      label: const Text(
+                        'Karne Karşılaştırması',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      onPressed: () {
+                        final karne = Map<String, dynamic>.from(karneler.first);
 
+                        final sporcu = Sporcu.fromJson({
+                          'id': widget.sporcuId,
+                          'isim': karne['athlete_isim'] ?? 'Çocuğum',
+                          'dogum_yili': karne['dogum_yili'],
+                          'dogum_tarihi': karne['dogum_tarihi'],
+                          'cinsiyet': karne['cinsiyet'],
+                          'grup': karne['grup'],
+                        });
+
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SporcuKarneleriEkrani(
+                              sporcu: sporcu,
+                              sadeceGoruntule: true,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  if (karneler.length < 2) ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      'İki karne oluştuğunda ölçümler arasındaki '
+                      'değişimleri ve gelişim grafiklerini görebilirsin.',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                ],
                 if (karneler.isEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -2885,8 +3004,13 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
 
 class SporcuKarneleriEkrani extends StatefulWidget {
   final Sporcu sporcu;
+  final bool sadeceGoruntule;
 
-  const SporcuKarneleriEkrani({super.key, required this.sporcu});
+  const SporcuKarneleriEkrani({
+    super.key,
+    required this.sporcu,
+    this.sadeceGoruntule = false,
+  });
 
   @override
   State<SporcuKarneleriEkrani> createState() => _SporcuKarneleriEkraniState();
@@ -3371,6 +3495,23 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
     return karneler;
   }
 
+  Widget _karneGrafikAlani({required int olcumSayisi, required Widget child}) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final gerekenGenislik = olcumSayisi * 76.0 + 50;
+
+        final genislik = gerekenGenislik > constraints.maxWidth
+            ? gerekenGenislik
+            : constraints.maxWidth;
+
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(width: genislik, height: 260, child: child),
+        );
+      },
+    );
+  }
+
   Widget _sayisalGelisimGrafigi({
     required List<Map<String, dynamic>> karneler,
     required String baslik,
@@ -3380,11 +3521,10 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
     List<Map<String, dynamic>> seviyeBantlari = const [],
     String? normTesti,
   }) {
-    final degerler = <double?>[];
-
-    for (final karne in karneler) {
-      degerler.add(_karneSayiAl(karne, bolum, alan));
-    }
+    final degerler = karneler.map((karne) {
+      final deger = _karneSayiAl(karne, bolum, alan);
+      return deger != null && deger.isFinite ? deger : null;
+    }).toList();
 
     final doluDegerler = degerler.whereType<double>().toList();
 
@@ -3393,28 +3533,39 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
     }
 
     double enBuyuk = doluDegerler.reduce((a, b) => a > b ? a : b);
+    double enKucuk = doluDegerler.reduce((a, b) => a < b ? a : b);
 
     for (final bant in seviyeBantlari) {
-      final max = (bant['max'] as num?)?.toDouble();
-      if (max != null && max > enBuyuk) {
-        enBuyuk = max;
-      }
+      final alt = (bant['min'] as num?)?.toDouble();
+      final ust = (bant['max'] as num?)?.toDouble();
+
+      if (alt != null && alt < enKucuk) enKucuk = alt;
+      if (ust != null && ust > enBuyuk) enBuyuk = ust;
     }
 
-    double maxY = enBuyuk <= 0 ? 10 : enBuyuk * 1.12;
-    if (maxY < 10) maxY = 10;
+    final double minY = enKucuk < 0 ? enKucuk * 1.30 : 0.0;
+    final double maxY = enBuyuk > 0 ? enBuyuk * 1.25 : 1.0;
 
-    const grafikArkaPlan = Color(0xFFF7F0E6);
-    const sutunRengi = Color(0xFF2E4F8F);
-    const eksenRengi = Color(0xFF334155);
+    final sonIndex = degerler.lastIndexWhere((deger) => deger != null);
+    final sonDeger = degerler[sonIndex]!;
+
+    final String? sonDurum = normTesti == null
+        ? null
+        : _fizikselDurum(
+            karne: karneler[sonIndex],
+            test: normTesti,
+            deger: sonDeger,
+          );
+
+    const eksenRengi = Color(0xFFB7C4B7);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF171717),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF292929)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF303030)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3426,7 +3577,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                   baslik,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 14,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -3436,77 +3587,89 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                   birim,
                   style: const TextStyle(
                     color: Colors.lightGreenAccent,
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
+          Text(
+            'Son ölçüm: ${_degerMetni(sonDeger, birim)}',
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const SizedBox(height: 16),
+
           Container(
-            padding: const EdgeInsets.fromLTRB(8, 10, 10, 8),
+            padding: const EdgeInsets.fromLTRB(8, 16, 10, 8),
             decoration: BoxDecoration(
-              color: grafikArkaPlan,
-              borderRadius: BorderRadius.circular(10),
+              color: const Color(0xFF101710),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: SizedBox(
-              height: 220,
+            child: _karneGrafikAlani(
+              olcumSayisi: karneler.length,
               child: Stack(
                 children: [
                   if (seviyeBantlari.isNotEmpty)
                     Positioned.fill(
-                      left: 34,
+                      left: 42,
                       right: 2,
-                      top: 4,
-                      bottom: 31,
+                      bottom: 44,
                       child: LayoutBuilder(
                         builder: (context, constraints) {
+                          final aralik = maxY - minY;
+
                           return Stack(
                             children: seviyeBantlari.map((bant) {
-                              final min =
+                              final alt =
                                   (bant['min'] as num?)?.toDouble() ?? 0;
-                              final max =
+                              final ust =
                                   (bant['max'] as num?)?.toDouble() ?? 0;
+
+                              if (ust <= alt) {
+                                return const SizedBox.shrink();
+                              }
+
+                              final ustOran = ((ust - minY) / aralik).clamp(
+                                0.0,
+                                1.0,
+                              );
+                              final altOran = ((alt - minY) / aralik).clamp(
+                                0.0,
+                                1.0,
+                              );
+
                               final renk =
                                   bant['renk'] as Color? ?? Colors.transparent;
-
-                              final yukseklik = constraints.maxHeight;
-                              final ust =
-                                  yukseklik *
-                                  (1 - (max / maxY).clamp(0.0, 1.0));
-                              final alt =
-                                  yukseklik * ((min / maxY).clamp(0.0, 1.0));
 
                               return Positioned(
                                 left: 0,
                                 right: 0,
-                                top: ust,
-                                bottom: alt,
-                                child: Container(color: renk),
+                                top: constraints.maxHeight * (1 - ustOran),
+                                bottom: constraints.maxHeight * altOran,
+                                child: ColoredBox(
+                                  color: renk.withOpacity(0.12),
+                                ),
                               );
                             }).toList(),
                           );
                         },
                       ),
                     ),
+
                   BarChart(
                     BarChartData(
-                      minY: 0,
+                      minY: minY,
                       maxY: maxY,
                       alignment: BarChartAlignment.spaceAround,
+                      borderData: FlBorderData(show: false),
                       gridData: FlGridData(
                         show: true,
                         drawVerticalLine: false,
                         getDrawingHorizontalLine: (value) => FlLine(
-                          color: const Color(0xFF6B7280).withOpacity(0.20),
+                          color: Colors.white.withOpacity(0.07),
                           strokeWidth: 1,
-                        ),
-                      ),
-                      borderData: FlBorderData(
-                        show: true,
-                        border: const Border(
-                          left: BorderSide(color: Color(0xFF64748B)),
-                          bottom: BorderSide(color: Color(0xFF64748B)),
+                          dashArray: [4, 5],
                         ),
                       ),
                       titlesData: FlTitlesData(
@@ -3519,14 +3682,13 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                         leftTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 34,
+                            reservedSize: 42,
                             getTitlesWidget: (value, meta) {
                               return Text(
                                 value.toStringAsFixed(value % 1 == 0 ? 0 : 1),
                                 style: const TextStyle(
                                   color: eksenRengi,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w600,
+                                  fontSize: 10,
                                 ),
                               );
                             },
@@ -3535,26 +3697,33 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            reservedSize: 31,
+                            reservedSize: 44,
                             getTitlesWidget: (value, meta) {
                               final index = value.toInt();
+
                               if (index < 0 || index >= karneler.length) {
                                 return const SizedBox.shrink();
                               }
 
-                              final tarih = _tarihGoster(
-                                karneler[index]['test_date'],
+                              final hamTarih = karneler[index]['test_date'];
+                              final tarih = DateTime.tryParse(
+                                hamTarih?.toString() ?? '',
                               );
 
+                              final metin = tarih == null
+                                  ? _tarihGoster(hamTarih)
+                                  : '${tarih.day.toString().padLeft(2, '0')}.'
+                                        '${tarih.month.toString().padLeft(2, '0')}\n'
+                                        '${tarih.year}';
+
                               return Padding(
-                                padding: const EdgeInsets.only(top: 5),
+                                padding: const EdgeInsets.only(top: 8),
                                 child: Text(
-                                  tarih,
+                                  metin,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: eksenRengi,
-                                    fontSize: 8,
-                                    fontWeight: FontWeight.w600,
+                                    fontSize: 10,
                                   ),
                                 ),
                               );
@@ -3562,10 +3731,15 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                           ),
                         ),
                       ),
+
                       barGroups: List.generate(karneler.length, (index) {
-                        final deger = degerler[index] ?? 0;
-                        final durum =
-                            normTesti == null || degerler[index] == null
+                        final deger = degerler[index];
+
+                        if (deger == null) {
+                          return BarChartGroupData(x: index, barRods: []);
+                        }
+
+                        final durum = normTesti == null
                             ? null
                             : _fizikselDurum(
                                 karne: karneler[index],
@@ -3573,35 +3747,58 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                                 deger: deger,
                               );
 
+                        final renk = normTesti == null
+                            ? Colors.lightGreenAccent
+                            : _durumRengi(durum);
+
                         return BarChartGroupData(
                           x: index,
+                          showingTooltipIndicators: const [0],
                           barRods: [
                             BarChartRodData(
                               toY: deger,
-                              width: 24,
-                              color: normTesti == null
-                                  ? sutunRengi
-                                  : _durumRengi(durum),
-                              borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(2),
+                              width: 30,
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [renk.withOpacity(0.40), renk],
+                              ),
+                              borderRadius: BorderRadius.vertical(
+                                top: deger >= 0
+                                    ? const Radius.circular(8)
+                                    : Radius.zero,
+                                bottom: deger < 0
+                                    ? const Radius.circular(8)
+                                    : Radius.zero,
                               ),
                             ),
                           ],
-                          showingTooltipIndicators: const [],
                         );
                       }),
+
                       barTouchData: BarTouchData(
-                        enabled: true,
+                        enabled: false,
+                        handleBuiltInTouches: false,
                         touchTooltipData: BarTouchTooltipData(
+                          getTooltipColor: (_) => Colors.transparent,
+                          tooltipPadding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 2,
+                          ),
+                          tooltipMargin: 8,
+                          fitInsideHorizontally: true,
+                          fitInsideVertically: true,
                           getTooltipItem: (group, groupIndex, rod, rodIndex) {
                             final deger = degerler[group.x];
                             if (deger == null) return null;
+
                             return BarTooltipItem(
-                              '${_degerMetni(deger, birim)}\n'
-                              '${_tarihGoster(karneler[group.x]['test_date'])}',
+                              deger % 1 == 0
+                                  ? deger.toInt().toString()
+                                  : deger.toStringAsFixed(1),
                               const TextStyle(
                                 color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                               ),
                             );
@@ -3614,8 +3811,9 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
               ),
             ),
           ),
+
           if (seviyeBantlari.isNotEmpty) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 12,
               runSpacing: 8,
@@ -3623,89 +3821,47 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 13,
-                      height: 13,
-                      decoration: BoxDecoration(
-                        color: bant['renk'] as Color,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
+                    Icon(
+                      Icons.square,
+                      size: 12,
+                      color: bant['renk'] as Color? ?? Colors.grey,
                     ),
                     const SizedBox(width: 5),
                     Text(
                       bant['etiket']?.toString() ?? '',
-                      style: const TextStyle(color: Colors.grey, fontSize: 10),
+                      style: const TextStyle(color: Colors.grey, fontSize: 11),
                     ),
                   ],
                 );
               }).toList(),
             ),
           ],
+
           if (normTesti != null) ...[
-            const SizedBox(height: 11),
-            Builder(
-              builder: (context) {
-                int? sonIndex;
-                for (var i = degerler.length - 1; i >= 0; i--) {
-                  if (degerler[i] != null) {
-                    sonIndex = i;
-                    break;
-                  }
-                }
-                if (sonIndex == null) return const SizedBox.shrink();
-                final sonDeger = degerler[sonIndex]!;
-                final durum = _fizikselDurum(
-                  karne: karneler[sonIndex],
-                  test: normTesti,
-                  deger: sonDeger,
-                );
-                final yas = _testYasi(karneler[sonIndex]);
-                final cinsiyet = _cinsiyet(karneler[sonIndex]);
-                final bilgiEksik = durum == null;
-                final renk = _durumRengi(durum);
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(11),
-                  decoration: BoxDecoration(
-                    color: bilgiEksik
-                        ? const Color(0xFF222222)
-                        : renk.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: bilgiEksik
-                          ? Colors.grey.shade800
-                          : renk.withOpacity(0.55),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: bilgiEksik ? Colors.grey : renk,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 9),
-                      Expanded(
-                        child: Text(
-                          bilgiEksik
-                              ? (normTesti == 'vki'
-                                    ? 'VKİ için yaş+cinsiyete göre persentil bilgisi gerekli.'
-                                    : 'Yaş/cinsiyet bilgisi eksik olduğu için norm değerlendirmesi yapılamadı.')
-                              : '${_durumEtiketi(durum)} · ${yas ?? '-'} yaş${cinsiyet.isEmpty ? '' : ' · ${cinsiyet == 'erkek' ? 'Erkek' : 'Kız'}'}',
-                          style: TextStyle(
-                            color: bilgiEksik ? Colors.grey : renk,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: sonDurum == null
+                    ? const Color(0xFF222222)
+                    : _durumRengi(sonDurum).withOpacity(0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                sonDurum == null
+                    ? (normTesti == 'vki'
+                          ? 'VKİ değerlendirmesi için yaş ve cinsiyete göre '
+                                'persentil bilgisi gerekli.'
+                          : 'Norm değerlendirmesi için yaş veya cinsiyet '
+                                'bilgisi eksik ya da uygun norm bulunmuyor.')
+                    : _durumEtiketi(sonDurum),
+                style: TextStyle(
+                  color: sonDurum == null ? Colors.grey : _durumRengi(sonDurum),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ],
@@ -3714,146 +3870,148 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
   }
 
   Widget _teknikGelisimGrafigi(List<Map<String, dynamic>> karneler) {
-    if (karneler.length < 2) return const SizedBox.shrink();
+    if (karneler.isEmpty) return const SizedBox.shrink();
 
-    final sayilar = karneler.map((karne) {
-      return List.generate(
-        5,
-        (index) => _teknikDurumSayisi(karne, '${index + 1}'),
-      );
-    }).toList();
+    // Mevcut yardımcı metot tarihleri eskiden yeniye sıralar.
+    final siraliKarneler = _siraliKarneler(karneler);
+    final sonKarne = siraliKarneler.last;
 
-    var enBuyuk = 0;
-    for (final satir in sayilar) {
-      for (final sayi in satir) {
-        if (sayi > enBuyuk) enBuyuk = sayi;
-      }
-    }
-
-    final grafikGenisligi = karneler.length * 100.0;
+    const bolumler = {
+      'butterfly': 'KELEBEK YÜZME',
+      'breaststroke': 'KURBAĞALAMA TEKNİK',
+      'freestyle': 'SERBEST TEKNİK',
+      'backstroke': 'SIRTÜSTÜ TEKNİK',
+      'basic_swim': 'TEMEL YÜZME',
+    };
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(14),
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF171717),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF292929)),
+        border: Border.all(color: const Color(0xFF303030)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Teknik Değerlendirme Gelişimi',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
+          const Row(
+            children: [
+              Icon(
+                Icons.assignment_turned_in_outlined,
+                color: Colors.lightGreenAccent,
+                size: 24,
+              ),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Antrenörün Değerlendirmeleri',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children: List.generate(5, (index) {
-              final puan = index + 1;
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.square, color: _karnePuanRengi(puan), size: 12),
-                  const SizedBox(width: 4),
-                  Text('$puan', style: const TextStyle(color: Colors.white)),
-                ],
-              );
-            }),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Her sütun ilgili seviyedeki beceri sayısını gösterir. '
-            'Eski değerlendirmeler grafiğe dahil edilmez.',
-            style: TextStyle(color: Colors.grey, fontSize: 11),
+          const SizedBox(height: 6),
+          Text(
+            'Son karne: ${_tarihGoster(sonKarne['test_date'])}',
+            style: const TextStyle(color: Colors.grey, fontSize: 12),
           ),
           const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SizedBox(
-              width: grafikGenisligi < 320 ? 320 : grafikGenisligi,
-              height: 230,
-              child: BarChart(
-                BarChartData(
-                  minY: 0,
-                  maxY: (enBuyuk + 1).toDouble(),
-                  alignment: BarChartAlignment.spaceAround,
-                  barTouchData: BarTouchData(enabled: false),
-                  gridData: FlGridData(show: true, drawVerticalLine: false),
-                  borderData: FlBorderData(show: false),
-                  titlesData: FlTitlesData(
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 28,
-                        getTitlesWidget: (value, meta) {
-                          if (value != value.roundToDouble()) {
-                            return const SizedBox.shrink();
-                          }
-                          return Text(
-                            '${value.toInt()}',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 10,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 32,
-                        getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index < 0 || index >= karneler.length) {
-                            return const SizedBox.shrink();
-                          }
+          const Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Yüzme Stili',
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ),
+              Text(
+                'Değerlendirme',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ...bolumler.entries.map((bolum) {
+            final veriler = _karneMapAl(sonKarne[bolum.key]);
 
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              _tarihGoster(karneler[index]['test_date']),
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 9,
-                              ),
-                            ),
-                          );
-                        },
+            final puanlar = veriler.values
+                .map(_karnePuani)
+                .whereType<int>()
+                .toList();
+
+            final tamamlandi = veriler.length == 5 && puanlar.length == 5;
+
+            final double? ortalama = tamamlandi
+                ? puanlar.reduce((a, b) => a + b) / puanlar.length
+                : null;
+
+            // Yuvarlama yapmadan karşılaştırıyoruz.
+            final iyiMi = ortalama != null && ortalama > 3;
+
+            final renk = ortalama == null
+                ? Colors.grey
+                : iyiMi
+                ? Colors.lightGreenAccent
+                : Colors.redAccent;
+
+            final sonuc = ortalama == null
+                ? 'DEĞERLENDİRME EKSİK'
+                : iyiMi
+                ? 'İYİ'
+                : 'GELİŞTİRMELİ';
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF222222),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: Text(
+                      bolum.value,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                  barGroups: List.generate(karneler.length, (index) {
-                    return BarChartGroupData(
-                      x: index,
-                      barsSpace: 3,
-                      barRods: List.generate(5, (seviyeIndex) {
-                        return BarChartRodData(
-                          toY: sayilar[index][seviyeIndex].toDouble(),
-                          width: 10,
-                          color: _karnePuanRengi(seviyeIndex + 1),
-                          borderRadius: BorderRadius.circular(3),
-                        );
-                      }),
-                    );
-                  }),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    flex: 4,
+                    child: Text(
+                      sonuc,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(
+                        color: renk,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    ortalama == null
+                        ? Icons.remove_circle_outline
+                        : iyiMi
+                        ? Icons.check_circle
+                        : Icons.error,
+                    color: renk,
+                    size: 20,
+                  ),
+                ],
               ),
-            ),
-          ),
+            );
+          }),
         ],
       ),
     );
@@ -3864,6 +4022,25 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
 
     if (karneler.length < 2) {
       return const SizedBox.shrink();
+    }
+    Widget _karneGrafikAlani({
+      required int olcumSayisi,
+      required Widget child,
+    }) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final gerekenGenislik = olcumSayisi * 76.0 + 50;
+
+          final genislik = gerekenGenislik > constraints.maxWidth
+              ? gerekenGenislik
+              : constraints.maxWidth;
+
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(width: genislik, height: 260, child: child),
+          );
+        },
+      );
     }
 
     final grafikler = <Widget>[
@@ -3928,7 +4105,6 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
         birim: 'adet',
         normTesti: 'flamingo',
       ),
-      _teknikGelisimGrafigi(karneler),
     ];
 
     return Column(
@@ -4020,16 +4196,52 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                SporcuOzelProfilKarti(
-                  key: ValueKey('karne-profil-${widget.sporcu.id}'),
-                  db: dbService,
-                  sporcuId: widget.sporcu.id,
-                  isim: widget.sporcu.isim,
-                  grup: '${widget.sporcu.dogumYili} · ${widget.sporcu.grup}',
-                ),
+                if (!widget.sadeceGoruntule)
+                  SporcuOzelProfilKarti(
+                    key: ValueKey('karne-profil-${widget.sporcu.id}'),
+                    db: dbService,
+                    sporcuId: widget.sporcu.id,
+                    isim: widget.sporcu.isim,
+                    grup: '${widget.sporcu.dogumYili} · ${widget.sporcu.grup}',
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF171717),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFF303030)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.sporcu.isim,
+                          style: const TextStyle(
+                            color: Colors.lightGreenAccent,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          widget.sporcu.grup,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 24),
 
                 _gelisimOzetiKarti(karneler),
+
+                if (karneler.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  _teknikGelisimGrafigi(
+                    karneler.map((e) => Map<String, dynamic>.from(e)).toList(),
+                  ),
+                ],
 
                 if (karneler.length >= 2) ...[
                   const SizedBox(height: 24),
@@ -4084,30 +4296,31 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                       color: const Color(0xFF171717),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Column(
+                    child: Column(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.description_outlined,
                           color: Colors.grey,
                           size: 42,
                         ),
-
-                        SizedBox(height: 12),
-
-                        Text(
+                        const SizedBox(height: 12),
+                        const Text(
                           'Henüz karne oluşturulmamış',
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-
-                        SizedBox(height: 5),
-
+                        const SizedBox(height: 5),
                         Text(
-                          'İlk ölçüm karnesini oluşturmak için aşağıdaki + butonunu kullan.',
+                          widget.sadeceGoruntule
+                              ? 'Antrenör tarafından oluşturulan karneler burada görünecek.'
+                              : 'İlk ölçüm karnesini oluşturmak için aşağıdaki + butonunu kullan.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -4184,26 +4397,29 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
         ),
       ),
 
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: Colors.lightGreenAccent,
-        foregroundColor: Colors.black,
-        onPressed: () async {
-          final kaydedildi = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => KarneOlusturEkrani(sporcu: widget.sporcu),
+      floatingActionButton: widget.sadeceGoruntule
+          ? null
+          : FloatingActionButton.extended(
+              backgroundColor: Colors.lightGreenAccent,
+              foregroundColor: Colors.black,
+              onPressed: () async {
+                final kaydedildi = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        KarneOlusturEkrani(sporcu: widget.sporcu),
+                  ),
+                );
+                if (kaydedildi == true && mounted) {
+                  _yenile();
+                }
+              },
+              icon: const Icon(Icons.add),
+              label: const Text(
+                'Yeni Karne',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
-          );
-          if (kaydedildi == true && mounted) {
-            _yenile();
-          }
-        },
-        icon: const Icon(Icons.add),
-        label: const Text(
-          'Yeni Karne',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
     );
   }
 }
@@ -5267,7 +5483,24 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
     return 'Doğum yılı: $yil · Grup: $grup · Sporcu No: ${s['id']}';
   }
 
+  Future<void> _veliOnaylariniAc() async {
+    if (_islemSuruyor) return;
+
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VeliOnayEkrani(db: dbService, antrenorMu: true),
+      ),
+    );
+
+    if (mounted) _reload();
+  }
+
   Future<void> _eslestirmeyiDuzenle(Map<String, dynamic> kullanici) async {
+    if (kullanici['role'] == 'veli') {
+      await _veliOnaylariniAc();
+      return;
+    }
     if (_islemSuruyor) return;
     setState(() => _islemSuruyor = true);
     try {
@@ -5688,6 +5921,11 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
       appBar: AppBar(
         title: const Text('Veli / Sporcu Hesapları'),
         actions: [
+          IconButton(
+            tooltip: 'Veli Onayları',
+            icon: const Icon(Icons.verified_user_outlined),
+            onPressed: _islemSuruyor ? null : _veliOnaylariniAc,
+          ),
           IconButton(
             tooltip: 'Listeyi Yenile',
             onPressed: _islemSuruyor ? null : _reload,
@@ -8716,23 +8954,9 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          DropdownButtonFormField<String>(
-            value: _seciliGrup,
-            isExpanded: true,
-            dropdownColor: const Color(0xFF171717),
-            style: const TextStyle(color: Colors.white),
-            decoration: const InputDecoration(
-              labelText: 'Antrenman grubu',
-              filled: true,
-              fillColor: Color(0xFF171717),
-              border: OutlineInputBorder(),
-            ),
-            items: kulupGruplari.map((grup) {
-              return DropdownMenuItem(value: grup, child: Text(grup));
-            }).toList(),
-            onChanged: _kaydediliyor
-                ? null
-                : (grup) => setState(() => _seciliGrup = grup),
+          _FormAlani(
+            controller: _baslikController,
+            etiket: 'Başlık (örn. Dayanıklılık + Teknik)',
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
@@ -9054,66 +9278,463 @@ class AidatSekmesi extends StatefulWidget {
 }
 
 class _AidatSekmesiState extends State<AidatSekmesi> {
-  late Future<List<dynamic>> _sporcularFuture;
-  late Future<List<dynamic>> _aidatlarFuture;
+  late Future<List<List<dynamic>>> _veri;
+
+  String _ay = _guncelAy();
+  String _filtre = 'tumu';
+  bool _mesgul = false;
+
+  static const _etiketler = {
+    'tumu': 'Tümü',
+    'bekleniyor': 'Ödeme bekleniyor',
+    'onay_bekliyor': 'Onay bekliyor',
+    'reddedildi': 'Reddedildi',
+    'odendi': 'Ödendi',
+  };
 
   @override
   void initState() {
     super.initState();
-    _reload();
+    _veri = _yukle();
   }
 
-  void _reload() {
-    setState(() {
-      _sporcularFuture = dbService.getSporcular();
-      _aidatlarFuture = dbService.getAidatlar();
+  @override
+  void didUpdateWidget(covariant AidatSekmesi oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (oldWidget.filtreSporcuId != widget.filtreSporcuId ||
+        oldWidget.antrenorMu != widget.antrenorMu) {
+      _veri = _yukle();
+    }
+  }
+
+  Future<List<List<dynamic>>> _yukle() {
+    return Future.wait([
+      widget.antrenorMu ? dbService.getSporcular() : Future.value(<dynamic>[]),
+      dbService.getAidatlar(sporcuId: widget.filtreSporcuId),
+    ]);
+  }
+
+  Future<void> _yenile() async {
+    final yeniVeri = _yukle();
+
+    setState(() => _veri = yeniVeri);
+
+    try {
+      await yeniVeri;
+    } catch (_) {
+      // Hata FutureBuilder içinde gösterilir.
+    }
+  }
+
+  String _durum(Map<String, dynamic> aidat) {
+    if (aidat['odendi'] == true) return 'odendi';
+
+    return '${aidat['durum'] ?? aidat['dekont_durum'] ?? 'bekleniyor'}';
+  }
+
+  void _bilgi(String mesaj) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mesaj)));
+  }
+
+  Future<void> _islem(Future<void> Function() islem) async {
+    if (_mesgul) return;
+
+    setState(() => _mesgul = true);
+
+    try {
+      await islem();
+
+      if (mounted) {
+        await _yenile();
+      }
+    } catch (hata) {
+      _bilgi('$hata');
+    } finally {
+      if (mounted) {
+        setState(() => _mesgul = false);
+      }
+    }
+  }
+
+  Future<bool> _sor(String baslik, String mesaj) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(baslik),
+            content: Text(mesaj),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Vazgeç'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Onayla'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _dekontYukle(int aidatId) async {
+    await _islem(() async {
+      final sonuc = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: true,
+        allowMultiple: false,
+      );
+
+      if (sonuc == null || !mounted) return;
+
+      final dosya = sonuc.files.single;
+      final bytes = dosya.bytes;
+
+      if (bytes == null || bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
+        throw Exception('Dosya en fazla 5 MB olmalı');
+      }
+
+      final onay = await _sor(
+        'Dekont gönder',
+        '${dosya.name} antrenör onayına gönderilsin mi?',
+      );
+
+      if (!onay) return;
+
+      await dbService.aidatDekontGonder(aidatId, dosya.name, bytes);
+
+      _bilgi('Dekont gönderildi. Antrenör onayı bekleniyor.');
     });
   }
 
-  Map<String, dynamic>? _buAyinAidati(List<dynamic> aidatlar, int sporcuId) {
-    final ay = _guncelAy();
-    try {
-      return aidatlar.firstWhere(
-        (a) =>
-            int.parse(a['athlete_id'].toString()) == sporcuId && a['ay'] == ay,
+  Future<void> _incele(int aidatId, bool onayla) async {
+    String? neden;
+
+    if (onayla) {
+      final onay = await _sor(
+        'Ödemeyi onayla',
+        'Dekontu kontrol ettin mi? '
+            'Aidat ödendi olarak kaydedilecek.',
       );
-    } catch (e) {
-      return null;
+
+      if (!onay) return;
+    } else {
+      neden = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) {
+          String metin = '';
+
+          return StatefulBuilder(
+            builder: (dialogContext, dialogYenile) {
+              return AlertDialog(
+                title: const Text('Dekontu reddet'),
+                content: TextField(
+                  maxLength: 500,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Ret nedeni'),
+                  onChanged: (deger) {
+                    dialogYenile(() {
+                      metin = deger.trim();
+                    });
+                  },
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Vazgeç'),
+                  ),
+                  FilledButton(
+                    onPressed: metin.isEmpty
+                        ? null
+                        : () => Navigator.pop(dialogContext, metin),
+                    child: const Text('Reddet'),
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      );
+
+      if (neden == null) return;
     }
+
+    if (!mounted) return;
+
+    await _islem(() async {
+      await dbService.aidatDekontKarar(aidatId, onayla: onayla, neden: neden);
+
+      _bilgi(onayla ? 'Ödeme onaylandı' : 'Dekont reddedildi');
+    });
   }
 
-  Future<void> _aidatOlustur(int sporcuId) async {
+  Future<void> _dekontGor(int aidatId) async {
+    if (_mesgul) return;
+
+    setState(() => _mesgul = true);
+
     try {
-      await dbService.aidatEkle({
-        'athlete_id': sporcuId,
-        'ay': _guncelAy(),
-        'tutar': 1750,
-        'son_odeme_tarihi': DateTime.now()
-            .add(const Duration(days: 10))
-            .toIso8601String()
-            .substring(0, 10),
-      });
-      _reload();
-    } catch (e) {
+      final dekont = await dbService.aidatDekontBaglantisi(aidatId);
+
+      if (!mounted) return;
+
+      final url = dekont['url'] as String;
+      final resimMi = '${dekont['mime']}'.startsWith('image/');
+
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text('${dekont['dosya_adi'] ?? 'Dekont'}'),
+          content: SizedBox(
+            width: 600,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (resimMi)
+                    SizedBox(
+                      height: 360,
+                      child: InteractiveViewer(
+                        child: Image.network(
+                          url,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Text(
+                            'Görüntü yüklenemedi. '
+                            'Yeniden açmayı dene.',
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    const Text(
+                      'PDF için bağlantıyı kopyalayıp '
+                      'tarayıcıda aç.',
+                    ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Bağlantı 2 dakika geçerlidir. '
+                    'Süresi dolarsa dekontu yeniden aç.',
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: url));
+
+                _bilgi('Dekont bağlantısı kopyalandı');
+              },
+              child: const Text('Bağlantıyı kopyala'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Kapat'),
+            ),
+          ],
+        ),
+      );
+    } catch (hata) {
+      _bilgi('$hata');
+    } finally {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Hata (oluştur): $e')));
+        setState(() => _mesgul = false);
       }
     }
   }
 
-  Future<void> _odendiIsaretle(int aidatId) async {
-    try {
-      await dbService.aidatOdendiIsaretle(aidatId);
-      _reload();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Hata (ödeme): $e')));
-      }
+  Future<void> _olustur(int sporcuId) async {
+    final veri = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (dialogContext) {
+        String tutar = '1750';
+
+        DateTime tarih = DateTime.now().add(const Duration(days: 10));
+
+        return StatefulBuilder(
+          builder: (dialogContext, dialogYenile) {
+            final sayisalTutar =
+                double.tryParse(tutar.replaceAll(',', '.')) ?? 0;
+
+            return AlertDialog(
+              title: Text('$_ay aidatı oluştur'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    initialValue: tutar,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: const InputDecoration(labelText: 'Tutar (TL)'),
+                    onChanged: (deger) {
+                      dialogYenile(() => tutar = deger);
+                    },
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      final secim = await showDatePicker(
+                        context: dialogContext,
+                        initialDate: tarih,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime(2100),
+                      );
+
+                      if (secim != null && dialogContext.mounted) {
+                        dialogYenile(() => tarih = secim);
+                      }
+                    },
+                    child: Text(
+                      'Son ödeme: '
+                      '${tarih.toIso8601String().substring(0, 10)}',
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text('Vazgeç'),
+                ),
+                FilledButton(
+                  onPressed: sayisalTutar > 0
+                      ? () => Navigator.pop(dialogContext, <String, dynamic>{
+                          'athlete_id': sporcuId,
+                          'ay': _ay,
+                          'tutar': sayisalTutar,
+                          'son_odeme_tarihi': tarih.toIso8601String().substring(
+                            0,
+                            10,
+                          ),
+                        })
+                      : null,
+                  child: const Text('Oluştur'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (veri != null && mounted) {
+      await _islem(() => dbService.aidatEkle(veri));
     }
+  }
+
+  Widget _kart(Map<String, dynamic> aidat) {
+    final durum = _durum(aidat);
+    final id = int.parse('${aidat['id']}');
+
+    final renk = durum == 'odendi'
+        ? Colors.lightGreenAccent
+        : durum == 'reddedildi'
+        ? Colors.redAccent
+        : Colors.orangeAccent;
+
+    final sonTarih = DateTime.tryParse('${aidat['son_odeme_tarihi'] ?? ''}');
+
+    final tutar = num.tryParse('${aidat['tutar']}');
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: renk),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '${aidat['athlete_isim'] ?? 'Sporcu'}'
+            ' • ${aidat['ay']}',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${tutar?.toStringAsFixed(2) ?? '—'} TL'
+            ' • ${_etiketler[durum] ?? durum}',
+            style: TextStyle(color: renk),
+          ),
+          Text(
+            'Son ödeme: '
+            '${sonTarih?.toIso8601String().substring(0, 10) ?? 'Belirlenmedi'}',
+            style: const TextStyle(color: Colors.white70),
+          ),
+          if (durum == 'reddedildi')
+            Text(
+              'Ret nedeni: '
+              '${aidat['dekont_ret_nedeni'] ?? ''}',
+              style: const TextStyle(color: Colors.redAccent),
+            ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              if (aidat['dekont_var'] == true)
+                OutlinedButton(
+                  onPressed: _mesgul ? null : () => _dekontGor(id),
+                  child: const Text('Dekontu gör'),
+                ),
+
+              if (widget.antrenorMu && durum == 'onay_bekliyor') ...[
+                FilledButton(
+                  onPressed: _mesgul ? null : () => _incele(id, true),
+                  child: const Text('Onayla'),
+                ),
+                OutlinedButton(
+                  onPressed: _mesgul ? null : () => _incele(id, false),
+                  child: const Text('Reddet'),
+                ),
+              ],
+
+              if (widget.antrenorMu &&
+                  ['bekleniyor', 'reddedildi'].contains(durum))
+                OutlinedButton(
+                  onPressed: _mesgul
+                      ? null
+                      : () async {
+                          final onay = await _sor(
+                            'Ödeme kaydet',
+                            'Dekontsuz ödeme alındığını '
+                                'onaylıyor musun?',
+                          );
+
+                          if (onay && mounted) {
+                            await _islem(
+                              () => dbService.aidatOdendiIsaretle(id),
+                            );
+                          }
+                        },
+                  child: const Text('Ödendi işaretle'),
+                ),
+
+              if (!widget.antrenorMu &&
+                  ['bekleniyor', 'reddedildi'].contains(durum))
+                FilledButton(
+                  onPressed: _mesgul ? null : () => _dekontYukle(id),
+                  child: Text(
+                    durum == 'reddedildi'
+                        ? 'Yeniden dekont gönder'
+                        : 'Dekont gönder',
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -9121,137 +9742,152 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: RefreshIndicator(
-        onRefresh: () async => _reload(),
+        onRefresh: _yenile,
         color: Colors.lightGreenAccent,
-        backgroundColor: Colors.black,
-        child: FutureBuilder<List<dynamic>>(
-          future: _sporcularFuture,
-          builder: (context, sporcuSnapshot) {
-            if (sporcuSnapshot.connectionState == ConnectionState.waiting) {
+        child: FutureBuilder<List<List<dynamic>>>(
+          future: _veri,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(
                   color: Colors.lightGreenAccent,
                 ),
               );
             }
-            var sporcular = sporcuSnapshot.data ?? [];
-            if (widget.filtreSporcuId != null) {
-              sporcular = sporcular
-                  .where(
-                    (s) =>
-                        int.parse(s['id'].toString()) == widget.filtreSporcuId,
-                  )
-                  .toList();
+
+            if (snapshot.hasError) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Text(
+                    'Aidatlar yüklenemedi: '
+                    '${snapshot.error}',
+                    style: const TextStyle(color: Colors.redAccent),
+                  ),
+                  TextButton(
+                    onPressed: _mesgul ? null : _yenile,
+                    child: const Text('Yeniden dene'),
+                  ),
+                ],
+              );
             }
 
-            return FutureBuilder<List<dynamic>>(
-              future: _aidatlarFuture,
-              builder: (context, aidatSnapshot) {
-                final aidatlar = aidatSnapshot.data ?? [];
+            final sporcular = snapshot.data![0];
 
-                return ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    Text(
-                      '${_guncelAy()} Aidat Durumu',
-                      style: const TextStyle(
-                        color: Colors.lightGreenAccent,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+            final tumAidatlar = snapshot.data![1]
+                .map((veri) => Map<String, dynamic>.from(veri as Map))
+                .toList();
+
+            final aylar = {
+              _guncelAy(),
+              _ay,
+              ...tumAidatlar.map((aidat) => '${aidat['ay']}'),
+            }.toList()..sort((a, b) => b.compareTo(a));
+
+            final aylikAidatlar = tumAidatlar
+                .where((aidat) => aidat['ay'] == _ay)
+                .toList();
+
+            final gorunenAidatlar = aylikAidatlar
+                .where((aidat) => _filtre == 'tumu' || _durum(aidat) == _filtre)
+                .toList();
+
+            final eksikSporcular = sporcular
+                .where(
+                  (sporcu) =>
+                      (widget.filtreSporcuId == null ||
+                          '${sporcu['id']}' == '${widget.filtreSporcuId}') &&
+                      !aylikAidatlar.any(
+                        (aidat) =>
+                            '${aidat['athlete_id']}' == '${sporcu['id']}',
+                      ),
+                )
+                .toList();
+
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'Aidatlar',
+                  style: TextStyle(
+                    color: Colors.lightGreenAccent,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                DropdownButtonFormField<String>(
+                  value: _ay,
+                  decoration: const InputDecoration(labelText: 'Ay'),
+                  items: aylar
+                      .map((ay) => DropdownMenuItem(value: ay, child: Text(ay)))
+                      .toList(),
+                  onChanged: _mesgul
+                      ? null
+                      : (deger) {
+                          if (deger != null) {
+                            setState(() => _ay = deger);
+                          }
+                        },
+                ),
+
+                const SizedBox(height: 12),
+
+                Wrap(
+                  spacing: 8,
+                  children: _etiketler.entries.map((etiket) {
+                    return ChoiceChip(
+                      label: Text(etiket.value),
+                      selected: _filtre == etiket.key,
+                      onSelected: _mesgul
+                          ? null
+                          : (_) => setState(() => _filtre = etiket.key),
+                    );
+                  }).toList(),
+                ),
+
+                if (_mesgul)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: LinearProgressIndicator(),
+                  ),
+
+                const SizedBox(height: 12),
+
+                if (gorunenAidatlar.isEmpty)
+                  const Text(
+                    'Bu seçimde aidat kaydı yok.',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+
+                ...gorunenAidatlar.map(_kart),
+
+                if (widget.antrenorMu &&
+                    _filtre == 'tumu' &&
+                    eksikSporcular.isNotEmpty) ...[
+                  const Text(
+                    'Bu ay aidatı oluşturulmamış sporcular',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  ...eksikSporcular.map(
+                    (sporcu) => ListTile(
+                      title: Text(
+                        '${sporcu['isim']}',
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      trailing: TextButton(
+                        onPressed: _mesgul
+                            ? null
+                            : () => _olustur(int.parse('${sporcu['id']}')),
+                        child: const Text('Oluştur'),
                       ),
                     ),
-                    const SizedBox(height: 14),
-                    ...sporcular.map((s) {
-                      final sporcu = Sporcu.fromJson(s);
-                      final aidat = _buAyinAidati(aidatlar, sporcu.id);
-                      final odendiMi = aidat != null && aidat['odendi'] == true;
-
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: odendiMi
-                                ? Colors.lightGreenAccent
-                                : Colors.grey.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              odendiMi
-                                  ? Icons.check_circle
-                                  : Icons.radio_button_unchecked,
-                              color: odendiMi
-                                  ? Colors.lightGreenAccent
-                                  : Colors.grey,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    sporcu.isim,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  if (aidat != null)
-                                    Text(
-                                      odendiMi
-                                          ? 'Ödendi'
-                                          : 'Son ödeme: ${aidat['son_odeme_tarihi'].toString().substring(0, 10)}',
-                                      style: TextStyle(
-                                        color: odendiMi
-                                            ? Colors.lightGreenAccent
-                                            : Colors.grey,
-                                        fontSize: 12,
-                                      ),
-                                    )
-                                  else
-                                    const Text(
-                                      'Bu ay için aidat kaydı yok',
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            if (aidat == null && widget.antrenorMu)
-                              TextButton(
-                                onPressed: () => _aidatOlustur(sporcu.id),
-                                child: const Text(
-                                  'Oluştur',
-                                  style: TextStyle(
-                                    color: Colors.lightGreenAccent,
-                                  ),
-                                ),
-                              )
-                            else if (aidat != null && !odendiMi)
-                              TextButton(
-                                onPressed: () => _odendiIsaretle(
-                                  int.parse(aidat['id'].toString()),
-                                ),
-                                child: const Text(
-                                  'Ödendi İşaretle',
-                                  style: TextStyle(
-                                    color: Colors.lightGreenAccent,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ],
-                );
-              },
+                  ),
+                ],
+              ],
             );
           },
         ),
