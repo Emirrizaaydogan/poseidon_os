@@ -35,10 +35,10 @@ flutter:
 flutter_launcher_icons:
   android: false
   ios: false
-  image_path: "assets/images/poseidon_mizrak.png"
+  image_path: "assets/images/poseidon_icon.png"
 
   web:
     generate: true
-    image_path: "assets/images/poseidon_mizrak.png"
+    image_path: "assets/images/poseidon_icon.png"
     background_color: "#02090D"
     theme_color: "#02090D"
