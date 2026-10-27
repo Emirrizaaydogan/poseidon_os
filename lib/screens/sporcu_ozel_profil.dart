@@ -1,3 +1,4 @@
+import '../theme/poseidon_tema.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -46,7 +47,7 @@ class _SporcuOzelProfilKartiState extends State<SporcuOzelProfilKarti> {
       padding: const EdgeInsets.all(18),
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF12181C),
+        color: PoseidonRenkler.kart,
         borderRadius: BorderRadius.circular(16),
       ),
       child: FutureBuilder<Map<String, dynamic>>(
@@ -234,10 +235,10 @@ class _SporcuOzelProfilDuzenleState extends State<SporcuOzelProfilDuzenle> {
     return PopScope(
       canPop: !_busy,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(widget.isim),
-          foregroundColor: Colors.lightGreenAccent,
+          foregroundColor: PoseidonRenkler.vurgu,
         ),
         body: AbsorbPointer(
           absorbing: _busy,

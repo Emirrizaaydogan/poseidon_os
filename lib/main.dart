@@ -1,5 +1,5 @@
+import 'theme/poseidon_tema.dart';
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'services/database_service.dart';
 import 'package:video_player/video_player.dart';
@@ -218,10 +218,10 @@ class PoseidonApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const vurgu = Colors.lightGreenAccent;
-    const kartRengi = Color(0xFF141414);
-    const alanRengi = Color(0xFF1A1A1A);
-    const kenarRengi = Color(0xFF303030);
+    const vurgu = PoseidonRenkler.vurgu;
+    const kartRengi = PoseidonRenkler.kart;
+    const alanRengi = PoseidonRenkler.alan;
+    const kenarRengi = PoseidonRenkler.kenar;
 
     final temelTema = ThemeData.dark();
 
@@ -231,7 +231,13 @@ class PoseidonApp extends StatelessWidget {
 
     final tema = temelTema.copyWith(
       primaryColor: vurgu,
-      scaffoldBackgroundColor: Colors.black,
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        selectedItemColor: PoseidonRenkler.vurgu,
+        unselectedItemColor: PoseidonRenkler.ikincilYazi,
+      ),
+      scaffoldBackgroundColor: Colors.transparent,
       canvasColor: kartRengi,
       dividerColor: kenarRengi,
 
@@ -247,7 +253,7 @@ class PoseidonApp extends StatelessWidget {
       ),
 
       appBarTheme: temelTema.appBarTheme.copyWith(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         foregroundColor: vurgu,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -296,7 +302,7 @@ class PoseidonApp extends StatelessWidget {
         filled: true,
         fillColor: alanRengi,
         labelStyle: TextStyle(color: Colors.white70),
-        hintStyle: TextStyle(color: Colors.grey),
+        hintStyle: TextStyle(color: PoseidonRenkler.ikincilYazi),
         prefixIconColor: vurgu,
         suffixIconColor: vurgu,
         contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -327,7 +333,7 @@ class PoseidonApp extends StatelessWidget {
           backgroundColor: vurgu,
           foregroundColor: Colors.black,
           disabledBackgroundColor: kenarRengi,
-          disabledForegroundColor: Colors.grey,
+          disabledForegroundColor: PoseidonRenkler.ikincilYazi,
           elevation: 0,
           minimumSize: const Size(48, 46),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
@@ -339,7 +345,7 @@ class PoseidonApp extends StatelessWidget {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: vurgu,
-          disabledForegroundColor: Colors.grey,
+          disabledForegroundColor: PoseidonRenkler.ikincilYazi,
           side: const BorderSide(color: kenarRengi),
           minimumSize: const Size(48, 44),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -357,7 +363,7 @@ class PoseidonApp extends StatelessWidget {
 
       chipTheme: temelTema.chipTheme.copyWith(
         backgroundColor: alanRengi,
-        selectedColor: const Color(0xFF243B16),
+        selectedColor: PoseidonRenkler.secim,
         disabledColor: alanRengi,
         checkmarkColor: vurgu,
         labelStyle: const TextStyle(
@@ -372,9 +378,9 @@ class PoseidonApp extends StatelessWidget {
 
       listTileTheme: temelTema.listTileTheme.copyWith(
         textColor: Colors.white,
-        iconColor: Colors.grey,
+        iconColor: PoseidonRenkler.ikincilYazi,
         selectedColor: vurgu,
-        selectedTileColor: const Color(0xFF1C2B14),
+        selectedTileColor: PoseidonRenkler.secim,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       ),
@@ -393,12 +399,12 @@ class PoseidonApp extends StatelessWidget {
 
       textSelectionTheme: const TextSelectionThemeData(
         cursorColor: vurgu,
-        selectionColor: Color(0x553EFF00),
+        selectionColor: Color(0x559AB76D),
         selectionHandleColor: vurgu,
       ),
 
       snackBarTheme: temelTema.snackBarTheme.copyWith(
-        backgroundColor: const Color(0xFF252525),
+        backgroundColor: PoseidonRenkler.alan,
         contentTextStyle: const TextStyle(color: Colors.white),
         actionTextColor: vurgu,
         behavior: SnackBarBehavior.floating,
@@ -416,7 +422,9 @@ class PoseidonApp extends StatelessWidget {
 
         // Telefonlarda gerçek ekran genişliğini kullan.
         if (ekran.size.width <= 600) {
-          return child ?? const SizedBox.shrink();
+          return PoseidonArkaPlan(
+            child: child ?? const SizedBox.shrink(),
+          );
         }
 
         // Bilgisayarda mobil tasarımın oranını koru.
@@ -425,7 +433,7 @@ class PoseidonApp extends StatelessWidget {
             .toDouble();
 
         return ColoredBox(
-          color: const Color(0xFF02090D),
+          color: PoseidonRenkler.zemin,
           child: Center(
             child: SizedBox(
               width: mobilGenislik,
@@ -435,7 +443,9 @@ class PoseidonApp extends StatelessWidget {
                   data: ekran.copyWith(
                     size: Size(mobilGenislik, ekran.size.height),
                   ),
-                  child: child ?? const SizedBox.shrink(),
+                  child: PoseidonArkaPlan(
+                    child: child ?? const SizedBox.shrink(),
+                  ),
                 ),
               ),
             ),
@@ -457,11 +467,13 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
+class _LoginScreenState extends State<LoginScreen>
+    with WidgetsBindingObserver {
   late final VideoPlayerController _videoController;
 
   bool _videoDurduruldu = false;
   bool _videoGoster = false;
+  bool _arkaPlanda = false;
 
   @override
   void initState() {
@@ -480,18 +492,22 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
 
   Future<void> _videoyuHazirla() async {
     try {
-      await _videoController.initialize().timeout(const Duration(seconds: 12));
+      await _videoController.initialize().timeout(
+        const Duration(seconds: 12),
+      );
 
       if (!mounted || _videoDurduruldu) return;
 
       await _videoController.setVolume(0);
       await _videoController.setLooping(false);
 
-      if (!mounted || _videoDurduruldu) return;
+      if (!mounted || _videoDurduruldu || _arkaPlanda) return;
 
-      await _videoController.play().timeout(const Duration(seconds: 5));
+      await _videoController.play().timeout(
+        const Duration(seconds: 5),
+      );
     } catch (_) {
-      _sabitGorseleGec();
+      _videoyuDurdur();
     }
   }
 
@@ -501,38 +517,32 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     final deger = _videoController.value;
 
     if (deger.hasError) {
-      _sabitGorseleGec();
+      _videoyuDurdur();
       return;
     }
 
     if (!deger.isInitialized) return;
 
-    if (deger.duration > Duration.zero) {
-      final kalan = deger.duration - deger.position;
-
-      if (kalan <= const Duration(milliseconds: 100)) {
-        _sabitGorseleGec();
-        return;
-      }
+    // İlk görüntü geldikten sonra duraklatırken videoyu gizleme.
+    if (!_videoGoster && deger.position > Duration.zero) {
+      setState(() => _videoGoster = true);
     }
 
-    final goster =
-        deger.isPlaying && !deger.isBuffering && deger.position > Duration.zero;
+    if (deger.duration == Duration.zero) return;
 
-    // Her video karesinde ekranı yeniden oluşturmuyoruz.
-    if (_videoGoster != goster) {
-      setState(() => _videoGoster = goster);
+    final kalanSure = deger.duration - deger.position;
+
+    // Başka bir resme geçmeden videonun son görüntüsünü koru.
+    if (kalanSure <= const Duration(milliseconds: 100)) {
+      _videoyuDurdur();
     }
   }
 
-  void _sabitGorseleGec() {
+  void _videoyuDurdur() {
     if (!mounted || _videoDurduruldu) return;
 
+    // pause() listener'ı tekrar çağırabileceği için önce işaretle.
     _videoDurduruldu = true;
-
-    if (_videoGoster) {
-      setState(() => _videoGoster = false);
-    }
 
     unawaited(_videoController.pause().catchError((Object _) {}));
   }
@@ -542,7 +552,21 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
-      _sabitGorseleGec();
+      _arkaPlanda = true;
+
+      if (_videoController.value.isInitialized) {
+        unawaited(_videoController.pause().catchError((Object _) {}));
+      }
+
+      return;
+    }
+
+    if (state == AppLifecycleState.resumed) {
+      _arkaPlanda = false;
+
+      if (!_videoDurduruldu && _videoController.value.isInitialized) {
+        unawaited(_videoController.play().catchError((Object _) {}));
+      }
     }
   }
 
@@ -629,30 +653,22 @@ class _LoginScreenState extends State<LoginScreen> with WidgetsBindingObserver {
           // TAM EKRAN POSEIDON ARKA PLANI
           // =========================================================
           Positioned.fill(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // Video başlamasa bile marka görseli görünür.
-                Image.asset(
-                  'assets/images/poseidon_mizrak.png',
-                  fit: BoxFit.cover,
-                  alignment: Alignment.topCenter,
-                ),
-
-                if (_videoGoster)
-                  RepaintBoundary(
-                    child: FittedBox(
-                      fit: BoxFit.cover,
-                      clipBehavior: Clip.hardEdge,
-                      alignment: Alignment.topCenter,
-                      child: SizedBox(
-                        width: _videoController.value.size.width,
-                        height: _videoController.value.size.height,
-                        child: VideoPlayer(_videoController),
+            child: ColoredBox(
+              color: const Color(0xFF02090D),
+              child: _videoGoster && _videoController.value.isInitialized
+                  ? RepaintBoundary(
+                      child: FittedBox(
+                        fit: BoxFit.cover,
+                        clipBehavior: Clip.hardEdge,
+                        alignment: Alignment.topCenter,
+                        child: SizedBox(
+                          width: _videoController.value.size.width,
+                          height: _videoController.value.size.height,
+                          child: VideoPlayer(_videoController),
+                        ),
                       ),
-                    ),
-                  ),
-              ],
+                    )
+                  : const SizedBox.expand(),
             ),
           ),
 
@@ -1106,11 +1122,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return PopScope(
       canPop: !_kaydediliyor,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: const Text('Veli Kaydı'),
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.lightGreenAccent,
+          backgroundColor: Colors.transparent,
+          foregroundColor: PoseidonRenkler.vurgu,
         ),
         body: AbsorbPointer(
           absorbing: _kaydediliyor,
@@ -1163,7 +1179,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
-                              color: Colors.lightGreenAccent,
+                              color: PoseidonRenkler.vurgu,
                             ),
                           ),
                         ),
@@ -1213,11 +1229,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           children: sporcular.map<Widget>((s) {
                             final id = int.parse(s['id'].toString());
                             return Card(
-                              color: const Color(0xFF12181C),
+                              color: PoseidonRenkler.kart,
                               margin: const EdgeInsets.only(bottom: 10),
                               child: CheckboxListTile(
                                 value: _secimler.contains(id),
-                                activeColor: Colors.lightGreenAccent,
+                                activeColor: PoseidonRenkler.vurgu,
                                 checkColor: Colors.black,
                                 title: Text('${s['isim']}'),
                                 subtitle: Text(
@@ -1243,7 +1259,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     FilledButton(
                       onPressed: _kayitOl,
                       style: FilledButton.styleFrom(
-                        backgroundColor: Colors.lightGreenAccent,
+                        backgroundColor: PoseidonRenkler.vurgu,
                         foregroundColor: Colors.black,
                         minimumSize: const Size.fromHeight(54),
                       ),
@@ -1283,9 +1299,9 @@ class _RolSecimChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: seciliMi ? Colors.lightGreenAccent : const Color(0xFF1A1A1A),
+          color: seciliMi ? PoseidonRenkler.vurgu : PoseidonRenkler.alan,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.lightGreenAccent),
+          border: Border.all(color: PoseidonRenkler.vurgu),
         ),
         child: Text(
           etiket,
@@ -1301,68 +1317,6 @@ class _RolSecimChip extends StatelessWidget {
 }
 
 // ---------------- TRIDENT LOGO ----------------
-
-class TridentIcon extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const TridentIcon({
-    super.key,
-    this.size = 28,
-    this.color = Colors.lightGreenAccent,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _TridentPainter(color: color),
-    );
-  }
-}
-
-class _TridentPainter extends CustomPainter {
-  final Color color;
-  _TridentPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = size.width * 0.09
-      ..strokeCap = StrokeCap.round;
-    final w = size.width;
-    final h = size.height;
-    canvas.drawLine(
-      Offset(w * 0.5, h * 0.15),
-      Offset(w * 0.5, h * 0.95),
-      paint,
-    );
-    canvas.drawLine(Offset(w * 0.5, h * 0.4), Offset(w * 0.15, h * 0.1), paint);
-    canvas.drawLine(
-      Offset(w * 0.15, h * 0.1),
-      Offset(w * 0.15, h * 0.35),
-      paint,
-    );
-    canvas.drawLine(Offset(w * 0.5, h * 0.4), Offset(w * 0.85, h * 0.1), paint);
-    canvas.drawLine(
-      Offset(w * 0.85, h * 0.1),
-      Offset(w * 0.85, h * 0.35),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(w * 0.5, h * 0.15),
-      Offset(w * 0.5, h * 0.05),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _TridentPainter oldDelegate) => false;
-}
-
-// ---------------- OKLU BUTON ----------------
 
 class OkluButon extends StatelessWidget {
   final String metin;
@@ -1380,7 +1334,7 @@ class OkluButon extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF9AE637), Color(0xFF5FD858)],
+            colors: [PoseidonRenkler.vurgu, Color(0xFF9AB76D)],
           ),
           borderRadius: BorderRadius.circular(30),
         ),
@@ -1423,14 +1377,14 @@ class IstatistikKarti extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF161616),
+        color: PoseidonRenkler.kart,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF2A2A2A)),
+        border: Border.all(color: PoseidonRenkler.kenar),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.lightGreenAccent, size: 20),
+          Icon(icon, color: PoseidonRenkler.vurgu, size: 20),
           const SizedBox(height: 10),
           Text(
             deger,
@@ -1443,7 +1397,7 @@ class IstatistikKarti extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             etiket,
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
           ),
         ],
       ),
@@ -1503,10 +1457,10 @@ class _SifremiUnuttumEkraniState extends State<SifremiUnuttumEkrani> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24),
@@ -1517,7 +1471,7 @@ class _SifremiUnuttumEkraniState extends State<SifremiUnuttumEkrani> {
             const Text(
               'Şifremi Unuttum',
               style: TextStyle(
-                color: Colors.lightGreenAccent,
+                color: PoseidonRenkler.vurgu,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
@@ -1526,7 +1480,7 @@ class _SifremiUnuttumEkraniState extends State<SifremiUnuttumEkrani> {
             const Text(
               'Hesabına kayıtlı e-postayı gir, sana 6 haneli bir '
               'sıfırlama kodu gönderelim.',
-              style: TextStyle(color: Colors.grey, fontSize: 13),
+              style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
             ),
             const SizedBox(height: 28),
             _PoseidonLoginInput(
@@ -1652,10 +1606,10 @@ class _SifreSifirlaEkraniState extends State<SifreSifirlaEkrani> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -1665,7 +1619,7 @@ class _SifreSifirlaEkraniState extends State<SifreSifirlaEkrani> {
             const Text(
               'Kodu Gir',
               style: TextStyle(
-                color: Colors.lightGreenAccent,
+                color: PoseidonRenkler.vurgu,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
               ),
@@ -1674,7 +1628,7 @@ class _SifreSifirlaEkraniState extends State<SifreSifirlaEkrani> {
             Text(
               '${widget.email} adresine gönderdiğimiz 6 haneli kodu ve '
               'yeni şifreni gir.',
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
             ),
             const SizedBox(height: 28),
             _PoseidonLoginInput(
@@ -1782,7 +1736,7 @@ class _VeliPaneliState extends State<VeliPaneli> {
   Widget build(BuildContext context) {
     if (_yukleniyor) {
       return const Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         body: Center(child: CircularProgressIndicator()),
       );
     }
@@ -1796,7 +1750,7 @@ class _VeliPaneliState extends State<VeliPaneli> {
     }
     if (_hata != null || _seciliId == null) {
       return Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text('Veli Paneli')),
         body: Center(
           child: Padding(
@@ -1819,7 +1773,7 @@ class _VeliPaneliState extends State<VeliPaneli> {
       );
     }
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       body: SafeArea(
         child: Column(
           children: [
@@ -1846,14 +1800,14 @@ class _VeliPaneliState extends State<VeliPaneli> {
                 margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF12181C),
+                  color: PoseidonRenkler.kart,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<int>(
                     value: _seciliId,
                     isExpanded: true,
-                    dropdownColor: const Color(0xFF12181C),
+                    dropdownColor: PoseidonRenkler.kart,
                     items: _cocuklar
                         .map(
                           (cocuk) => DropdownMenuItem<int>(
@@ -1879,6 +1833,105 @@ class _VeliPaneliState extends State<VeliPaneli> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ---------------- POSEIDON ÜST BAŞLIK ----------------
+
+class _PoseidonUstBaslik extends StatelessWidget {
+  final String rolAdi;
+
+  const _PoseidonUstBaslik({required this.rolAdi});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Row(
+        children: [
+          // Focus the ornate head at toolbar size; the long shaft stays in the asset.
+          ExcludeSemantics(
+            child: SizedBox(
+              width: 44,
+              height: 66,
+              child: ClipRect(
+                child: OverflowBox(
+                  alignment: Alignment.topCenter,
+                  minWidth: 132,
+                  maxWidth: 132,
+                  minHeight: 177,
+                  maxHeight: 177,
+                  child: Image.asset(
+                    'assets/images/poseidon_mizrak.png',
+                    width: 132,
+                    height: 177,
+                    fit: BoxFit.contain,
+                    alignment: Alignment.topCenter,
+                    filterQuality: FilterQuality.medium,
+                    cacheWidth: 528,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      const TextSpan(
+                        text: 'POSEIDON OS',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      const WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 6),
+                          child: Icon(
+                            Icons.waves_rounded,
+                            size: 13,
+                            color: Color(0xFFBFCEAA),
+                          ),
+                        ),
+                      ),
+                      TextSpan(
+                        text: rolAdi,
+                        style: const TextStyle(
+                          color: Color(0xFFC7D6A9),
+                          fontWeight: FontWeight.w400,
+                        ),
+                      ),
+                    ],
+                  ),
+                  maxLines: 1,
+                  softWrap: false,
+                  style: const TextStyle(
+                    fontFamily: 'Georgia',
+                    fontFamilyFallback: ['Times New Roman', 'serif'],
+                    fontSize: 25,
+                    height: 1.15,
+                    letterSpacing: 0.1,
+                    color: Color(0xFFDCE3C8),
+                    shadows: [
+                      Shadow(
+                        color: Color(0xCC000A0D),
+                        offset: Offset(0, 2),
+                        blurRadius: 3,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1930,23 +1983,17 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Row(
-          children: [
-            const TridentIcon(size: 22),
-            const SizedBox(width: 8),
-            Text(
-              'POSEIDON OS · ${_rolAdi(widget.rol)}',
-              style: const TextStyle(
-                color: Colors.lightGreenAccent,
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-          ],
-        ),
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xFFD5DFBC),
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        toolbarHeight: 78,
+        leadingWidth: 44,
+        titleSpacing: 4,
+        title: _PoseidonUstBaslik(rolAdi: _rolAdi(widget.rol)),
         leading: IconButton(
-          icon: const Icon(Icons.logout, color: Colors.lightGreenAccent),
+          icon: const Icon(Icons.logout, color: Color(0xFFD5DFBC)),
           onPressed: () {
             dbService.cikisYap();
             Navigator.pushAndRemoveUntil(
@@ -1963,7 +2010,7 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               icon: const Icon(
                 Icons.manage_accounts,
-                color: Colors.lightGreenAccent,
+                color: Color(0xFFD5DFBC),
               ),
               tooltip: 'Veli / Sporcu Hesapları',
               onPressed: () {
@@ -1979,10 +2026,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
+        elevation: 0,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.black,
-        selectedItemColor: Colors.lightGreenAccent,
-        unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.transparent,
+        selectedItemColor: PoseidonRenkler.vurgu,
+        unselectedItemColor: PoseidonRenkler.ikincilYazi,
         currentIndex: _selectedIndex,
         onTap: (index) => setState(() => _selectedIndex = index),
         items: [
@@ -2048,11 +2096,11 @@ class ProfilSekmesi extends StatelessWidget {
 
     if (sporcuId == null) {
       return Container(
-        color: Colors.black,
+        color: Colors.transparent,
         child: const Center(
           child: Text(
             'Bu hesap henüz bir sporcuya bağlanmamış. Antrenöründen Veli / Sporcu Hesapları ekranında eşleştirme yapmasını iste.',
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 14),
           ),
         ),
       );
@@ -2104,20 +2152,20 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black,
+      color: Colors.transparent,
       child: RefreshIndicator(
         onRefresh: () async {
           _yenile();
         },
-        color: Colors.lightGreenAccent,
-        backgroundColor: Colors.black,
+        color: PoseidonRenkler.vurgu,
+        backgroundColor: PoseidonRenkler.kart,
         child: FutureBuilder<List<dynamic>>(
           future: _karnelerFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(
-                  color: Colors.lightGreenAccent,
+                  color: PoseidonRenkler.vurgu,
                 ),
               );
             }
@@ -2144,7 +2192,7 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
                 const Text(
                   'Sporcu Karnesi',
                   style: TextStyle(
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2154,7 +2202,7 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
 
                 const Text(
                   'Gelişim ve değerlendirme geçmişi',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                  style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
                 ),
 
                 const SizedBox(height: 22),
@@ -2163,8 +2211,8 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
                     width: double.infinity,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.lightGreenAccent,
-                        side: const BorderSide(color: Colors.lightGreenAccent),
+                        foregroundColor: PoseidonRenkler.vurgu,
+                        side: const BorderSide(color: PoseidonRenkler.vurgu),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 16,
@@ -2207,7 +2255,7 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
                     const Text(
                       'İki karne oluştuğunda ölçümler arasındaki '
                       'değişimleri ve gelişim grafiklerini görebilirsin.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
                     ),
                   ],
                   const SizedBox(height: 20),
@@ -2219,14 +2267,14 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
                       horizontal: 20,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: PoseidonRenkler.kart,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Column(
                       children: [
                         Icon(
                           Icons.description_outlined,
-                          color: Colors.grey,
+                          color: PoseidonRenkler.ikincilYazi,
                           size: 42,
                         ),
                         SizedBox(height: 12),
@@ -2241,7 +2289,7 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
                         Text(
                           'Antrenör tarafından oluşturulan karneler burada görünecek.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                          style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
                         ),
                       ],
                     ),
@@ -2264,9 +2312,9 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(15),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF171717),
+                          color: PoseidonRenkler.kart,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF292929)),
+                          border: Border.all(color: PoseidonRenkler.kenar),
                         ),
                         child: Row(
                           children: [
@@ -2274,12 +2322,12 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
                               width: 46,
                               height: 46,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E2A1E),
+                                color: PoseidonRenkler.secim,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Icon(
                                 Icons.assignment_turned_in_outlined,
-                                color: Colors.lightGreenAccent,
+                                color: PoseidonRenkler.vurgu,
                               ),
                             ),
 
@@ -2303,7 +2351,7 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
                                   Text(
                                     _tarihGoster(karne['test_date']),
                                     style: const TextStyle(
-                                      color: Colors.grey,
+                                      color: PoseidonRenkler.ikincilYazi,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -2311,7 +2359,7 @@ class _VeliSporcuKarneProfiliState extends State<VeliSporcuKarneProfili> {
                               ),
                             ),
 
-                            const Icon(Icons.chevron_right, color: Colors.grey),
+                            const Icon(Icons.chevron_right, color: PoseidonRenkler.ikincilYazi),
                           ],
                         ),
                       ),
@@ -2439,7 +2487,7 @@ class KarneDetayEkrani extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Icon(icon, color: Colors.lightGreenAccent, size: 20),
+          Icon(icon, color: PoseidonRenkler.vurgu, size: 20),
           const SizedBox(width: 8),
           Text(
             baslik,
@@ -2471,9 +2519,9 @@ class KarneDetayEkrani extends StatelessWidget {
 
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF171717),
+            color: PoseidonRenkler.kart,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF292929)),
+            border: Border.all(color: PoseidonRenkler.kenar),
           ),
           child: Column(
             children: veriler.entries.map((entry) {
@@ -2485,7 +2533,7 @@ class KarneDetayEkrani extends StatelessWidget {
                   vertical: 13,
                 ),
                 decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Color(0xFF252525))),
+                  border: Border(bottom: BorderSide(color: PoseidonRenkler.alan)),
                 ),
                 child: Row(
                   children: [
@@ -2493,7 +2541,7 @@ class KarneDetayEkrani extends StatelessWidget {
                       child: Text(
                         _etiket(entry.key),
                         style: const TextStyle(
-                          color: Colors.grey,
+                          color: PoseidonRenkler.ikincilYazi,
                           fontSize: 13,
                         ),
                       ),
@@ -2542,7 +2590,7 @@ class KarneDetayEkrani extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.pool, color: Colors.lightGreenAccent, size: 20),
+            const Icon(Icons.pool, color: PoseidonRenkler.vurgu, size: 20),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -2586,7 +2634,7 @@ class KarneDetayEkrani extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 8),
             padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: PoseidonRenkler.kart,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: renk.withOpacity(0.4)),
             ),
@@ -2647,14 +2695,14 @@ class KarneDetayEkrani extends StatelessWidget {
     final antrenorNotu = karne['coach_note']?.toString() ?? '';
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
 
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
         title: const Text(
           'Gelişim Karnesi',
-          style: TextStyle(color: Colors.lightGreenAccent, fontSize: 16),
+          style: TextStyle(color: PoseidonRenkler.vurgu, fontSize: 16),
         ),
       ),
 
@@ -2667,10 +2715,10 @@ class KarneDetayEkrani extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(17),
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: PoseidonRenkler.kart,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.lightGreenAccent.withOpacity(0.25),
+                color: PoseidonRenkler.vurgu.withOpacity(0.25),
               ),
             ),
             child: Column(
@@ -2679,7 +2727,7 @@ class KarneDetayEkrani extends StatelessWidget {
                 const Text(
                   'POSEIDON AKADEMİ',
                   style: TextStyle(
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1.5,
@@ -2703,23 +2751,23 @@ class KarneDetayEkrani extends StatelessWidget {
                   children: [
                     const Icon(
                       Icons.calendar_month,
-                      color: Colors.grey,
+                      color: PoseidonRenkler.ikincilYazi,
                       size: 15,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       _tarihGoster(karne['test_date']),
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                      style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
                     ),
 
                     if (karne['grup'] != null) ...[
                       const SizedBox(width: 16),
-                      const Icon(Icons.groups, color: Colors.grey, size: 15),
+                      const Icon(Icons.groups, color: PoseidonRenkler.ikincilYazi, size: 15),
                       const SizedBox(width: 6),
                       Text(
                         karne['grup'].toString(),
                         style: const TextStyle(
-                          color: Colors.grey,
+                          color: PoseidonRenkler.ikincilYazi,
                           fontSize: 13,
                         ),
                       ),
@@ -2807,9 +2855,9 @@ class KarneDetayEkrani extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: PoseidonRenkler.kart,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF292929)),
+                border: Border.all(color: PoseidonRenkler.kenar),
               ),
               child: Text(
                 antrenorNotu,
@@ -2871,20 +2919,20 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black,
+      color: Colors.transparent,
       child: RefreshIndicator(
         onRefresh: () async {
           _yenile();
         },
-        color: Colors.lightGreenAccent,
-        backgroundColor: Colors.black,
+        color: PoseidonRenkler.vurgu,
+        backgroundColor: PoseidonRenkler.kart,
         child: FutureBuilder<List<dynamic>>(
           future: _sporcularFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(
-                  color: Colors.lightGreenAccent,
+                  color: PoseidonRenkler.vurgu,
                 ),
               );
             }
@@ -2917,7 +2965,7 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
                 const Text(
                   'Karne Yönetimi',
                   style: TextStyle(
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2927,7 +2975,7 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
 
                 const Text(
                   'Bilgilerini incelemek ve karnelerini yönetmek için bir sporcu seç',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                  style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
                 ),
 
                 const SizedBox(height: 20),
@@ -2936,28 +2984,28 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
                     setState(() => _arama = deger);
                   },
                   style: const TextStyle(color: Colors.white),
-                  cursorColor: Colors.lightGreenAccent,
+                  cursorColor: PoseidonRenkler.vurgu,
                   decoration: InputDecoration(
                     hintText: 'Sporcu adı veya grup ara',
-                    hintStyle: const TextStyle(color: Colors.grey),
+                    hintStyle: const TextStyle(color: PoseidonRenkler.ikincilYazi),
                     prefixIcon: const Icon(
                       Icons.search,
-                      color: Colors.lightGreenAccent,
+                      color: PoseidonRenkler.vurgu,
                     ),
                     filled: true,
-                    fillColor: const Color(0xFF171717),
+                    fillColor: PoseidonRenkler.kart,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 15,
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFF343434)),
+                      borderSide: const BorderSide(color: PoseidonRenkler.kenar),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: const BorderSide(
-                        color: Colors.lightGreenAccent,
+                        color: PoseidonRenkler.vurgu,
                       ),
                     ),
                   ),
@@ -2965,20 +3013,20 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
                 const SizedBox(height: 12),
                 Text(
                   '${sporcular.length} / ${tumSporcular.length} sporcu',
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 if (sporcular.isEmpty)
                   Container(
                     padding: const EdgeInsets.all(30),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: PoseidonRenkler.kart,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Center(
                       child: Text(
                         'Gösterilicek sporcu bulunamadı',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(color: PoseidonRenkler.ikincilYazi),
                       ),
                     ),
                   )
@@ -3003,15 +3051,15 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(15),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF171717),
+                          color: PoseidonRenkler.kart,
                           borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: const Color(0xFF292929)),
+                          border: Border.all(color: PoseidonRenkler.kenar),
                         ),
                         child: Row(
                           children: [
                             CircleAvatar(
                               radius: 24,
-                              backgroundColor: Colors.lightGreenAccent,
+                              backgroundColor: PoseidonRenkler.vurgu,
                               child: Text(
                                 sporcu.isim.isNotEmpty
                                     ? sporcu.isim[0].toUpperCase()
@@ -3044,7 +3092,7 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
                                   Text(
                                     '${sporcu.dogumYili} · ${sporcu.grup}',
                                     style: const TextStyle(
-                                      color: Colors.grey,
+                                      color: PoseidonRenkler.ikincilYazi,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -3054,12 +3102,12 @@ class _AntrenorKarneYonetimiState extends State<AntrenorKarneYonetimi> {
 
                             const Icon(
                               Icons.description_outlined,
-                              color: Colors.lightGreenAccent,
+                              color: PoseidonRenkler.vurgu,
                             ),
 
                             const SizedBox(width: 6),
 
-                            const Icon(Icons.chevron_right, color: Colors.grey),
+                            const Icon(Icons.chevron_right, color: PoseidonRenkler.ikincilYazi),
                           ],
                         ),
                       ),
@@ -3343,7 +3391,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
           Expanded(
             child: Text(
               etiket,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
             ),
           ),
           Text(
@@ -3354,13 +3402,13 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: const Color(0xFF222222),
+              color: PoseidonRenkler.alan,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               _farkMetni(fark, birim),
               style: const TextStyle(
-                color: Colors.lightGreenAccent,
+                color: PoseidonRenkler.vurgu,
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
               ),
@@ -3377,18 +3425,18 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
         width: double.infinity,
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF141414),
+          color: PoseidonRenkler.kart,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFF292929)),
+          border: Border.all(color: PoseidonRenkler.kenar),
         ),
         child: const Row(
           children: [
-            Icon(Icons.insights, color: Colors.grey, size: 20),
+            Icon(Icons.insights, color: PoseidonRenkler.ikincilYazi, size: 20),
             SizedBox(width: 10),
             Expanded(
               child: Text(
                 'Gelişim karşılaştırması için en az 2 karne gerekli.',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+                style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
               ),
             ),
           ],
@@ -3465,16 +3513,16 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF101510),
+        color: PoseidonRenkler.secim,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.lightGreenAccent.withOpacity(0.25)),
+        border: Border.all(color: PoseidonRenkler.vurgu.withOpacity(0.25)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
-              Icon(Icons.insights, color: Colors.lightGreenAccent, size: 20),
+              Icon(Icons.insights, color: PoseidonRenkler.vurgu, size: 20),
               SizedBox(width: 8),
               Text(
                 'Son Gelişim',
@@ -3489,14 +3537,14 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
           const SizedBox(height: 5),
           Text(
             '${_tarihGoster(onceki['test_date'])} → ${_tarihGoster(son['test_date'])}',
-            style: const TextStyle(color: Colors.grey, fontSize: 11),
+            style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 11),
           ),
           if (sayisalSatirlar.isNotEmpty) ...[
             const SizedBox(height: 15),
             ...sayisalSatirlar,
           ],
           const SizedBox(height: 4),
-          const Divider(color: Color(0xFF292929)),
+          const Divider(color: PoseidonRenkler.kenar),
           const SizedBox(height: 8),
           const Text(
             'Teknik Değerlendirme',
@@ -3547,7 +3595,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
           const Text(
             'Sayılar her seviyedeki beceri adedidir. '
             'Eski iyi/geliştirilmeli kayıtları bu sayılara dahil değildir.',
-            style: TextStyle(color: Colors.grey, fontSize: 11),
+            style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 11),
           ),
         ],
       ),
@@ -3639,9 +3687,9 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: PoseidonRenkler.kart,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF303030)),
+        border: Border.all(color: PoseidonRenkler.kenar),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3662,7 +3710,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                 Text(
                   birim,
                   style: const TextStyle(
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
@@ -3672,14 +3720,14 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
           const SizedBox(height: 6),
           Text(
             'Son ölçüm: ${_degerMetni(sonDeger, birim)}',
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
           ),
           const SizedBox(height: 16),
 
           Container(
             padding: const EdgeInsets.fromLTRB(8, 16, 10, 8),
             decoration: BoxDecoration(
-              color: const Color(0xFF101710),
+              color: PoseidonRenkler.secim,
               borderRadius: BorderRadius.circular(12),
             ),
             child: _karneGrafikAlani(
@@ -3824,7 +3872,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                               );
 
                         final renk = normTesti == null
-                            ? Colors.lightGreenAccent
+                            ? PoseidonRenkler.vurgu
                             : _durumRengi(durum);
 
                         return BarChartGroupData(
@@ -3900,12 +3948,12 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                     Icon(
                       Icons.square,
                       size: 12,
-                      color: bant['renk'] as Color? ?? Colors.grey,
+                      color: bant['renk'] as Color? ?? PoseidonRenkler.ikincilYazi,
                     ),
                     const SizedBox(width: 5),
                     Text(
                       bant['etiket']?.toString() ?? '',
-                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                      style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 11),
                     ),
                   ],
                 );
@@ -3920,7 +3968,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: sonDurum == null
-                    ? const Color(0xFF222222)
+                    ? PoseidonRenkler.alan
                     : _durumRengi(sonDurum).withOpacity(0.12),
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -3933,7 +3981,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                                 'bilgisi eksik ya da uygun norm bulunmuyor.')
                     : _durumEtiketi(sonDurum),
                 style: TextStyle(
-                  color: sonDurum == null ? Colors.grey : _durumRengi(sonDurum),
+                  color: sonDurum == null ? PoseidonRenkler.ikincilYazi : _durumRengi(sonDurum),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -3964,9 +4012,9 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF171717),
+        color: PoseidonRenkler.kart,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF303030)),
+        border: Border.all(color: PoseidonRenkler.kenar),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3975,7 +4023,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
             children: [
               Icon(
                 Icons.assignment_turned_in_outlined,
-                color: Colors.lightGreenAccent,
+                color: PoseidonRenkler.vurgu,
                 size: 24,
               ),
               SizedBox(width: 10),
@@ -3994,7 +4042,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
           const SizedBox(height: 6),
           Text(
             'Son karne: ${_tarihGoster(sonKarne['test_date'])}',
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
           ),
           const SizedBox(height: 16),
           const Row(
@@ -4002,12 +4050,12 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
               Expanded(
                 child: Text(
                   'Yüzme Stili',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
                 ),
               ),
               Text(
                 'Değerlendirme',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+                style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
               ),
             ],
           ),
@@ -4030,9 +4078,9 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
             final iyiMi = ortalama != null && ortalama > 3;
 
             final renk = ortalama == null
-                ? Colors.grey
+                ? PoseidonRenkler.ikincilYazi
                 : iyiMi
-                ? Colors.lightGreenAccent
+                ? PoseidonRenkler.vurgu
                 : Colors.redAccent;
 
             final sonuc = ortalama == null
@@ -4045,7 +4093,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
               decoration: BoxDecoration(
-                color: const Color(0xFF222222),
+                color: PoseidonRenkler.alan,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
@@ -4188,7 +4236,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
       children: [
         const Row(
           children: [
-            Icon(Icons.bar_chart, color: Colors.lightGreenAccent, size: 20),
+            Icon(Icons.bar_chart, color: PoseidonRenkler.vurgu, size: 20),
             SizedBox(width: 8),
             Text(
               'Gelişim Grafikleri',
@@ -4203,7 +4251,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
         const SizedBox(height: 6),
         const Text(
           'Her ölçüm, test tarihindeki yaş ve uygun olduğunda cinsiyet normuna göre değerlendirilir.',
-          style: TextStyle(color: Colors.grey, fontSize: 11),
+          style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 11),
         ),
         const SizedBox(height: 10),
         const Wrap(
@@ -4224,14 +4272,14 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
 
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
         title: Text(
           '${widget.sporcu.isim} · Karneler',
-          style: const TextStyle(color: Colors.lightGreenAccent, fontSize: 16),
+          style: const TextStyle(color: PoseidonRenkler.vurgu, fontSize: 16),
         ),
       ),
 
@@ -4239,8 +4287,8 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
         onRefresh: () async {
           _yenile();
         },
-        color: Colors.lightGreenAccent,
-        backgroundColor: Colors.black,
+        color: PoseidonRenkler.vurgu,
+        backgroundColor: PoseidonRenkler.kart,
 
         child: FutureBuilder<List<dynamic>>(
           future: _karnelerFuture,
@@ -4248,7 +4296,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(
-                  color: Colors.lightGreenAccent,
+                  color: PoseidonRenkler.vurgu,
                 ),
               );
             }
@@ -4285,9 +4333,9 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: PoseidonRenkler.kart,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFF303030)),
+                      border: Border.all(color: PoseidonRenkler.kenar),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4295,7 +4343,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                         Text(
                           widget.sporcu.isim,
                           style: const TextStyle(
-                            color: Colors.lightGreenAccent,
+                            color: PoseidonRenkler.vurgu,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
@@ -4303,7 +4351,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                         const SizedBox(height: 6),
                         Text(
                           widget.sporcu.grup,
-                          style: const TextStyle(color: Colors.grey),
+                          style: const TextStyle(color: PoseidonRenkler.ikincilYazi),
                         ),
                       ],
                     ),
@@ -4345,13 +4393,13 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E2A1E),
+                        color: PoseidonRenkler.secim,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         '${karneler.length} karne',
                         style: const TextStyle(
-                          color: Colors.lightGreenAccent,
+                          color: PoseidonRenkler.vurgu,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -4369,14 +4417,14 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                       horizontal: 20,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF171717),
+                      color: PoseidonRenkler.kart,
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Column(
                       children: [
                         const Icon(
                           Icons.description_outlined,
-                          color: Colors.grey,
+                          color: PoseidonRenkler.ikincilYazi,
                           size: 42,
                         ),
                         const SizedBox(height: 12),
@@ -4394,7 +4442,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                               : 'İlk ölçüm karnesini oluşturmak için aşağıdaki + butonunu kullan.',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
-                            color: Colors.grey,
+                            color: PoseidonRenkler.ikincilYazi,
                             fontSize: 12,
                           ),
                         ),
@@ -4419,9 +4467,9 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                         margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(15),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF171717),
+                          color: PoseidonRenkler.kart,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF2A2A2A)),
+                          border: Border.all(color: PoseidonRenkler.kenar),
                         ),
                         child: Row(
                           children: [
@@ -4429,12 +4477,12 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                               width: 44,
                               height: 44,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1E2A1E),
+                                color: PoseidonRenkler.secim,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Icon(
                                 Icons.assignment_turned_in_outlined,
-                                color: Colors.lightGreenAccent,
+                                color: PoseidonRenkler.vurgu,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -4454,14 +4502,14 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
                                   Text(
                                     _tarihGoster(karne['test_date']),
                                     style: const TextStyle(
-                                      color: Colors.grey,
+                                      color: PoseidonRenkler.ikincilYazi,
                                       fontSize: 12,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            const Icon(Icons.chevron_right, color: Colors.grey),
+                            const Icon(Icons.chevron_right, color: PoseidonRenkler.ikincilYazi),
                           ],
                         ),
                       ),
@@ -4476,7 +4524,7 @@ class _SporcuKarneleriEkraniState extends State<SporcuKarneleriEkrani> {
       floatingActionButton: widget.sadeceGoruntule
           ? null
           : FloatingActionButton.extended(
-              backgroundColor: Colors.lightGreenAccent,
+              backgroundColor: PoseidonRenkler.vurgu,
               foregroundColor: Colors.black,
               onPressed: () async {
                 final kaydedildi = await Navigator.push<bool>(
@@ -4520,7 +4568,7 @@ class _NormLejant extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 5),
-        Text(metin, style: const TextStyle(color: Colors.grey, fontSize: 10)),
+        Text(metin, style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 10)),
       ],
     );
   }
@@ -4641,11 +4689,11 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
       lastDate: DateTime(2035),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
+          data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Colors.lightGreenAccent,
+              primary: PoseidonRenkler.vurgu,
               onPrimary: Colors.black,
-              surface: Color(0xFF171717),
+              surface: PoseidonRenkler.kart,
               onSurface: Colors.white,
             ),
           ),
@@ -4893,16 +4941,16 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
     final vki = _vkiHesapla();
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
 
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
 
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
 
         title: Text(
           '${widget.sporcu.isim} · Yeni Karne',
-          style: const TextStyle(color: Colors.lightGreenAccent, fontSize: 16),
+          style: const TextStyle(color: PoseidonRenkler.vurgu, fontSize: 16),
         ),
       ),
 
@@ -4922,13 +4970,13 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
             child: Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: const Color(0xFF171717),
+                color: PoseidonRenkler.kart,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF2A2A2A)),
+                border: Border.all(color: PoseidonRenkler.kenar),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.event, color: Colors.lightGreenAccent),
+                  const Icon(Icons.event, color: PoseidonRenkler.vurgu),
 
                   const SizedBox(width: 12),
 
@@ -4942,7 +4990,7 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
                     ),
                   ),
 
-                  const Icon(Icons.chevron_right, color: Colors.grey),
+                  const Icon(Icons.chevron_right, color: PoseidonRenkler.ikincilYazi),
                 ],
               ),
             ),
@@ -5028,17 +5076,17 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFF101510),
+              color: PoseidonRenkler.secim,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.lightGreenAccent.withOpacity(0.25),
+                color: PoseidonRenkler.vurgu.withOpacity(0.25),
               ),
             ),
             child: Row(
               children: [
                 const Icon(
                   Icons.monitor_weight_outlined,
-                  color: Colors.lightGreenAccent,
+                  color: PoseidonRenkler.vurgu,
                 ),
 
                 const SizedBox(width: 10),
@@ -5053,7 +5101,7 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
                 Text(
                   vki == null ? 'Boy ve kilo gir' : vki.toStringAsFixed(2),
                   style: TextStyle(
-                    color: vki == null ? Colors.grey : Colors.lightGreenAccent,
+                    color: vki == null ? PoseidonRenkler.ikincilYazi : PoseidonRenkler.vurgu,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -5237,16 +5285,16 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Sporcunun gelişimi hakkında not...',
-              hintStyle: const TextStyle(color: Colors.grey),
+              hintStyle: const TextStyle(color: PoseidonRenkler.ikincilYazi),
               filled: true,
-              fillColor: const Color(0xFF171717),
+              fillColor: PoseidonRenkler.kart,
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF2A2A2A)),
+                borderSide: const BorderSide(color: PoseidonRenkler.kenar),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.lightGreenAccent),
+                borderSide: const BorderSide(color: PoseidonRenkler.vurgu),
               ),
             ),
           ),
@@ -5263,7 +5311,7 @@ class _KarneOlusturEkraniState extends State<KarneOlusturEkrani> {
               onPressed: _kaydediliyor ? null : _kaydet,
 
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.lightGreenAccent,
+                backgroundColor: PoseidonRenkler.vurgu,
                 foregroundColor: Colors.black,
 
                 shape: RoundedRectangleBorder(
@@ -5310,7 +5358,7 @@ class _KarneBolumBasligi extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: Colors.lightGreenAccent, size: 20),
+        Icon(icon, color: PoseidonRenkler.vurgu, size: 20),
 
         const SizedBox(width: 8),
 
@@ -5361,26 +5409,26 @@ class _KarneSayisalAlan extends StatelessWidget {
         decoration: InputDecoration(
           labelText: etiket,
 
-          labelStyle: const TextStyle(color: Colors.grey),
+          labelStyle: const TextStyle(color: PoseidonRenkler.ikincilYazi),
 
           suffixText: birim,
 
-          suffixStyle: const TextStyle(color: Colors.lightGreenAccent),
+          suffixStyle: const TextStyle(color: PoseidonRenkler.vurgu),
 
           filled: true,
 
-          fillColor: const Color(0xFF171717),
+          fillColor: PoseidonRenkler.kart,
 
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
 
-            borderSide: const BorderSide(color: Color(0xFF2A2A2A)),
+            borderSide: const BorderSide(color: PoseidonRenkler.kenar),
           ),
 
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
 
-            borderSide: const BorderSide(color: Colors.lightGreenAccent),
+            borderSide: const BorderSide(color: PoseidonRenkler.vurgu),
           ),
         ),
       ),
@@ -5407,7 +5455,7 @@ Color _karnePuanRengi(int? puan) {
     case 5:
       return Colors.lightGreenAccent;
     default:
-      return Colors.grey;
+      return PoseidonRenkler.ikincilYazi;
   }
 }
 
@@ -5449,7 +5497,7 @@ class _KarneTeknikBolumu extends StatelessWidget {
         const SizedBox(height: 6),
         const Text(
           'Her beceriyi 1–5 arasında değerlendir.',
-          style: TextStyle(color: Colors.grey, fontSize: 12),
+          style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
         ),
         const SizedBox(height: 12),
         ...maddeler.entries.map((madde) {
@@ -5459,9 +5507,9 @@ class _KarneTeknikBolumu extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
-              color: const Color(0xFF171717),
+              color: PoseidonRenkler.kart,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFF292929)),
+              border: Border.all(color: PoseidonRenkler.kenar),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -5600,7 +5648,7 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
       final sonuc = await showModalBottomSheet<Map<String, int?>>(
         context: context,
         isScrollControlled: true,
-        backgroundColor: const Color(0xFF141414),
+        backgroundColor: PoseidonRenkler.kart,
         builder: (sheetContext) => StatefulBuilder(
           builder: (sheetContext, setModalState) {
             final liste = sporcular
@@ -5631,7 +5679,7 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
                             ? 'Velinin Çocuğunu Seç'
                             : 'Sporcu Hesabını Eşleştir',
                         style: const TextStyle(
-                          color: Colors.lightGreenAccent,
+                          color: PoseidonRenkler.vurgu,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
@@ -5644,7 +5692,7 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
                       const SizedBox(height: 8),
                       const Text(
                         'Kulüpteki sporcu kayıtları listelenir. Çocuğun ayrıca giriş hesabı olması gerekmez.',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -5692,7 +5740,7 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
                               );
                               return ListTile(
                                 selected: seciliId == id,
-                                selectedColor: Colors.lightGreenAccent,
+                                selectedColor: PoseidonRenkler.vurgu,
                                 leading: Icon(
                                   seciliId == id
                                       ? Icons.radio_button_checked
@@ -5781,19 +5829,19 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
     final onay = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF141414),
+        backgroundColor: PoseidonRenkler.kart,
         title: const Text(
           'Hesabı Kaldır',
           style: TextStyle(color: Colors.white),
         ),
         content: Text(
           '$email hesabının erişimi kaldırılsın mı?',
-          style: const TextStyle(color: Colors.grey),
+          style: const TextStyle(color: PoseidonRenkler.ikincilYazi),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç', style: TextStyle(color: Colors.grey)),
+            child: const Text('Vazgeç', style: TextStyle(color: PoseidonRenkler.ikincilYazi)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -5826,7 +5874,7 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF141414),
+      backgroundColor: PoseidonRenkler.kart,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -5895,7 +5943,7 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
                       rol == 'veli'
                           ? 'Çocuğu (zorunlu)'
                           : 'Sporcu Kaydıyla Eşleştir (isteğe bağlı)',
-                      style: const TextStyle(color: Colors.grey, fontSize: 13),
+                      style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -5908,13 +5956,13 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
                             selected: sporcuId == null,
                             onSelected: (_) =>
                                 setModalState(() => sporcuId = null),
-                            selectedColor: Colors.grey,
+                            selectedColor: PoseidonRenkler.ikincilYazi,
                             labelStyle: TextStyle(
                               color: sporcuId == null
                                   ? Colors.black
                                   : Colors.white,
                             ),
-                            backgroundColor: const Color(0xFF1A1A1A),
+                            backgroundColor: PoseidonRenkler.alan,
                           ),
                         ...sporcular.map((s) {
                           final id = int.parse(s['id'].toString());
@@ -5924,12 +5972,12 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
                             selected: seciliMi,
                             onSelected: (_) =>
                                 setModalState(() => sporcuId = id),
-                            selectedColor: Colors.lightGreenAccent,
+                            selectedColor: PoseidonRenkler.vurgu,
                             labelStyle: TextStyle(
                               color: seciliMi ? Colors.black : Colors.white,
                               fontWeight: FontWeight.bold,
                             ),
-                            backgroundColor: const Color(0xFF1A1A1A),
+                            backgroundColor: PoseidonRenkler.alan,
                           );
                         }),
                       ],
@@ -5993,7 +6041,7 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Veli / Sporcu Hesapları'),
         actions: [
@@ -6107,7 +6155,7 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
                                   style: TextStyle(
                                     color: cocuk == null
                                         ? Colors.orangeAccent
-                                        : Colors.lightGreenAccent,
+                                        : PoseidonRenkler.vurgu,
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -6115,7 +6163,7 @@ class _KullaniciYonetimEkraniState extends State<KullaniciYonetimEkrani> {
                                 if (cocuk != null)
                                   Text(
                                     _sporcuAciklamasi(cocuk),
-                                    style: const TextStyle(color: Colors.grey),
+                                    style: const TextStyle(color: PoseidonRenkler.ikincilYazi),
                                   ),
                                 const SizedBox(height: 10),
                                 Wrap(
@@ -6319,21 +6367,21 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF141414),
+                      color: PoseidonRenkler.kart,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: const Color(0xFF2A2A2A)),
+                      border: Border.all(color: PoseidonRenkler.kenar),
                     ),
                     child: Row(
                       children: const [
                         Icon(
                           Icons.calendar_month,
-                          color: Colors.grey,
+                          color: PoseidonRenkler.ikincilYazi,
                           size: 18,
                         ),
                         SizedBox(width: 10),
                         Text(
                           'Bugün için planlanmış antrenman yok',
-                          style: TextStyle(color: Colors.grey, fontSize: 14),
+                          style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 14),
                         ),
                       ],
                     ),
@@ -6346,9 +6394,9 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF141414),
+                    color: PoseidonRenkler.kart,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFF2A2A2A)),
+                    border: Border.all(color: PoseidonRenkler.kenar),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -6357,14 +6405,14 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
                         children: const [
                           Icon(
                             Icons.calendar_month,
-                            color: Colors.lightGreenAccent,
+                            color: PoseidonRenkler.vurgu,
                             size: 16,
                           ),
                           SizedBox(width: 6),
                           Text(
                             'Bugünkü Antrenman',
                             style: TextStyle(
-                              color: Colors.lightGreenAccent,
+                              color: PoseidonRenkler.vurgu,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
@@ -6383,22 +6431,22 @@ class _AnaSayfaSekmesiState extends State<AnaSayfaSekmesi> {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.pool, color: Colors.grey, size: 14),
+                          const Icon(Icons.pool, color: PoseidonRenkler.ikincilYazi, size: 14),
                           const SizedBox(width: 4),
                           Text(
                             antrenman.havuz,
                             style: const TextStyle(
-                              color: Colors.grey,
+                              color: PoseidonRenkler.ikincilYazi,
                               fontSize: 13,
                             ),
                           ),
                           const SizedBox(width: 12),
-                          const Icon(Icons.timer, color: Colors.grey, size: 14),
+                          const Icon(Icons.timer, color: PoseidonRenkler.ikincilYazi, size: 14),
                           const SizedBox(width: 4),
                           Text(
                             antrenman.sure,
                             style: const TextStyle(
-                              color: Colors.grey,
+                              color: PoseidonRenkler.ikincilYazi,
                               fontSize: 13,
                             ),
                           ),
@@ -6530,7 +6578,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
-            child: LinearProgressIndicator(color: Colors.lightGreenAccent),
+            child: LinearProgressIndicator(color: PoseidonRenkler.vurgu),
           );
         }
 
@@ -6569,7 +6617,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
               bulunanlar.isEmpty
                   ? 'Aramana uygun sporcu bulunamadı.'
                   : '${bulunanlar.length} sporcu bulundu',
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
             ),
             const SizedBox(height: 12),
             ...bulunanlar.map<Widget>((veri) {
@@ -6577,10 +6625,10 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 10),
-                color: const Color(0xFF171717),
+                color: PoseidonRenkler.kart,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
-                  side: const BorderSide(color: Color(0xFF343434)),
+                  side: const BorderSide(color: PoseidonRenkler.kenar),
                 ),
                 child: ListTile(
                   contentPadding: const EdgeInsets.symmetric(
@@ -6588,7 +6636,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                     vertical: 8,
                   ),
                   leading: const CircleAvatar(
-                    backgroundColor: Colors.lightGreenAccent,
+                    backgroundColor: PoseidonRenkler.vurgu,
                     child: Icon(Icons.person_outline, color: Colors.black),
                   ),
                   title: Text(
@@ -6600,11 +6648,11 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                   ),
                   subtitle: Text(
                     '${sporcu.dogumYili} · ${sporcu.grup}',
-                    style: const TextStyle(color: Colors.grey),
+                    style: const TextStyle(color: PoseidonRenkler.ikincilYazi),
                   ),
                   trailing: const Icon(
                     Icons.chevron_right,
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                   ),
                   onTap: () async {
                     await Navigator.push(
@@ -6690,7 +6738,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
     final onayVerdiMi = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
+        backgroundColor: PoseidonRenkler.alan,
         title: const Text(
           'Sporcuyu Sil',
           style: TextStyle(color: Colors.white),
@@ -6698,12 +6746,12 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
         content: Text(
           '${sporcu['isim']} adlı sporcuyu silmek istediğine emin misin?\n\n'
           'Bu işlem geri alınamaz.',
-          style: const TextStyle(color: Colors.grey),
+          style: const TextStyle(color: PoseidonRenkler.ikincilYazi),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç', style: TextStyle(color: Colors.grey)),
+            child: const Text('Vazgeç', style: TextStyle(color: PoseidonRenkler.ikincilYazi)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -6763,8 +6811,8 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
               label: Text(stil),
               selected: seciliMi,
               onSelected: (_) => _stilDegistir(stil),
-              selectedColor: Colors.lightGreenAccent,
-              backgroundColor: const Color(0xFF1A1A1A),
+              selectedColor: PoseidonRenkler.vurgu,
+              backgroundColor: PoseidonRenkler.alan,
               labelStyle: TextStyle(
                 color: seciliMi ? Colors.black : Colors.white,
                 fontWeight: FontWeight.bold,
@@ -6791,9 +6839,9 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
               selected: seciliMi,
               onSelected: (_) => _mesafeDegistir(mesafe),
               selectedColor: const Color(0xFF36525E),
-              backgroundColor: const Color(0xFF1A1A1A),
+              backgroundColor: PoseidonRenkler.alan,
               labelStyle: TextStyle(
-                color: seciliMi ? Colors.lightGreenAccent : Colors.white,
+                color: seciliMi ? PoseidonRenkler.vurgu : Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
@@ -6859,11 +6907,11 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
+          color: PoseidonRenkler.alan,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: sira <= 3
-                ? Colors.lightGreenAccent.withOpacity(0.35)
+                ? PoseidonRenkler.vurgu.withOpacity(0.35)
                 : Colors.white.withOpacity(0.05),
           ),
         ),
@@ -6877,7 +6925,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                       '$sira',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Colors.grey,
+                        color: PoseidonRenkler.ikincilYazi,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -6888,7 +6936,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
 
             CircleAvatar(
               radius: 21,
-              backgroundColor: Colors.lightGreenAccent,
+              backgroundColor: PoseidonRenkler.vurgu,
               child: Text(
                 isim.isNotEmpty ? isim[0].toUpperCase() : '?',
                 style: const TextStyle(
@@ -6915,7 +6963,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                   const SizedBox(height: 3),
                   Text(
                     grup,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
                   ),
                 ],
               ),
@@ -6927,7 +6975,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 Text(
                   '$derece sn',
                   style: const TextStyle(
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
@@ -6935,7 +6983,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 const SizedBox(height: 3),
                 Text(
                   '$_seciliMesafe $_seciliStil',
-                  style: const TextStyle(color: Colors.grey, fontSize: 10),
+                  style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 10),
                 ),
               ],
             ),
@@ -6965,7 +7013,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: PoseidonRenkler.alan,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.orangeAccent.withOpacity(0.25)),
       ),
@@ -6973,7 +7021,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
         children: [
           CircleAvatar(
             radius: 21,
-            backgroundColor: const Color(0xFF2A2A2A),
+            backgroundColor: PoseidonRenkler.kenar,
             child: Text(
               sporcu.isim.isNotEmpty ? sporcu.isim[0].toUpperCase() : '?',
               style: const TextStyle(
@@ -7000,7 +7048,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 const SizedBox(height: 3),
                 Text(
                   sporcu.grup,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
                 ),
                 const SizedBox(height: 4),
                 const Text(
@@ -7014,7 +7062,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
           if (widget.antrenorMu)
             IconButton(
               tooltip: 'Sporcu Bilgilerini Düzenle',
-              icon: const Icon(Icons.edit, color: Colors.lightGreenAccent),
+              icon: const Icon(Icons.edit, color: PoseidonRenkler.vurgu),
               onPressed: () async {
                 await sporcuBilgileriniDuzenle(context, sporcu.id);
                 if (mounted) _tumVerileriYenile();
@@ -7041,7 +7089,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.lightGreenAccent,
+                backgroundColor: PoseidonRenkler.vurgu,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
@@ -7062,7 +7110,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
           return const Center(
             child: Padding(
               padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(color: Colors.lightGreenAccent),
+              child: CircularProgressIndicator(color: PoseidonRenkler.vurgu),
             ),
           );
         }
@@ -7084,7 +7132,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 child: Padding(
                   padding: EdgeInsets.all(16),
                   child: CircularProgressIndicator(
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                   ),
                 ),
               );
@@ -7117,21 +7165,21 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF101510),
+                  color: PoseidonRenkler.secim,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.lightGreenAccent.withOpacity(0.15),
+                    color: PoseidonRenkler.vurgu.withOpacity(0.15),
                   ),
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.lightGreenAccent),
+                    Icon(Icons.check_circle, color: PoseidonRenkler.vurgu),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'Tüm sporcuların en az bir performans kaydı bulunuyor.',
                         style: TextStyle(
-                          color: Colors.lightGreenAccent,
+                          color: PoseidonRenkler.vurgu,
                           fontSize: 12,
                         ),
                       ),
@@ -7160,20 +7208,20 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         onRefresh: () async {
           _tumVerileriYenile();
         },
-        color: Colors.lightGreenAccent,
-        backgroundColor: Colors.black,
+        color: PoseidonRenkler.vurgu,
+        backgroundColor: PoseidonRenkler.kart,
         child: FutureBuilder<List<dynamic>>(
           future: _siralamaFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(
-                  color: Colors.lightGreenAccent,
+                  color: PoseidonRenkler.vurgu,
                 ),
               );
             }
@@ -7202,28 +7250,28 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                     setState(() => _sporcuArama = deger);
                   },
                   style: const TextStyle(color: Colors.white),
-                  cursorColor: Colors.lightGreenAccent,
+                  cursorColor: PoseidonRenkler.vurgu,
                   decoration: InputDecoration(
                     hintText: 'Sporcu adı veya grup ara',
-                    hintStyle: const TextStyle(color: Colors.grey),
+                    hintStyle: const TextStyle(color: PoseidonRenkler.ikincilYazi),
                     prefixIcon: const Icon(
                       Icons.search,
-                      color: Colors.lightGreenAccent,
+                      color: PoseidonRenkler.vurgu,
                     ),
                     filled: true,
-                    fillColor: const Color(0xFF171717),
+                    fillColor: PoseidonRenkler.kart,
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 15,
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFF343434)),
+                      borderSide: const BorderSide(color: PoseidonRenkler.kenar),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
                       borderSide: const BorderSide(
-                        color: Colors.lightGreenAccent,
+                        color: PoseidonRenkler.vurgu,
                       ),
                     ),
                   ),
@@ -7235,7 +7283,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 const Text(
                   'Kulüp Sıralaması',
                   style: TextStyle(
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
@@ -7245,7 +7293,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
 
                 Text(
                   '$_seciliMesafe $_seciliStil',
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+                  style: const TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
                 ),
 
                 const SizedBox(height: 18),
@@ -7283,17 +7331,17 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF101010),
+                    color: PoseidonRenkler.alan,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: Colors.lightGreenAccent.withOpacity(0.15),
+                      color: PoseidonRenkler.vurgu.withOpacity(0.15),
                     ),
                   ),
                   child: Row(
                     children: [
                       const Icon(
                         Icons.emoji_events,
-                        color: Colors.lightGreenAccent,
+                        color: PoseidonRenkler.vurgu,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
@@ -7309,7 +7357,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                       Text(
                         '${siralama.length} sporcu',
                         style: const TextStyle(
-                          color: Colors.grey,
+                          color: PoseidonRenkler.ikincilYazi,
                           fontSize: 12,
                         ),
                       ),
@@ -7323,17 +7371,17 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
                   Container(
                     padding: const EdgeInsets.all(30),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
+                      color: PoseidonRenkler.alan,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Column(
                       children: [
-                        Icon(Icons.pool, color: Colors.grey, size: 40),
+                        Icon(Icons.pool, color: PoseidonRenkler.ikincilYazi, size: 40),
                         SizedBox(height: 12),
                         Text(
                           'Bu stil ve mesafede henüz performans kaydı yok.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                          style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
                         ),
                       ],
                     ),
@@ -7373,7 +7421,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
 
                   const Text(
                     'Henüz hiçbir performans kaydı girilmemiş sporcular',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                    style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
                   ),
 
                   const SizedBox(height: 14),
@@ -7388,7 +7436,7 @@ class _SporcularSekmesiState extends State<SporcularSekmesi> {
 
       floatingActionButton: widget.antrenorMu
           ? FloatingActionButton(
-              backgroundColor: Colors.lightGreenAccent,
+              backgroundColor: PoseidonRenkler.vurgu,
               onPressed: () async {
                 await Navigator.push(
                   context,
@@ -7544,14 +7592,14 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         title: Text(
           widget.sporcu == null ? 'Yeni Sporcu' : 'Sporcu Bilgilerini Düzenle',
-          style: TextStyle(color: Colors.lightGreenAccent),
+          style: TextStyle(color: PoseidonRenkler.vurgu),
         ),
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -7595,7 +7643,7 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
               alignment: Alignment.centerLeft,
               child: Text(
                 'En İyi Derecenin Stili',
-                style: TextStyle(color: Colors.grey, fontSize: 13),
+                style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
               ),
             ),
             const SizedBox(height: 8),
@@ -7613,10 +7661,10 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
                     ),
                     decoration: BoxDecoration(
                       color: seciliMi
-                          ? Colors.lightGreenAccent
-                          : const Color(0xFF1A1A1A),
+                          ? PoseidonRenkler.vurgu
+                          : PoseidonRenkler.alan,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.lightGreenAccent),
+                      border: Border.all(color: PoseidonRenkler.vurgu),
                     ),
                     child: Text(
                       stil,
@@ -7636,7 +7684,7 @@ class _SporcuEkleEkraniState extends State<SporcuEkleEkrani> {
               child: ElevatedButton(
                 onPressed: _kaydediliyor ? null : _sporcuKaydet,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightGreenAccent,
+                  backgroundColor: PoseidonRenkler.vurgu,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -7681,16 +7729,16 @@ class _FormAlani extends StatelessWidget {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: etiket,
-        labelStyle: const TextStyle(color: Colors.grey),
+        labelStyle: const TextStyle(color: PoseidonRenkler.ikincilYazi),
         filled: true,
-        fillColor: const Color(0xFF1A1A1A),
+        fillColor: PoseidonRenkler.alan,
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.grey),
+          borderSide: const BorderSide(color: PoseidonRenkler.ikincilYazi),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: const BorderSide(color: Colors.lightGreenAccent),
+          borderSide: const BorderSide(color: PoseidonRenkler.vurgu),
         ),
       ),
     );
@@ -7733,10 +7781,10 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
         actions: [
           if (widget.antrenorMu)
             IconButton(
@@ -7767,7 +7815,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
         ],
         title: Text(
           _sporcu.isim,
-          style: const TextStyle(color: Colors.lightGreenAccent),
+          style: const TextStyle(color: PoseidonRenkler.vurgu),
         ),
       ),
       body: FutureBuilder<List<dynamic>>(
@@ -7775,7 +7823,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
-              child: CircularProgressIndicator(color: Colors.lightGreenAccent),
+              child: CircularProgressIndicator(color: PoseidonRenkler.vurgu),
             );
           }
           final kayitlar = (snapshot.data ?? [])
@@ -7796,14 +7844,14 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
+                    color: PoseidonRenkler.alan,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     children: [
                       CircleAvatar(
                         radius: 26,
-                        backgroundColor: Colors.lightGreenAccent,
+                        backgroundColor: PoseidonRenkler.vurgu,
                         child: Text(
                           _sporcu.isim.isNotEmpty ? _sporcu.isim[0] : '?',
                           style: const TextStyle(
@@ -7827,7 +7875,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                           ),
                           Text(
                             '${_sporcu.dogumYili} · ${_sporcu.grup}',
-                            style: const TextStyle(color: Colors.grey),
+                            style: const TextStyle(color: PoseidonRenkler.ikincilYazi),
                           ),
                         ],
                       ),
@@ -7850,7 +7898,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                   child: Center(
                     child: Text(
                       'Henüz performans kaydı yok',
-                      style: TextStyle(color: Colors.grey),
+                      style: TextStyle(color: PoseidonRenkler.ikincilYazi),
                     ),
                   ),
                 )
@@ -7870,7 +7918,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                               width: 8,
                               height: 8,
                               decoration: const BoxDecoration(
-                                color: Colors.lightGreenAccent,
+                                color: PoseidonRenkler.vurgu,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -7891,14 +7939,14 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                             width: double.infinity,
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF141414),
+                              color: PoseidonRenkler.kart,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Center(
                               child: Text(
                                 'Bu stilde henüz kayıt yok',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: PoseidonRenkler.ikincilYazi,
                                   fontSize: 12,
                                 ),
                               ),
@@ -7922,7 +7970,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                                   Text(
                                     mesafe,
                                     style: const TextStyle(
-                                      color: Colors.lightGreenAccent,
+                                      color: PoseidonRenkler.vurgu,
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -7937,7 +7985,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                                       6,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF1A1A1A),
+                                      color: PoseidonRenkler.alan,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: LineChart(
@@ -7952,7 +8000,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                                                   Text(
                                                     value.toStringAsFixed(0),
                                                     style: const TextStyle(
-                                                      color: Colors.grey,
+                                                      color: PoseidonRenkler.ikincilYazi,
                                                       fontSize: 8,
                                                     ),
                                                   ),
@@ -7974,7 +8022,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                                                   child: Text(
                                                     mesafeKayitlari[i].tarih,
                                                     style: const TextStyle(
-                                                      color: Colors.grey,
+                                                      color: PoseidonRenkler.ikincilYazi,
                                                       fontSize: 8,
                                                     ),
                                                   ),
@@ -8007,14 +8055,14 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                                                 )
                                                 .toList(),
                                             isCurved: true,
-                                            color: Colors.lightGreenAccent,
+                                            color: PoseidonRenkler.vurgu,
                                             barWidth: 2.5,
                                             dotData: const FlDotData(
                                               show: true,
                                             ),
                                             belowBarData: BarAreaData(
                                               show: true,
-                                              color: Colors.lightGreenAccent
+                                              color: PoseidonRenkler.vurgu
                                                   .withOpacity(0.15),
                                             ),
                                           ),
@@ -8032,7 +8080,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                                             child: Text(
                                               k.tarih,
                                               style: const TextStyle(
-                                                color: Colors.grey,
+                                                color: PoseidonRenkler.ikincilYazi,
                                                 fontSize: 12,
                                               ),
                                             ),
@@ -8040,7 +8088,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
                                           Text(
                                             k.derece.toStringAsFixed(2),
                                             style: const TextStyle(
-                                              color: Colors.lightGreenAccent,
+                                              color: PoseidonRenkler.vurgu,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 13,
                                             ),
@@ -8063,7 +8111,7 @@ class _SporcuDetayEkraniState extends State<SporcuDetayEkrani> {
       ),
       floatingActionButton: widget.antrenorMu
           ? FloatingActionButton(
-              backgroundColor: Colors.lightGreenAccent,
+              backgroundColor: PoseidonRenkler.vurgu,
               onPressed: () async {
                 await Navigator.push(
                   context,
@@ -8141,21 +8189,21 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         title: const Text(
           'Yeni Performans Kaydı',
-          style: TextStyle(color: Colors.lightGreenAccent),
+          style: TextStyle(color: PoseidonRenkler.vurgu),
         ),
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
             'Yüzme Stili',
-            style: TextStyle(color: Colors.grey, fontSize: 13),
+            style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -8172,10 +8220,10 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
                   ),
                   decoration: BoxDecoration(
                     color: seciliMi
-                        ? Colors.lightGreenAccent
-                        : const Color(0xFF1A1A1A),
+                        ? PoseidonRenkler.vurgu
+                        : PoseidonRenkler.alan,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.lightGreenAccent),
+                    border: Border.all(color: PoseidonRenkler.vurgu),
                   ),
                   child: Text(
                     stil,
@@ -8192,7 +8240,7 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
           const SizedBox(height: 18),
           const Text(
             'Mesafe',
-            style: TextStyle(color: Colors.grey, fontSize: 13),
+            style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 13),
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -8209,10 +8257,10 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
                   ),
                   decoration: BoxDecoration(
                     color: seciliMi
-                        ? Colors.lightGreenAccent
-                        : const Color(0xFF1A1A1A),
+                        ? PoseidonRenkler.vurgu
+                        : PoseidonRenkler.alan,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.lightGreenAccent),
+                    border: Border.all(color: PoseidonRenkler.vurgu),
                   ),
                   child: Text(
                     mesafe,
@@ -8242,7 +8290,7 @@ class _PerformansEkleEkraniState extends State<PerformansEkleEkrani> {
             child: ElevatedButton(
               onPressed: _kaydediliyor ? null : _kaydet,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.lightGreenAccent,
+                backgroundColor: PoseidonRenkler.vurgu,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
@@ -8297,7 +8345,7 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       body: Column(
         children: [
           if (widget.antrenorMu)
@@ -8321,15 +8369,15 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                     vertical: 12,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
+                    color: PoseidonRenkler.alan,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF2A2A2A)),
+                    border: Border.all(color: PoseidonRenkler.kenar),
                   ),
                   child: const Row(
                     children: [
                       Icon(
                         Icons.history,
-                        color: Colors.lightGreenAccent,
+                        color: PoseidonRenkler.vurgu,
                         size: 18,
                       ),
                       SizedBox(width: 10),
@@ -8338,7 +8386,7 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                         style: TextStyle(color: Colors.white, fontSize: 14),
                       ),
                       Spacer(),
-                      Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+                      Icon(Icons.chevron_right, color: PoseidonRenkler.ikincilYazi, size: 18),
                     ],
                   ),
                 ),
@@ -8347,15 +8395,15 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async => _reload(),
-              color: Colors.lightGreenAccent,
-              backgroundColor: Colors.black,
+              color: PoseidonRenkler.vurgu,
+              backgroundColor: Colors.transparent,
               child: FutureBuilder<List<dynamic>>(
                 future: _future,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
                       child: CircularProgressIndicator(
-                        color: Colors.lightGreenAccent,
+                        color: PoseidonRenkler.vurgu,
                       ),
                     );
                   }
@@ -8375,7 +8423,7 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                         Center(
                           child: Text(
                             'Henüz antrenman eklenmemiş',
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: PoseidonRenkler.ikincilYazi),
                           ),
                         ),
                       ],
@@ -8405,10 +8453,10 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                           margin: const EdgeInsets.only(bottom: 12),
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1A1A1A),
+                            color: PoseidonRenkler.alan,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.lightGreenAccent,
+                              color: PoseidonRenkler.vurgu,
                               width: 1,
                             ),
                           ),
@@ -8431,7 +8479,7 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                                   ),
                                   const Icon(
                                     Icons.chevron_right,
-                                    color: Colors.lightGreenAccent,
+                                    color: PoseidonRenkler.vurgu,
                                     size: 22,
                                   ),
                                 ],
@@ -8440,7 +8488,7 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                               Text(
                                 antrenman.tarih,
                                 style: const TextStyle(
-                                  color: Colors.grey,
+                                  color: PoseidonRenkler.ikincilYazi,
                                   fontSize: 13,
                                 ),
                               ),
@@ -8448,7 +8496,7 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                               Text(
                                 '${antrenman.grup.isEmpty ? 'Grup atanmamış' : antrenman.grup} · ${antrenman.havuz} · ${antrenman.sure}',
                                 style: const TextStyle(
-                                  color: Colors.grey,
+                                  color: PoseidonRenkler.ikincilYazi,
                                   fontSize: 13,
                                 ),
                               ),
@@ -8457,7 +8505,7 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
                                 Text(
                                   '${antrenman.setler.length} set · Programı görmek için dokun',
                                   style: const TextStyle(
-                                    color: Colors.lightGreenAccent,
+                                    color: PoseidonRenkler.vurgu,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -8476,7 +8524,7 @@ class _AntrenmanSekmesiState extends State<AntrenmanSekmesi> {
       ),
       floatingActionButton: widget.antrenorMu
           ? FloatingActionButton(
-              backgroundColor: Colors.lightGreenAccent,
+              backgroundColor: PoseidonRenkler.vurgu,
               onPressed: () async {
                 await Navigator.push(
                   context,
@@ -8524,13 +8572,13 @@ class _GecmisAntrenmanlarEkraniState extends State<GecmisAntrenmanlarEkrani> {
     final yediGunOnce = bugunGunBasi.subtract(const Duration(days: 7));
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
         title: const Text(
           'Geçmiş Antrenmanlar',
-          style: TextStyle(color: Colors.lightGreenAccent, fontSize: 16),
+          style: TextStyle(color: PoseidonRenkler.vurgu, fontSize: 16),
         ),
       ),
       body: Column(
@@ -8564,7 +8612,7 @@ class _GecmisAntrenmanlarEkraniState extends State<GecmisAntrenmanlarEkrani> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
                     child: CircularProgressIndicator(
-                      color: Colors.lightGreenAccent,
+                      color: PoseidonRenkler.vurgu,
                     ),
                   );
                 }
@@ -8622,7 +8670,7 @@ class _GecmisAntrenmanlarEkraniState extends State<GecmisAntrenmanlarEkrani> {
                       _son7GunSekmesi
                           ? 'Son 7 günde geçmiş antrenman yok'
                           : 'Arşivde antrenman yok',
-                      style: const TextStyle(color: Colors.grey),
+                      style: const TextStyle(color: PoseidonRenkler.ikincilYazi),
                     ),
                   );
                 }
@@ -8650,7 +8698,7 @@ class _GecmisAntrenmanlarEkraniState extends State<GecmisAntrenmanlarEkrani> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
+                          color: PoseidonRenkler.alan,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -8671,7 +8719,7 @@ class _GecmisAntrenmanlarEkraniState extends State<GecmisAntrenmanlarEkrani> {
                                   Text(
                                     antrenman.tarih,
                                     style: const TextStyle(
-                                      color: Colors.grey,
+                                      color: PoseidonRenkler.ikincilYazi,
                                       fontSize: 13,
                                     ),
                                   ),
@@ -8680,7 +8728,7 @@ class _GecmisAntrenmanlarEkraniState extends State<GecmisAntrenmanlarEkrani> {
                             ),
                             const Icon(
                               Icons.chevron_right,
-                              color: Colors.grey,
+                              color: PoseidonRenkler.ikincilYazi,
                               size: 20,
                             ),
                           ],
@@ -8717,10 +8765,10 @@ class _GecmisSekmeButonu extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: secili ? Colors.lightGreenAccent : const Color(0xFF1A1A1A),
+          color: secili ? PoseidonRenkler.vurgu : PoseidonRenkler.alan,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: secili ? Colors.lightGreenAccent : const Color(0xFF2A2A2A),
+            color: secili ? PoseidonRenkler.vurgu : PoseidonRenkler.kenar,
           ),
         ),
         child: Center(
@@ -8766,13 +8814,13 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        backgroundColor: Colors.transparent,
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
         title: Text(
           widget.antrenman.baslik,
-          style: const TextStyle(color: Colors.lightGreenAccent),
+          style: const TextStyle(color: PoseidonRenkler.vurgu),
         ),
       ),
       body: Padding(
@@ -8782,14 +8830,14 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: PoseidonRenkler.alan,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
                   const Icon(
                     Icons.calendar_today,
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
@@ -8800,7 +8848,7 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
                   const SizedBox(width: 20),
                   const Icon(
                     Icons.pool,
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
@@ -8811,7 +8859,7 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
                   const SizedBox(width: 20),
                   const Icon(
                     Icons.timer,
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
@@ -8842,7 +8890,7 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
                 child: Center(
                   child: Text(
                     'Bu antrenman için henüz set girilmemiş',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: PoseidonRenkler.ikincilYazi),
                   ),
                 ),
               )
@@ -8856,7 +8904,7 @@ class _AntrenmanDetayEkraniState extends State<AntrenmanDetayEkrani> {
                       Text(
                         grup.key,
                         style: const TextStyle(
-                          color: Colors.lightGreenAccent,
+                          color: PoseidonRenkler.vurgu,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -8929,11 +8977,11 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
       lastDate: DateTime(bugun.year + 2, 12, 31),
       builder: (context, child) {
         return Theme(
-          data: ThemeData.dark().copyWith(
+          data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: Colors.lightGreenAccent,
+              primary: PoseidonRenkler.vurgu,
               onPrimary: Colors.black,
-              surface: Color(0xFF151515),
+              surface: PoseidonRenkler.kart,
               onSurface: Colors.white,
             ),
           ),
@@ -9018,14 +9066,14 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         title: const Text(
           'Yeni Antrenman',
-          style: TextStyle(color: Colors.lightGreenAccent),
+          style: TextStyle(color: PoseidonRenkler.vurgu),
         ),
-        iconTheme: const IconThemeData(color: Colors.lightGreenAccent),
+        iconTheme: const IconThemeData(color: PoseidonRenkler.vurgu),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -9038,12 +9086,12 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
           DropdownButtonFormField<String>(
             value: _seciliGrup,
             isExpanded: true,
-            dropdownColor: const Color(0xFF171717),
+            dropdownColor: PoseidonRenkler.kart,
             style: const TextStyle(color: Colors.white),
             decoration: const InputDecoration(
               labelText: 'Antrenman grubu',
               filled: true,
-              fillColor: Color(0xFF171717),
+              fillColor: PoseidonRenkler.kart,
               border: OutlineInputBorder(),
             ),
             items: kulupGruplari.map((grup) {
@@ -9063,15 +9111,15 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A),
+                color: PoseidonRenkler.alan,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF2A2A2A)),
+                border: Border.all(color: PoseidonRenkler.kenar),
               ),
               child: Row(
                 children: [
                   const Icon(
                     Icons.calendar_today,
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     size: 18,
                   ),
                   const SizedBox(width: 10),
@@ -9080,7 +9128,7 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
                         ? turkceTarihMetni(_seciliTarih!)
                         : 'Tarih seç',
                     style: TextStyle(
-                      color: _seciliTarih != null ? Colors.white : Colors.grey,
+                      color: _seciliTarih != null ? Colors.white : PoseidonRenkler.ikincilYazi,
                       fontSize: 15,
                     ),
                   ),
@@ -9099,7 +9147,7 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
           const Text(
             'Antrenman Setleri (Drill\'ler)',
             style: TextStyle(
-              color: Colors.lightGreenAccent,
+              color: PoseidonRenkler.vurgu,
               fontSize: 16,
               fontWeight: FontWeight.bold,
             ),
@@ -9118,10 +9166,10 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: seciliMi
-                            ? Colors.lightGreenAccent
-                            : const Color(0xFF1A1A1A),
+                            ? PoseidonRenkler.vurgu
+                            : PoseidonRenkler.alan,
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.lightGreenAccent),
+                        border: Border.all(color: PoseidonRenkler.vurgu),
                       ),
                       child: Text(
                         kategori,
@@ -9150,7 +9198,7 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
               ElevatedButton(
                 onPressed: _setEkle,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.lightGreenAccent,
+                  backgroundColor: PoseidonRenkler.vurgu,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(
                     vertical: 18,
@@ -9170,7 +9218,7 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Text(
                 'Henüz set eklenmedi',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: PoseidonRenkler.ikincilYazi),
               ),
             )
           else
@@ -9181,7 +9229,7 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A1A),
+                  color: PoseidonRenkler.alan,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -9192,7 +9240,7 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.lightGreenAccent,
+                        color: PoseidonRenkler.vurgu,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -9214,7 +9262,7 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
                     IconButton(
                       icon: const Icon(
                         Icons.close,
-                        color: Colors.grey,
+                        color: PoseidonRenkler.ikincilYazi,
                         size: 18,
                       ),
                       onPressed: () => _setSil(index),
@@ -9229,7 +9277,7 @@ class _AntrenmanEkleEkraniState extends State<AntrenmanEkleEkrani> {
             child: ElevatedButton(
               onPressed: _kaydediliyor ? null : _antrenmanKaydet,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.lightGreenAccent,
+                backgroundColor: PoseidonRenkler.vurgu,
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
@@ -9281,7 +9329,7 @@ class TakvimSekmesi extends StatelessWidget {
 
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
-          color: const Color(0xFF171717),
+          color: PoseidonRenkler.kart,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
             side: const BorderSide(color: Colors.redAccent),
@@ -9290,7 +9338,7 @@ class TakvimSekmesi extends StatelessWidget {
             contentPadding: const EdgeInsets.all(16),
             leading: Icon(
               odendi ? Icons.check_circle : Icons.payments_outlined,
-              color: odendi ? Colors.lightGreenAccent : Colors.redAccent,
+              color: odendi ? PoseidonRenkler.vurgu : Colors.redAccent,
             ),
             title: Text(
               aidat['athlete_isim']?.toString() ??
@@ -9708,7 +9756,7 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
     final id = int.parse('${aidat['id']}');
 
     final renk = durum == 'odendi'
-        ? Colors.lightGreenAccent
+        ? PoseidonRenkler.vurgu
         : durum == 'reddedildi'
         ? Colors.redAccent
         : Colors.orangeAccent;
@@ -9721,7 +9769,7 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: PoseidonRenkler.alan,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: renk),
       ),
@@ -9816,17 +9864,17 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       body: RefreshIndicator(
         onRefresh: _yenile,
-        color: Colors.lightGreenAccent,
+        color: PoseidonRenkler.vurgu,
         child: FutureBuilder<List<List<dynamic>>>(
           future: _veri,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(
-                  color: Colors.lightGreenAccent,
+                  color: PoseidonRenkler.vurgu,
                 ),
               );
             }
@@ -9888,7 +9936,7 @@ class _AidatSekmesiState extends State<AidatSekmesi> {
                 const Text(
                   'Aidatlar',
                   style: TextStyle(
-                    color: Colors.lightGreenAccent,
+                    color: PoseidonRenkler.vurgu,
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                   ),

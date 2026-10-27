@@ -1,3 +1,4 @@
+import '../theme/poseidon_tema.dart';
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
 import '../widgets/sporcu_ozel_alanlar.dart';
@@ -95,7 +96,7 @@ class _SporcuKayitEkraniState extends State<SporcuKayitEkrani> {
         decoration: InputDecoration(
           labelText: baslik,
           filled: true,
-          fillColor: const Color(0xFF09141A),
+          fillColor: PoseidonRenkler.alan,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
         ),
         validator: (value) {
@@ -117,9 +118,9 @@ class _SporcuKayitEkraniState extends State<SporcuKayitEkrani> {
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF12181C),
+        color: PoseidonRenkler.kart,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF293238)),
+        border: Border.all(color: PoseidonRenkler.kenar),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -127,7 +128,7 @@ class _SporcuKayitEkraniState extends State<SporcuKayitEkrani> {
           Text(
             baslik,
             style: const TextStyle(
-              color: Colors.lightGreenAccent,
+              color: PoseidonRenkler.vurgu,
               fontSize: 17,
               fontWeight: FontWeight.bold,
             ),
@@ -144,10 +145,10 @@ class _SporcuKayitEkraniState extends State<SporcuKayitEkrani> {
     return PopScope(
       canPop: !_kaydediliyor,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         appBar: AppBar(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.lightGreenAccent,
+          backgroundColor: Colors.transparent,
+          foregroundColor: PoseidonRenkler.vurgu,
           title: const Text('Yeni Sporcu'),
         ),
         body: AbsorbPointer(
@@ -206,7 +207,7 @@ class _SporcuKayitEkraniState extends State<SporcuKayitEkrani> {
                     FilledButton.icon(
                       onPressed: _kaydet,
                       style: FilledButton.styleFrom(
-                        backgroundColor: Colors.lightGreenAccent,
+                        backgroundColor: PoseidonRenkler.vurgu,
                         foregroundColor: Colors.black,
                         minimumSize: const Size.fromHeight(54),
                       ),

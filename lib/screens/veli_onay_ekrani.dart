@@ -1,3 +1,4 @@
+import '../theme/poseidon_tema.dart';
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
 
@@ -20,7 +21,7 @@ class VeliOnayEkrani extends StatefulWidget {
 }
 
 class _VeliOnayEkraniState extends State<VeliOnayEkrani> {
-  static const _lime = Color(0xFFB2FF59);
+  static const _lime = PoseidonRenkler.vurgu;
   List<dynamic> _liste = [];
   bool _yukleniyor = true;
   bool _islem = false;
@@ -55,7 +56,7 @@ class _VeliOnayEkraniState extends State<VeliOnayEkrani> {
     final kabul = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: const Color(0xFF151C20),
+        backgroundColor: PoseidonRenkler.kart,
         title: Text(onay ? 'Veli bağlantısını onayla' : 'Başvuruyu reddet'),
         content: SingleChildScrollView(
           child: Column(
@@ -128,7 +129,7 @@ class _VeliOnayEkraniState extends State<VeliOnayEkrani> {
         context: context,
         builder: (dialogContext) => StatefulBuilder(
           builder: (context, guncelle) => AlertDialog(
-            backgroundColor: const Color(0xFF151C20),
+            backgroundColor: PoseidonRenkler.kart,
             title: const Text('Çocuğunu seç'),
             content: SizedBox(
               width: 440,
@@ -205,7 +206,7 @@ class _VeliOnayEkraniState extends State<VeliOnayEkrani> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF12181C),
+        color: PoseidonRenkler.kart,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: renk.withOpacity(0.35)),
       ),
@@ -295,9 +296,9 @@ class _VeliOnayEkraniState extends State<VeliOnayEkrani> {
         )
         .toList();
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         foregroundColor: _lime,
         title: Text(
           widget.antrenorMu ? 'Veli Onayları' : 'Çocuk Bağlantılarım',

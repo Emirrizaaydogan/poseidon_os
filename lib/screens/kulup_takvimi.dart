@@ -1,3 +1,4 @@
+import '../theme/poseidon_tema.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../services/database_service.dart';
@@ -103,7 +104,7 @@ class _KulupTakvimiState extends State<KulupTakvimi> {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF101010),
+      backgroundColor: PoseidonRenkler.alan,
       builder: (sheetContext) => FractionallySizedBox(
         heightFactor: 0.85,
         child: SafeArea(
@@ -117,7 +118,7 @@ class _KulupTakvimiState extends State<KulupTakvimi> {
                       child: Text(
                         'Ödeme Geçmişim (${odenenler.length})',
                         style: const TextStyle(
-                          color: Colors.lightGreenAccent,
+                          color: PoseidonRenkler.vurgu,
                           fontSize: 19,
                           fontWeight: FontWeight.bold,
                         ),
@@ -136,7 +137,7 @@ class _KulupTakvimiState extends State<KulupTakvimi> {
                 child: Text(
                   'Seçili çocuğun tüm dönemlerde ödendi olarak '
                   'kaydedilmiş aidatları. Saatler Türkiye saatidir.',
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 12),
                 ),
               ),
               const SizedBox(height: 12),
@@ -159,7 +160,7 @@ class _KulupTakvimiState extends State<KulupTakvimi> {
                               Text(
                                 'Ödeme: ${_odemeZamani(aidat['odeme_tarihi'])}',
                                 style: const TextStyle(
-                                  color: Colors.lightGreenAccent,
+                                  color: PoseidonRenkler.vurgu,
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -292,7 +293,7 @@ class _KulupTakvimiState extends State<KulupTakvimi> {
                     child: Text(
                       'Kulüp Takvimi',
                       style: TextStyle(
-                        color: Colors.lightGreenAccent,
+                        color: PoseidonRenkler.vurgu,
                         fontSize: 21,
                         fontWeight: FontWeight.bold,
                       ),
@@ -352,11 +353,11 @@ class _KulupTakvimiState extends State<KulupTakvimi> {
                 ),
                 calendarStyle: const CalendarStyle(
                   selectedDecoration: BoxDecoration(
-                    color: Color(0xFF424242),
+                    color: PoseidonRenkler.secim,
                     shape: BoxShape.circle,
                   ),
                   todayDecoration: BoxDecoration(
-                    color: Color(0xFF263238),
+                    color: PoseidonRenkler.secim,
                     shape: BoxShape.circle,
                   ),
                   selectedTextStyle: TextStyle(
@@ -416,7 +417,7 @@ class _KulupTakvimiState extends State<KulupTakvimi> {
                   padding: EdgeInsets.symmetric(vertical: 24),
                   child: Text(
                     'Bu gün için etkinlik veya ödeme kaydı yok.',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: PoseidonRenkler.ikincilYazi),
                   ),
                 ),
 
@@ -429,7 +430,7 @@ class _KulupTakvimiState extends State<KulupTakvimi> {
                   margin: const EdgeInsets.only(top: 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF171717),
+                    color: PoseidonRenkler.kart,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: _renk(tur)),
                   ),
@@ -512,7 +513,7 @@ class _KulupTakvimiState extends State<KulupTakvimi> {
 
                 const Text(
                   'Son ödeme tarihi bu gün olan aidatlar.',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(color: PoseidonRenkler.ikincilYazi),
                 ),
 
                 if (selectedDues.isEmpty)
@@ -526,7 +527,7 @@ class _KulupTakvimiState extends State<KulupTakvimi> {
                   child: Text(
                     'Ödeyenler (${odenenAidatlar.length} aidat)',
                     style: const TextStyle(
-                      color: Colors.lightGreenAccent,
+                      color: PoseidonRenkler.vurgu,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -765,7 +766,7 @@ class _TakvimFormuState extends State<_TakvimFormu> {
                   const Text(
                     'Bu kayıt ödeme hatırlatmasıdır; '
                     'otomatik aidat borcu oluşturmaz.',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: PoseidonRenkler.ikincilYazi),
                   ),
                 const SizedBox(height: 24),
                 FilledButton(

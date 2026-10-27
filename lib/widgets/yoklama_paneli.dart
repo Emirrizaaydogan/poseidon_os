@@ -1,3 +1,4 @@
+import '../theme/poseidon_tema.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/database_service.dart';
@@ -158,9 +159,9 @@ class _YoklamaPaneliState extends State<YoklamaPaneli>
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: PoseidonRenkler.kart,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFF343E29)),
+        border: Border.all(color: PoseidonRenkler.kenar),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,7 +170,7 @@ class _YoklamaPaneliState extends State<YoklamaPaneli>
             children: [
               const Icon(
                 Icons.fact_check_outlined,
-                color: Colors.lightGreenAccent,
+                color: PoseidonRenkler.vurgu,
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -186,13 +187,13 @@ class _YoklamaPaneliState extends State<YoklamaPaneli>
               IconButton(
                 onPressed: _kaydedilen == null ? _yukle : null,
                 tooltip: 'Yenile',
-                icon: const Icon(Icons.refresh, color: Colors.lightGreenAccent),
+                icon: const Icon(Icons.refresh, color: PoseidonRenkler.vurgu),
               ),
             ],
           ),
           const Text(
             'Türkiye saati · Ekran açıkken 20 saniyede yenilenir',
-            style: TextStyle(color: Colors.grey, fontSize: 11),
+            style: TextStyle(color: PoseidonRenkler.ikincilYazi, fontSize: 11),
           ),
           if (_hata != null)
             Padding(
@@ -213,7 +214,7 @@ class _YoklamaPaneliState extends State<YoklamaPaneli>
               '${all.where((r) => r['giris_zamani'] != null).length} girdi · '
               '${all.where((r) => r['cikis_zamani'] != null).length} çıktı · '
               '${all.length} sporcu',
-              style: const TextStyle(color: Colors.lightGreenAccent),
+              style: const TextStyle(color: PoseidonRenkler.vurgu),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -230,7 +231,7 @@ class _YoklamaPaneliState extends State<YoklamaPaneli>
               padding: EdgeInsets.only(top: 16),
               child: Text(
                 'Gösterilecek yoklama kaydı yok.',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: PoseidonRenkler.ikincilYazi),
               ),
             ),
           ...rows.map((r) {
@@ -242,7 +243,7 @@ class _YoklamaPaneliState extends State<YoklamaPaneli>
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF202020),
+                color: PoseidonRenkler.alan,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -270,7 +271,7 @@ class _YoklamaPaneliState extends State<YoklamaPaneli>
                     style: TextStyle(
                       color: cikis
                           ? Colors.orangeAccent
-                          : Colors.lightGreenAccent,
+                          : PoseidonRenkler.vurgu,
                     ),
                   ),
                   Text(
@@ -289,7 +290,7 @@ class _YoklamaPaneliState extends State<YoklamaPaneli>
                       children: [
                         FilledButton.icon(
                           style: FilledButton.styleFrom(
-                            backgroundColor: Colors.lightGreenAccent,
+                            backgroundColor: PoseidonRenkler.vurgu,
                             foregroundColor: Colors.black,
                           ),
                           onPressed:
